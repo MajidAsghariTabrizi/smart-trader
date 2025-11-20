@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Smart Trader – Live Decisions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f5f7fa;
+      font-family: "IRANSans", sans-serif;
+      color: #222;
+    }
+
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      opacity: 0.7;
+      margin-bottom: 25px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    #priceChart {
+      height: 330px !important;
+    }
+
+    /* ---- تصمیم‌ها ---- */
+
+    .decision-item {
+      background: #f0f3f7;
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      border-right: 4px solid #ccc;
+    }
+
+    .decision-buy { border-right-color: #4caf50; }
+    .decision-sell { border-right-color: #f44336; }
+    .decision-hold { border-right-color: #607d8b; }
+
+    .decision-label { font-size: 14px; font-weight: bold; }
+    .decision-time { font-size: 11px; color: #777; margin-top: 4px; }
+    .decision-price { font-size: 12px; opacity: 0.7; }
+
+    .decisions-list {
+      max-height: 550px;
+      overflow-y: auto;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <div class="title">Smart Trader – Bitcoin Live Decisions</div>
+    <div class="subtitle">بات هر دقیقه بازار را تحلیل می‌کند. این صفحه قیمت BTC و تصمیم‌های زنده را نشان می‌دهد.</div>
+
+    <div class="layout">
+      
+      <!-- چارت -->
+      <div class="card">
+        <h2>نمودار قیمت بیت‌کوین</h2>
+        <canvas id="priceChart"></canvas>
+      </div>
+
+      <!-- تصمیم‌ها -->
+      <div class="card">
+        <h2>آخرین تصمیم‌های بات</h2>
+        <div class="decisions-list" id="decisions"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    async function getJSON(url) {
+      const res = await fetch(url);
+      return res.json();
+    }
+
+    function cls(d) {
+      if (!d) return "decision-hold";
+      let x = d.toLowerCase();
+      if (x.includes("buy") || x.includes("long")) return "decision-buy";
+      if (x.includes("sell") || x.includes("short")) return "decision-sell";
+      return "decision-hold";
+    }
+
+    async function render() {
+      const prices = await getJSON("/api/prices?limit=300");
+      const decisions = await getJSON("/api/decisions?limit=80");
+
+      /* ----- چارت ----- */
+      const ctx = document.getElementById("priceChart").getContext("2d");
+      const labels = prices.map(p => p.timestamp);
+      const data = prices.map(p => p.price);
+
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            label: "BTC/USDT",
+            data,
+            borderColor: "#1976d2",
+            backgroundColor: "rgba(25,118,210,0.07)",
+            borderWidth: 2,
+            tension: 0.35,
+            fill: true,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: { ticks: { display: false } },
+            y: { ticks: { font: { size: 11 } } }
+          }
+        }
+      });
+
+      /* ----- تصمیم‌ها ----- */
+      const container = document.getElementById("decisions");
+      container.innerHTML = "";
+
+      decisions.slice().reverse().forEach(d => {
+        const div = document.createElement("div");
+        div.className = "decision-item " + cls(d.decision);
+
+        div.innerHTML = `
+          <div class="decision-label">${d.decision}</div>
+          <div class="decision-price">قیمت: ${d.price}</div>
+          <div class="decision-time">${d.timestamp}</div>
+        `;
+
+        container.appendChild(div);
+      });
+    }
+
+    render();
+  </script>
+
+</body>
+</html>

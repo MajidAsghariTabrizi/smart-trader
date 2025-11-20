@@ -1,0 +1,9 @@
+.env
+*.db
+*.pyc
+__pycache__/
+smart_trader.log
+*.log
+logs/
+.env.backup
+venv/
