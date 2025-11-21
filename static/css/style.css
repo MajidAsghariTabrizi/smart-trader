@@ -433,3 +433,92 @@ body.theme-light .stat-pill {
   background: rgba(0,0,0,0.05) !important;
   color: #1f2937 !important;
 }
+/* =====================================================
+   ⭐ Regime Component UI
+   ===================================================== */
+
+.regime-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 14px 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.regime-title {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.regime-pill {
+  padding: 4px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* رنگ‌ها */
+.regime-low {
+  background: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+}
+
+.regime-neutral {
+  background: rgba(234, 179, 8, 0.35);
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.45);
+}
+
+.regime-high {
+  background: rgba(244, 63, 94, 0.35);
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.45);
+}
+
+/* انیمیشن‌های زیباسازی */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 12px rgba(255,255,255,0.2); }
+  50% { box-shadow: 0 0 25px rgba(255,255,255,0.35); }
+  100% { box-shadow: 0 0 12px rgba(255,255,255,0.2); }
+}
+
+.regime-pill {
+  animation: pulseGlow 2.8s infinite;
+}
+
+/* Light Mode اصلاح شده */
+body.theme-light .regime-box {
+  background: rgba(0,0,0,0.05);
+  border-color: rgba(0,0,0,0.1);
+}
+
+body.theme-light .regime-title {
+  color: #1e293b;
+}
+
+body.theme-light .regime-pill {
+  color: #111;
+}
+
+body.theme-light .regime-low {
+  background: rgba(14,165,233,0.25);
+}
+
+body.theme-light .regime-neutral {
+  background: rgba(234,179,8,0.25);
+}
+
+body.theme-light .regime-high {
+  background: rgba(244,63,94,0.25);
+}

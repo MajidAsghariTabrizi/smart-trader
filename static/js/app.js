@@ -261,6 +261,25 @@ async function render() {
       <span class="${decisionTagClass(last.decision)}">${decisionFa(last.decision)}</span>
       ${buildPersianSummary(last)}
   `;
+/* ⭐ Apply Regime Component */
+const regimeBox = document.getElementById("regimeLabel");
+
+const regime = (last?.regime || "NEUTRAL").toUpperCase();
+
+regimeBox.classList.remove("regime-low", "regime-neutral", "regime-high");
+
+if (regime === "LOW") {
+    regimeBox.textContent = "کم‌نوسان (LOW)";
+    regimeBox.classList.add("regime-low");
+}
+else if (regime === "HIGH") {
+    regimeBox.textContent = "پرنوسان (HIGH)";
+    regimeBox.classList.add("regime-high");
+}
+else {
+    regimeBox.textContent = "متعادل (NEUTRAL)";
+    regimeBox.classList.add("regime-neutral");
+}
 
   /* ----- Stats Bar ----- */
   const stats = buildStats(globalDecisions, prices);
@@ -293,11 +312,10 @@ function setTheme(mode) {
   document.body.classList.add(mode);
   localStorage.setItem("theme", mode);
 
-  if (mode === "theme-light") {
-    document.querySelector(".theme-toggle .icon").textContent = "🌞";
-  } else {
-    document.querySelector(".theme-toggle .icon").textContent = "🌙";
-  }
+if (mode === "theme-light") {
+  document.querySelector(".theme-toggle .icon").textContent = "🌞";
+} else {
+  document.querySelector(".theme-toggle .icon").textContent = "🌙";
 }
 
 themeBtn.addEventListener("click", () => {
