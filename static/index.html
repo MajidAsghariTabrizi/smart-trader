@@ -4,251 +4,57 @@
   <meta charset="UTF-8" />
   <title>اسمارت‌تریدر – ربات هوش مصنوعی بازار</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- چارت -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: radial-gradient(circle at top, #0b1020 0, #050612 35%, #020308 100%);
-      font-family: "IRANSans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      color: #f5f7ff;
-    }
-
-    .container {
-      max-width: 1300px;
-      margin: 0 auto;
-      padding: 20px 16px 40px;
-    }
-
-    /* --- هدر / هیرو --- */
-
-    .hero {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 24px;
-    }
-
-    .badge {
-      align-self: flex-start;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(129, 212, 250, 0.08);
-      border: 1px solid rgba(129, 212, 250, 0.35);
-      font-size: 11px;
-      color: #80d8ff;
-    }
-
-    .title {
-      font-size: 26px;
-      font-weight: 800;
-      line-height: 1.4;
-    }
-
-    .title span {
-      color: #82b1ff;
-    }
-
-    .subtitle {
-      font-size: 13px;
-      opacity: 0.78;
-      max-width: 520px;
-    }
-
-    /* layout اصلی */
-
-    .layout {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 20px;
-    }
-
-    @media (max-width: 900px) {
-      .layout {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .card {
-      background: rgba(15, 23, 42, 0.96);
-      border-radius: 18px;
-      padding: 18px 18px 20px;
-      box-shadow: 0 14px 30px rgba(0,0,0,0.55);
-      border: 1px solid rgba(148, 163, 184, 0.15);
-      backdrop-filter: blur(14px);
-    }
-
-    h2 {
-      font-size: 15px;
-      margin-bottom: 14px;
-      font-weight: 700;
-      color: #e5e7eb;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    h2 span.small {
-      font-size: 11px;
-      font-weight: 400;
-      color: #9ca3af;
-    }
-
-    #priceChart {
-      height: 260px !important;
-    }
-
-    /* --- خلاصه تحلیلی زیر نمودار --- */
-
-    .summary {
-      margin-top: 12px;
-      padding-top: 10px;
-      border-top: 1px dashed rgba(148, 163, 184, 0.35);
-      font-size: 12px;
-      line-height: 1.8;
-      color: #e5e7eb;
-    }
-
-    .summary-title {
-      font-weight: 700;
-      margin-bottom: 4px;
-      font-size: 12px;
-      color: #93c5fd;
-    }
-
-    .summary-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 8px;
-      margin-left: 6px;
-      border-radius: 999px;
-      font-size: 10px;
-      background: rgba(55, 65, 81, 0.65);
-      color: #e5e7eb;
-    }
-
-    .summary-tag.buy { background: rgba(16, 185, 129, 0.25); color: #6ee7b7; }
-    .summary-tag.sell { background: rgba(239, 68, 68, 0.25); color: #fecaca; }
-    .summary-tag.hold { background: rgba(148, 163, 184, 0.25); color: #e5e7eb; }
-
-    /* ---- لیست تصمیم‌ها ---- */
-
-    .decisions-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .decisions-header select {
-      background: rgba(15,23,42,0.7);
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      padding: 4px 10px;
-      font-size: 11px;
-      color: #e5e7eb;
-      outline: none;
-    }
-
-    .decisions-list {
-      max-height: 520px;
-      overflow-y: auto;
-      margin-top: 8px;
-      padding-right: 4px;
-    }
-
-    .decisions-list::-webkit-scrollbar {
-      width: 4px;
-    }
-    .decisions-list::-webkit-scrollbar-thumb {
-      background: rgba(148,163,184,0.6);
-      border-radius: 999px;
-    }
-
-    .decision-item {
-      background: rgba(15, 23, 42, 0.9);
-      padding: 10px 11px;
-      border-radius: 12px;
-      margin-bottom: 8px;
-      border-right: 3px solid #4b5563;
-      font-size: 12px;
-    }
-
-    .decision-buy { border-right-color: #22c55e; }
-    .decision-sell { border-right-color: #ef4444; }
-    .decision-hold { border-right-color: #64748b; }
-
-    .decision-label { font-size: 12px; font-weight: 700; }
-    .decision-time { font-size: 10px; color: #9ca3af; margin-top: 3px; }
-    .decision-price { font-size: 11px; margin-top: 2px; color: #e5e7eb; opacity: 0.85; }
-    .decision-pill {
-      font-size: 10px;
-      display: inline-flex;
-      padding: 2px 6px;
-      border-radius: 999px;
-      margin-left: 4px;
-      background: rgba(31, 41, 55, 0.9);
-      color: #9ca3af;
-    }
-
-    @media (max-width: 600px) {
-      .title {
-        font-size: 20px;
-      }
-      .subtitle {
-        font-size: 12px;
-      }
-      .card {
-        padding: 14px 14px 16px;
-      }
-    }
-  </style>
+  <!-- CSS جدید -->
+  <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
 <body>
+
   <div class="container">
 
     <!-- Hero -->
     <div class="hero">
       <div class="badge">⚡ ربات هوش مصنوعی اسمارت‌تریدر</div>
       <div class="title">
-        رباتی که <span>ستاپ‌های معاملاتی</span> را ۲۴ ساعته در بازار رصد می‌کند.
+        رباتی که <span>ستاپ‌های معاملاتی</span> را ۲۴ ساعته رصد می‌کند.
       </div>
       <div class="subtitle">
-        این داشبورد، آخرین تصمیم‌های ربات را روی نمودار قیمت نمایش می‌دهد تا ببینی در هر لحظه
-        بازار را چطور می‌خوانَد.
+        این داشبورد تصمیمات لحظه‌ای ربات را روی نمودار قیمت نمایش می‌دهد.
       </div>
     </div>
 
+
     <div class="layout">
       
-      <!-- چارت + تحلیل آخرین تصمیم -->
+      <!-- چارت -->
       <div class="card">
         <h2>
           نمودار قیمت
-          <span class="small">داده‌ها بر اساس آخرین لاگ‌های ربات</span>
+          <span class="small">+ سیگنال‌های خرید / فروش توسط AI</span>
         </h2>
+
         <canvas id="priceChart"></canvas>
 
-        <!-- خلاصه تحلیلی آخرین تصمیم -->
-        <div class="summary" id="lastSummary">
+        <!-- خلاصه تحلیلی -->
+        <div class="summary">
           <div class="summary-title">آخرین تحلیل بات</div>
-          <div id="lastSummaryText">در حال بارگذاری...</div>
+          <div id="lastSummaryText">لطفاً صبر کنید...</div>
         </div>
       </div>
 
       <!-- لیست تصمیم‌ها -->
       <div class="card">
         <div class="decisions-header">
-          <h2>آخرین تصمیم‌های بات</h2>
+          <h2>آخرین تصمیم‌های معاملاتی</h2>
           <select id="filterSelect">
             <option value="all">همه</option>
-            <option value="buy">فقط سیگنال‌های خرید</option>
-            <option value="sell">فقط سیگنال‌های فروش</option>
-            <option value="hold">فقط وضعیت HOLD</option>
+            <option value="buy">خرید</option>
+            <option value="sell">فروش</option>
+            <option value="hold">HOLD</option>
           </select>
         </div>
         <div class="decisions-list" id="decisions"></div>
@@ -256,206 +62,17 @@
 
     </div>
 
+    <!-- آمار عملکرد -->
+    <div class="stats-card card">
+      <h2>خلاصه عملکرد ربات</h2>
+      <div id="statsBar" class="stats-bar"></div>
+    </div>
+
   </div>
 
-  <script>
-    async function getJSON(url) {
-      const res = await fetch(url);
-      return res.json();
-    }
 
-    function cls(decision) {
-      if (!decision) return "decision-hold";
-      const x = decision.toLowerCase();
-      if (x.includes("buy") || x.includes("long")) return "decision-buy";
-      if (x.includes("sell") || x.includes("short")) return "decision-sell";
-      return "decision-hold";
-    }
-
-    function decisionFa(decision) {
-      const d = (decision || "").toUpperCase();
-      if (d === "BUY") return "سیگنال خرید";
-      if (d === "SELL") return "سیگنال فروش";
-      if (d === "HOLD") return "بدون سیگنال (HOLD)";
-      return decision || "نامشخص";
-    }
-
-    function regimeFa(regime) {
-      const r = (regime || "").toUpperCase();
-      if (r === "LOW") return "رژیم کم‌نوسان / محتاط";
-      if (r === "HIGH") return "رژیم پرنوسان و رونددار";
-      if (r === "NEUTRAL") return "رژیم متعادل";
-      return "رژیم نامشخص";
-    }
-
-    function decisionTagClass(decision) {
-      const d = (decision || "").toUpperCase();
-      if (d === "BUY") return "summary-tag buy";
-      if (d === "SELL") return "summary-tag sell";
-      return "summary-tag hold";
-    }
-
-    function buildPersianSummary(dec) {
-      if (!dec) {
-        return "هنوز تحلیلی در دیتابیس ثبت نشده است.";
-      }
-
-      const price = dec.price;
-      const decision = dec.decision;
-      const regime = dec.regime;
-      let reasons = [];
-
-      try {
-        if (dec.reasons_json) {
-          reasons = JSON.parse(dec.reasons_json);
-        }
-      } catch (e) {
-        // در صورت خطا، رها می‌کنیم
-        reasons = [];
-      }
-
-      const joined = Array.isArray(reasons) ? reasons.join(" | ") : String(reasons);
-
-      const parts = [];
-
-      // جمله‌ی اصلی
-      parts.push(`در آخرین کندل، ربات قیمت را حدود <b>${Number(price).toLocaleString("fa-IR")}</b> تومان ثبت کرده و به جمع‌بندی <b>${decisionFa(decision)}</b> رسیده است.`);
-
-      // رژیم بازار
-      parts.push(`بر اساس نوسانات و قدرت روند، بازار در وضعیت <b>${regimeFa(regime)}</b> تشخیص داده شده است.`);
-
-      // گیت‌ها و توضیح هوش
-      if (joined.includes("Trend gated")) {
-        parts.push("قدرت روند (ADX) پایین بوده و کانال روند به صورت خودکار توسط بات کم‌اثر شده است تا از سیگنال‌های فیک جلوگیری شود.");
-      }
-
-      if (joined.includes("MTF agree")) {
-        parts.push("تایم‌فریم تأییدی نیز همین جهت را حمایت می‌کند و سیگنال از چند بعد مختلف تأیید شده است.");
-      } else if (joined.includes("MTF reject")) {
-        parts.push("اما تایم‌فریم تأییدی هم‌جهت نبود، به همین دلیل شدت سیگنال کاهش یافته و بات محافظه‌کار عمل کرده است.");
-      }
-
-      if (joined.includes("Aggregate=")) {
-        parts.push("امتیاز نهایی سیگنال از ترکیب روند، مومنتوم، میانگین‌وارونگی و بریک‌اوت ساخته شده و سپس با توجه به رژیم نوسان، مقیاس‌دهی شده است.");
-      }
-
-      // اگر دلیل خاصی نبود، یک جمله‌ی عمومی:
-      if (parts.length <= 2) {
-        parts.push("این تصمیم بر اساس وزن‌دهی هم‌زمان به روند، مومنتوم، بریک‌اوت و میانگین‌وارونگی گرفته شده و تلاش می‌کند تعادل خوبی بین ریسک و سود ایجاد کند.");
-      }
-
-      return parts.join(" ");
-    }
-
-    let globalDecisions = [];
-
-    function renderDecisionList(filter = "all") {
-      const container = document.getElementById("decisions");
-      container.innerHTML = "";
-
-      const list = globalDecisions.slice().reverse().filter(d => {
-        const dec = (d.decision || "").toUpperCase();
-        if (filter === "buy") return dec === "BUY";
-        if (filter === "sell") return dec === "SELL";
-        if (filter === "hold") return dec === "HOLD";
-        return true;
-      });
-
-      list.forEach(d => {
-        const div = document.createElement("div");
-        div.className = "decision-item " + cls(d.decision);
-
-        div.innerHTML = `
-          <div class="decision-label">
-            ${decisionFa(d.decision)}
-            <span class="decision-pill">${regimeFa(d.regime)}</span>
-          </div>
-          <div class="decision-price">قیمت: ${Number(d.price).toLocaleString("fa-IR")} تومان</div>
-          <div class="decision-time">${d.timestamp}</div>
-        `;
-
-        container.appendChild(div);
-      });
-    }
-
-    async function render() {
-      const prices = await getJSON("/api/prices?limit=300");
-      globalDecisions = await getJSON("/api/decisions?limit=80");
-
-      /* ----- چارت ----- */
-      const ctx = document.getElementById("priceChart").getContext("2d");
-      const labels = prices.map(p => p.timestamp);
-      const data = prices.map(p => p.price);
-
-      new Chart(ctx, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [{
-            label: "قیمت",
-            data,
-            borderColor: "#60a5fa",
-            backgroundColor: "rgba(37, 99, 235, 0.18)",
-            borderWidth: 2,
-            tension: 0.35,
-            fill: true,
-            pointRadius: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: function(ctx) {
-                  return "قیمت: " + Number(ctx.parsed.y).toLocaleString("fa-IR") + " تومان";
-                }
-              }
-            }
-          },
-          scales: {
-            x: { ticks: { display: false } },
-            y: {
-              ticks: {
-                font: { size: 10 },
-                callback: function(value) {
-                  return Number(value).toLocaleString("fa-IR");
-                }
-              },
-              grid: { color: "rgba(55, 65, 81, 0.5)" }
-            }
-          }
-        }
-      });
-
-      /* ----- خلاصه آخرین تصمیم زیر نمودار ----- */
-      const last = globalDecisions[globalDecisions.length - 1];
-      const summaryText = document.getElementById("lastSummaryText");
-      const summaryBox = document.getElementById("lastSummary");
-
-      if (last) {
-        summaryText.innerHTML = `
-          <span class="${decisionTagClass(last.decision)}">
-            ${decisionFa(last.decision)}
-          </span>
-          ${buildPersianSummary(last)}
-        `;
-      } else {
-        summaryText.textContent = "هنوز تصمیمی ثبت نشده است.";
-      }
-
-      /* ----- لیست تصمیم‌ها ----- */
-      renderDecisionList("all");
-
-      document.getElementById("filterSelect").addEventListener("change", (e) => {
-        renderDecisionList(e.target.value);
-      });
-    }
-
-    render();
-  </script>
+  <!-- JS جدید -->
+  <script src="/static/js/app.js"></script>
 
 </body>
 </html>
