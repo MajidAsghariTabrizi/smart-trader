@@ -224,7 +224,28 @@ async function render() {
           pointBorderColor: "#fff",
           pointRadius: 6,
           pointStyle: "triangle"
-        }
+        },
+		{
+  type: "scatter",
+  label: "Breakout",
+  data: breakoutPoints,
+  pointStyle: "triangle",
+  rotation: 180,
+  pointRadius: 7,
+  pointBackgroundColor: "rgba(59,130,246,1)",
+  pointBorderColor: "#fff"
+},
+{
+  type: "scatter",
+  label: "Mean Reversion",
+  data: meanrevPoints,
+  pointStyle: "triangle",
+  rotation: 0,
+  pointRadius: 7,
+  pointBackgroundColor: "rgba(239,68,68,1)",
+  pointBorderColor: "#fff"
+}
+
       ]
     },
     options: {
@@ -261,6 +282,19 @@ async function render() {
       <span class="${decisionTagClass(last.decision)}">${decisionFa(last.decision)}</span>
       ${buildPersianSummary(last)}
   `;
+  
+  
+  /* ⭐ Signal Strength Meter */
+const strengthEl = document.getElementById("signalStrengthFill");
+
+if (strengthEl && last?.aggregate) {
+  const s = Number(last.aggregate);   // -1 تا +1
+  const pct = ((s + 1) / 2) * 100;     // تبدیل به 0 تا 100%
+
+  strengthEl.style.width = pct + "%";
+}
+
+  
 /* ⭐ Apply Regime Component */
 const regimeBox = document.getElementById("regimeLabel");
 
@@ -280,6 +314,22 @@ else {
     regimeBox.textContent = "متعادل (NEUTRAL)";
     regimeBox.classList.add("regime-neutral");
 }
+
+/* ⭐ ADX Component */
+const adxValueEl = document.getElementById("adxValue");
+if (adxValueEl) {
+  const adx = Number(last?.adx || 0);
+
+  adxValueEl.textContent = adx.toFixed(1);
+
+  adxValueEl.classList.remove("adx-weak", "adx-medium", "adx-strong");
+
+  if (adx < 20) adxValueEl.classList.add("adx-weak");
+  else if (adx < 30) adxValueEl.classList.add("adx-medium");
+  else adxValueEl.classList.add("adx-strong");
+}
+
+
 
   /* ----- Stats Bar ----- */
   const stats = buildStats(globalDecisions, prices);
