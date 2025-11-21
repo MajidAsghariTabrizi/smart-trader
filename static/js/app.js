@@ -302,7 +302,7 @@ statsBar.innerHTML = `
 
 render();
 /* =====================================================
-   🌗 THEME ENGINE
+   🌗 THEME ENGINE (FIXED & CLEAN)
    ===================================================== */
 
 const themeBtn = document.getElementById("toggleThemeBtn");
@@ -310,18 +310,20 @@ const themeBtn = document.getElementById("toggleThemeBtn");
 function setTheme(mode) {
   document.body.classList.remove("theme-light", "theme-dark-pro");
   document.body.classList.add(mode);
+
   localStorage.setItem("theme", mode);
 
-if (mode === "theme-light") {
-  document.querySelector(".theme-toggle .icon").textContent = "🌞";
-} else {
-  document.querySelector(".theme-toggle .icon").textContent = "🌙";
+  // icon update
+  const icon = document.querySelector(".theme-toggle .icon");
+  if (icon) icon.textContent = mode === "theme-light" ? "🌞" : "🌙";
 }
 
-themeBtn.addEventListener("click", () => {
+// toggle event - OUTSIDE the function (correct placement)
+themeBtn?.addEventListener("click", () => {
   const current = localStorage.getItem("theme") || "theme-dark-pro";
-  setTheme(current === "theme-dark-pro" ? "theme-light" : "theme-dark-pro");
+  const next = current === "theme-dark-pro" ? "theme-light" : "theme-dark-pro";
+  setTheme(next);
 });
 
-// Load saved theme
+// initial load
 setTheme(localStorage.getItem("theme") || "theme-dark-pro");
