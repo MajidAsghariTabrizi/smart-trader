@@ -279,3 +279,124 @@ h2 .small {
     height: 220px !important;
   }
 }
+
+/* =====================================================
+   🌕 Light Mode Theme
+   ===================================================== */
+
+body.theme-light {
+  background: #f8fafc;
+  color: #111827;
+}
+
+body.theme-light .card {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: #111;
+}
+
+body.theme-light h2 {
+  color: #1f2937;
+}
+
+body.theme-light .summary,
+body.theme-light .decision-price,
+body.theme-light .decision-time {
+  color: #374151;
+}
+
+body.theme-light .badge {
+  background: rgba(0, 0, 0, 0.05);
+  color: #1e40af;
+}
+
+body.theme-light .decision-item {
+  background: #ffffff;
+  border-right-color: #ccc;
+}
+
+body.theme-light .stat-pill {
+  background: rgba(0,0,0,0.04);
+  color: #111;
+}
+
+body.theme-light .theme-toggle button {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+/* =====================================================
+   🌑 Dark Pro Theme (Gradient Blue/Purple)
+   ===================================================== */
+
+body.theme-dark-pro {
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  color: #f8faff;
+}
+
+body.theme-dark-pro .card {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+body.theme-dark-pro h2 {
+  color: #e0e7ff;
+}
+
+body.theme-dark-pro .summary-title {
+  color: #a5b4fc;
+}
+
+body.theme-dark-pro .badge {
+  background: rgba(129, 212, 250, 0.15);
+  border-color: rgba(129, 212, 250, 0.35);
+}
+
+body.theme-dark-pro .decision-item {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+body.theme-dark-pro .stat-pill {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+
+body.theme-dark-pro .theme-toggle button {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border-color: rgba(255,255,255,0.2);
+}
+/* =====================================================
+   🎛 Theme Toggle Button
+   ===================================================== */
+
+.theme-toggle {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.theme-toggle button {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  padding: 8px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(12px);
+}
+
+.theme-toggle button:hover {
+  transform: scale(1.05);
+  background: rgba(255,255,255,0.22);
+}
+
+.theme-toggle .icon {
+  font-size: 16px;
+}

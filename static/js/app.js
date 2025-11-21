@@ -270,3 +270,28 @@ async function render() {
 }
 
 render();
+/* =====================================================
+   🌗 THEME ENGINE
+   ===================================================== */
+
+const themeBtn = document.getElementById("toggleThemeBtn");
+
+function setTheme(mode) {
+  document.body.classList.remove("theme-light", "theme-dark-pro");
+  document.body.classList.add(mode);
+  localStorage.setItem("theme", mode);
+
+  if (mode === "theme-light") {
+    document.querySelector(".theme-toggle .icon").textContent = "🌞";
+  } else {
+    document.querySelector(".theme-toggle .icon").textContent = "🌙";
+  }
+}
+
+themeBtn.addEventListener("click", () => {
+  const current = localStorage.getItem("theme") || "theme-dark-pro";
+  setTheme(current === "theme-dark-pro" ? "theme-light" : "theme-dark-pro");
+});
+
+// Load saved theme
+setTheme(localStorage.getItem("theme") || "theme-dark-pro");
