@@ -110,7 +110,15 @@ function buildStats(decisions, prices) {
     if (dec === "SELL" && next < now) wins++;
   });
 
-  const winrate = total === 0 ? "-" : (wins / total * 100).toFixed(1) + "%";
+if (total === 0) {
+  return {
+    total: 0,
+    buys: 0,
+    sells: 0,
+    wins: 0,
+    winrate: "بدون سیگنال قابل محاسبه"
+  };
+}
 
   return { total, buys, sells, wins, winrate };
 }
@@ -235,9 +243,13 @@ async function render() {
       scales: {
         x: { ticks: { display: false } },
         y: {
-          ticks: {
-            callback: (val) => Number(val).toLocaleString("fa-IR")
-          }
+         ticks: {
+  font: { family: "IRANSans", size: 11 },
+  color: getComputedStyle(document.body).color,
+  callback: function (value) {
+    return Number(value).toLocaleString("fa-IR");
+  }
+}
         }
       }
     }
@@ -254,12 +266,12 @@ async function render() {
   const stats = buildStats(globalDecisions, prices);
   const statsBar = document.getElementById("statsBar");
 
-  statsBar.innerHTML = `
-    <div class="stat-pill"><span class="stat-label">تعداد سیگنال‌ها: </span><span class="stat-value">${stats.total}</span></div>
-    <div class="stat-pill"><span class="stat-label">خرید: </span><span class="stat-value">${stats.buys}</span></div>
-    <div class="stat-pill"><span class="stat-label">فروش: </span><span class="stat-value">${stats.sells}</span></div>
-    <div class="stat-pill"><span class="stat-label">وین‌ریت تقریبی: </span><span class="stat-value">${stats.winrate}</span></div>
-  `;
+statsBar.innerHTML = `
+  <div class="stat-pill">سیگنال کل: ${stats.total}</div>
+  <div class="stat-pill">خرید: ${stats.buys}</div>
+  <div class="stat-pill">فروش: ${stats.sells}</div>
+  <div class="stat-pill">وین‌ریت: ${stats.winrate}</div>
+`;
 
   /* ----- Decision List ----- */
   renderDecisionList();

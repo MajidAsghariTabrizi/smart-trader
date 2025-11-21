@@ -43,6 +43,10 @@ body {
   font-weight: 800;
   line-height: 1.4;
 }
+.title, h2 {
+  font-weight: 700 !important;
+  font-family: "IRANSans", system-ui !important;
+}
 
 .title span {
   color: #82b1ff;
@@ -78,8 +82,8 @@ body {
 
 .card {
   background: rgba(15, 23, 42, 0.65);
-  border-radius: 18px;
-  padding: 20px 20px 26px;
+  border-radius: 14px !important;
+  padding: 14px 16px 18px !important;
   border: 1px solid rgba(148, 163, 184, 0.14);
   backdrop-filter: blur(22px);
   box-shadow: 0 25px 40px rgba(0, 0, 0, 0.45);
@@ -99,8 +103,8 @@ body {
 }
 
 h2 {
-  font-size: 16px;
-  margin-bottom: 14px;
+  font-size: 14px !important;
+  margin-bottom: 10px;
   font-weight: 700;
   color: #e5e7eb;
   display: flex;
@@ -321,8 +325,8 @@ body.theme-light .stat-pill {
 }
 
 body.theme-light .theme-toggle button {
-  background: #ffffff;
-  color: #0f172a;
+  background: #fff !important;
+  color: #1f2937 !important;
   border-color: #cbd5e1;
 }
 
@@ -363,8 +367,8 @@ body.theme-dark-pro .stat-pill {
 }
 
 body.theme-dark-pro .theme-toggle button {
-  background: rgba(255,255,255,0.12);
-  color: #fff;
+  background: rgba(255,255,255,0.15) !important;
+  color: #fff !important;
   border-color: rgba(255,255,255,0.2);
 }
 /* =====================================================
@@ -382,6 +386,7 @@ body.theme-dark-pro .theme-toggle button {
   border: 1px solid rgba(255,255,255,0.25);
   padding: 8px 14px;
   border-radius: 12px;
+    font-family: "IRANSans";
   cursor: pointer;
   font-size: 13px;
   color: #fff;
@@ -399,4 +404,32 @@ body.theme-dark-pro .theme-toggle button {
 
 .theme-toggle .icon {
   font-size: 16px;
+}
+body.theme-light {
+  color: #1d1d1f !important;
+}
+
+body.theme-light .card {
+  color: #1d1d1f !important;
+  background: rgba(255,255,255,0.9) !important;
+}
+
+body.theme-light .summary,
+body.theme-light .decision-price,
+body.theme-light .decision-time {
+  color: #1f2937 !important;
+}
+
+body.theme-light .decision-item {
+  background: #ffffff !important;
+  border-right-color: #94a3b8 !important;
+}
+
+body.theme-light #priceChart {
+  filter: drop-shadow(0 0 4px rgba(0,0,0,0.1));
+}
+
+body.theme-light .stat-pill {
+  background: rgba(0,0,0,0.05) !important;
+  color: #1f2937 !important;
 }
