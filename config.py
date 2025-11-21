@@ -28,32 +28,33 @@ LIVE_POLL_SECONDS = int(os.getenv("LIVE_POLL_SECONDS", "12"))
 
 STRATEGY = {
     "weights": {
-        "trend": float(os.getenv("W_TREND", "0.25")),
-        "momentum": float(os.getenv("W_MOMENTUM", "0.20")),
+        "trend": float(os.getenv("W_TREND", "0.35")),
+        "momentum": float(os.getenv("W_MOMENTUM", "0.25")),
         "meanrev": float(os.getenv("W_MEANREV", "0.20")),
         "breakout": float(os.getenv("W_BREAKOUT", "0.20")),
     },
 
-    "s_buy": float(os.getenv("S_BUY", "0.20")),
-    "s_sell": float(os.getenv("S_SELL", "-0.20")),
+    # هر دو مثبت (علامت فروش در خود لاجیک اعمال می‌شود)
+    "s_buy": float(os.getenv("S_BUY", "0.18")),
+    "s_sell": float(os.getenv("S_SELL", "0.18")),
 
-    "min_adx_for_trend": float(os.getenv("MIN_ADX_FOR_TREND", "20.0")),
+    "min_adx_for_trend": float(os.getenv("MIN_ADX_FOR_TREND", "18.0")),
     "require_mtf_agreement": _get_bool("REQUIRE_MTF_AGREEMENT", "true"),
 
     "regime_scale": {
-        "LOW": float(os.getenv("REGIME_SCALE_LOW", "0.40")),
-        "NEUTRAL": float(os.getenv("REGIME_SCALE_NEUTRAL", "0.90")),
-        "HIGH": float(os.getenv("REGIME_SCALE_HIGH", "1.15")),
+        "LOW": float(os.getenv("REGIME_SCALE_LOW", "0.70")),
+        "NEUTRAL": float(os.getenv("REGIME_SCALE_NEUTRAL", "1.00")),
+        "HIGH": float(os.getenv("REGIME_SCALE_HIGH", "1.20")),
     },
 
-    "decision_buffer": float(os.getenv("DECISION_BUFFER", "0.02")),
-    "mtf_confirm_bar": float(os.getenv("MTF_CONFIRM_BAR", "0.30")),
+    "decision_buffer": float(os.getenv("DECISION_BUFFER", "0.00")),
+    "mtf_confirm_bar": float(os.getenv("MTF_CONFIRM_BAR", "0.18")),
 
-    "enable_micro_mr": _get_bool("ENABLE_MICRO_MR", "false"),
-    "micro_mr_risk_mult": float(os.getenv("MICRO_MR_RISK_MULT", "0.25")),
-    "micro_mr_rsi_low": float(os.getenv("MICRO_MR_RSI_LOW", "30")),
-    "micro_mr_rsi_high": float(os.getenv("MICRO_MR_RSI_HIGH", "70")),
-    "micro_mr_band_eps": float(os.getenv("MICRO_MR_BAND_EPS", "0.002")),
+    "enable_micro_mr": _get_bool("ENABLE_MICRO_MR", "true"),
+    "micro_mr_risk_mult": float(os.getenv("MICRO_MR_RISK_MULT", "0.30")),
+    "micro_mr_rsi_low": float(os.getenv("MICRO_MR_RSI_LOW", "32")),
+    "micro_mr_rsi_high": float(os.getenv("MICRO_MR_RSI_HIGH", "68")),
+    "micro_mr_band_eps": float(os.getenv("MICRO_MR_BAND_EPS", "0.0018")),
 }
 
 TELEGRAM = {
