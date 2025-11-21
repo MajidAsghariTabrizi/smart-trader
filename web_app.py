@@ -1,4 +1,5 @@
 # web_app.py
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -6,21 +7,47 @@ from fastapi.responses import HTMLResponse
 import sqlite3
 from typing import List, Dict, Any
 from pathlib import Path
+from datetime import datetime
+import pytz
 
-from database_setup import get_db_path, TABLE_NAME  # از کد خودت استفاده می‌کنیم
+from database_setup import get_db_path, TABLE_NAME
 
 app = FastAPI(title="Smart Trader Dashboard")
 
-# اگر می‌خوای از یه فرانت جدا (مثلاً React) استفاده کنی، این CORS خوبه
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # بعداً می‌تونی محدودش کنی
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 DB_PATH = get_db_path()
+
+
+def ts_to_unix_ms(ts_value):
+    """
+    تبدیل timestamp دیتابیس (ISO یا UNIX) → UNIX میلی‌ثانیه
+    """
+    if ts_value is None:
+        return None
+
+    # اگر ISO بود
+    if isinstance(ts_value, str):
+        try:
+            dt = datetime.fromisoformat(ts_value)
+            # تبدیل به timezone تهران
+            tehran = pytz.timezone("Asia/Tehran")
+            dt = dt.astimezone(tehran)
+            return int(dt.timestamp() * 1000)
+        except:
+            pass
+
+    # اگر عدد بود (مثلاً UNIX)
+    try:
+        return int(float(ts_value) * 1000)
+    except:
+        return None
 
 
 def query_db(query: str, params=()) -> List[Dict[str, Any]]:
@@ -35,9 +62,6 @@ def query_db(query: str, params=()) -> List[Dict[str, Any]]:
 
 @app.get("/api/prices")
 def get_prices(limit: int = 500):
-    """
-    آخرین n رکورد قیمت برای چارت.
-    """
     rows = query_db(
         f"""
         SELECT timestamp, price, tf
@@ -48,16 +72,16 @@ def get_prices(limit: int = 500):
         """,
         (limit,),
     )
-    # برعکس کنیم که از قدیم به جدید باشه
+
+    for r in rows:
+        r["timestamp"] = ts_to_unix_ms(r["timestamp"])
+
     rows.reverse()
     return rows
 
 
 @app.get("/api/decisions")
 def get_decisions(limit: int = 200):
-    """
-    لاگ تصمیم‌ها (جاهایی که decision خالی نیست).
-    """
     rows = query_db(
         f"""
         SELECT timestamp, price, decision, regime, reasons_json
@@ -68,16 +92,18 @@ def get_decisions(limit: int = 200):
         """,
         (limit,),
     )
+
+    for r in rows:
+        r["timestamp"] = ts_to_unix_ms(r["timestamp"])
+
     rows.reverse()
     return rows
 
 
-# --- سرو کردن وان‌پیج استاتیک (index.html) از پوشه "static" در کنار همین فایل ---
-
+# سرو statics
 BASE_DIR = Path(__file__).parent
 static_dir = BASE_DIR / "static"
 static_dir.mkdir(exist_ok=True)
-
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
