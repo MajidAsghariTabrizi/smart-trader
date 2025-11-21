@@ -407,7 +407,7 @@ def analyze_once(iteration: int):
             "high": latest_candle_data.get("high"),
             "low": latest_candle_data.get("low"),
             "volume": latest_candle_data.get("volume", 0.0),
-            "timestamp": utc_ts_to_iso(current_ts),
+            "timestamp": now_iso(),  # ← فیکس اصلی
         })
         ok = insert_trading_log(row)
         if not ok:
