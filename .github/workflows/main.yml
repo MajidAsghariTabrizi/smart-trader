@@ -2,18 +2,19 @@ name: Deploy SmartTrader
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: Upload Code to VPS
-        uses: appleboy/scp-action@v0.1.7
+      - name: Copy Files To Server
+        uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.SERVER_IP }}
           username: root
@@ -21,7 +22,7 @@ jobs:
           source: "."
           target: "/root/smart-trader"
 
-      - name: Run DB Migration + Restart
+      - name: Run DB Migration + Restart Services
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
