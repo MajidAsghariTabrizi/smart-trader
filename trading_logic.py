@@ -62,6 +62,8 @@ class Position:
     qty: float
     entry_price: float
     stop_price: Optional[float] = None
+    trade_id: Optional[str] = None  # 👈 جدید
+
 
 
 @dataclass

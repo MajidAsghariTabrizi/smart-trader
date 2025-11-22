@@ -22,6 +22,7 @@ import json
 import logging
 from typing import Optional, Tuple
 from datetime import datetime, timezone
+import uuid
 
 import numpy as np
 import pandas as pd
@@ -89,7 +90,8 @@ def utc_ts_to_iso(ts: int) -> str:
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
-
+def new_trade_id() -> str:
+    return uuid.uuid4().hex
 def compute_regime(trend_val: float, adx_val: float, vol_ratio: float) -> Tuple[str, list]:
     """
     Regime based on smoothed volatility ratio and trend strength.
@@ -312,9 +314,23 @@ def _maybe_close_position(current_price: float):
     account.position = None
     account.update_equity(current_price)
 
+    entry = float(pos.entry_price)
+    qty = float(pos.qty)
+    trade_id = getattr(pos, "trade_id", None)
+
+    ...
+
     _log_trade_event(
         "CLOSE",
-        {"side": pos.side, "qty": qty, "close_price": float(current_price), "pnl": float(pnl), "reason": "STOP_HIT"},
+        {
+            "trade_id": trade_id,
+            "side": pos.side,
+            "qty": qty,
+            "entry_price": entry,
+            "close_price": float(current_price),
+            "pnl": float(pnl),
+            "reason": "STOP_HIT",
+        },
     )
     logger.info(f"🛑 Closed {pos.side} @ {current_price:.2f} pnl={pnl:.2f} (stop hit)")
     if tg:
@@ -608,11 +624,14 @@ Reasons:
             notional = qty * dc240.price
 
         side = "LONG" if action == "BUY" else "SHORT"
+        trade_id = new_trade_id()  # 👈 شناسه این ترید
+
         account.position = Position(
             side=side,
             qty=qty,
             entry_price=dc240.price,
             stop_price=float(stop_price) if stop_price else None,
+            trade_id=trade_id,
         )
 
         if side == "LONG":
@@ -623,6 +642,7 @@ Reasons:
         _log_trade_event(
             "OPEN",
             {
+                "trade_id": trade_id,
                 "side": side,
                 "qty": float(qty),
                 "entry_price": float(dc240.price),

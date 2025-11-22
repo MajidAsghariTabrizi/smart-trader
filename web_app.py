@@ -10,7 +10,7 @@ from pathlib import Path
 from datetime import datetime
 import pytz
 
-from database_setup import get_db_path, TABLE_NAME
+from database_setup import get_db_path, TABLE_NAME, TRADE_EVENTS_TABLE
 
 app = FastAPI(title="Smart Trader Dashboard")
 
@@ -99,6 +99,91 @@ def get_decisions(limit: int = 200):
     rows.reverse()
     return rows
 
+@app.get("/api/perf/summary")
+def perf_summary():
+    rows = query_db(
+        f"""
+        SELECT
+            COUNT(*) AS total_trades,
+            SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) AS wins,
+            SUM(CASE WHEN pnl <= 0 THEN 1 ELSE 0 END) AS losses,
+            SUM(pnl) AS total_pnl
+        FROM {TRADE_EVENTS_TABLE}
+        WHERE event_type = 'CLOSE'
+        """
+    )
+
+    if not rows:
+        return {
+            "total_trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "winrate": 0.0,
+            "total_pnl": 0.0,
+        }
+
+    r = rows[0]
+    total = int(r.get("total_trades") or 0)
+    wins = int(r.get("wins") or 0)
+    losses = int(r.get("losses") or 0)
+    total_pnl = float(r.get("total_pnl") or 0.0)
+
+    winrate = (wins / total * 100.0) if total > 0 else 0.0
+
+    return {
+        "total_trades": total,
+        "wins": wins,
+        "losses": losses,
+        "winrate": winrate,
+        "total_pnl": total_pnl,
+    }
+@app.get("/api/perf/daily")
+def perf_daily(limit: int = 30):
+    rows = query_db(
+        f"""
+        SELECT
+            DATE(timestamp) AS day,
+            COUNT(*) AS n_trades,
+            SUM(pnl) AS pnl,
+            SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) AS wins,
+            SUM(CASE WHEN pnl <= 0 THEN 1 ELSE 0 END) AS losses
+        FROM {TRADE_EVENTS_TABLE}
+        WHERE event_type = 'CLOSE'
+        GROUP BY DATE(timestamp)
+        ORDER BY day DESC
+        LIMIT ?
+        """,
+        (limit,),
+    )
+    # برای نمایش از قدیم به جدید
+    rows.reverse()
+    return rows
+@app.get("/api/trades/recent")
+def trades_recent(limit: int = 50):
+    rows = query_db(
+        f"""
+        SELECT
+            timestamp,
+            symbol,
+            trade_id,
+            side,
+            qty,
+            entry_price,
+            close_price,
+            pnl,
+            reason
+        FROM {TRADE_EVENTS_TABLE}
+        WHERE event_type = 'CLOSE'
+        ORDER BY timestamp DESC
+        LIMIT ?
+        """,
+        (limit,),
+    )
+
+    for r in rows:
+        r["timestamp"] = ts_to_unix_ms(r["timestamp"])
+
+    return rows
 
 # سرو statics
 BASE_DIR = Path(__file__).parent

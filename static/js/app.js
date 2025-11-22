@@ -6,7 +6,7 @@ async function getJSON(url) {
   const res = await fetch(url);
   if (!res.ok) {
     console.error("API error:", url, res.status);
-    return [];
+    return null;
   }
   return res.json();
 }
@@ -41,6 +41,7 @@ function decisionTagClass(dec) {
 }
 
 function formatFaDate(ts) {
+  // بک‌اند timestamp را به ms UNIX می‌فرستد
   const d = new Date(ts);
   if (isNaN(d.getTime())) return ts;
   return d.toLocaleString("fa-IR", {
@@ -48,7 +49,7 @@ function formatFaDate(ts) {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
   });
 }
 
@@ -102,54 +103,7 @@ function buildPersianSummary(dec) {
 }
 
 /* =============================
-   📌 Stats (winrate)
-   ============================= */
-
-function buildStats(decisions, prices) {
-  const index = {};
-  prices.forEach((p, i) => {
-    index[p.timestamp] = i;
-  });
-
-  let total = 0,
-    buys = 0,
-    sells = 0,
-    wins = 0;
-
-  decisions.forEach((d) => {
-    const dec = (d.decision || "").toUpperCase();
-    if (dec !== "BUY" && dec !== "SELL") return;
-
-    const i = index[d.timestamp];
-    if (i == null || i >= prices.length - 1) return;
-
-    total++;
-    if (dec === "BUY") buys++;
-    else sells++;
-
-    const now = prices[i].price;
-    const next = prices[i + 1].price;
-
-    if (dec === "BUY" && next > now) wins++;
-    if (dec === "SELL" && next < now) wins++;
-  });
-
-  if (total === 0) {
-    return {
-      total: 0,
-      buys: 0,
-      sells: 0,
-      wins: 0,
-      winrate: "بدون سیگنال قابل محاسبه"
-    };
-  }
-
-  const winrate = ((wins / total) * 100).toFixed(1) + "%";
-  return { total, buys, sells, wins, winrate };
-}
-
-/* =============================
-   📌 Render Decisions List
+   📌 Decisions List
    ============================= */
 
 let globalDecisions = [];
@@ -188,22 +142,108 @@ function renderDecisionList(filter = "all") {
 }
 
 /* =============================
-   📌 Main Render (Chart + Stats)
+   📌 Daily PnL & Recent Trades
+   ============================= */
+
+function renderDailyPnl(daily) {
+  const el = document.getElementById("pnlDailyList");
+  if (!el) return;
+
+  if (!daily || !daily.length) {
+    el.textContent = "هنوز ترید بسته‌شده‌ای برای محاسبه سود روزانه وجود ندارد.";
+    return;
+  }
+
+  el.innerHTML = "";
+  daily.forEach((d) => {
+    const pnl = Number(d.pnl || 0);
+    const signClass = pnl > 0 ? "pnl-pos" : pnl < 0 ? "pnl-neg" : "pnl-flat";
+
+    const row = document.createElement("div");
+    row.className = "pnl-item";
+
+    row.innerHTML = `
+      <span class="pnl-date">${d.day}</span>
+      <span class="pnl-pnl ${signClass}">${pnl.toLocaleString("fa-IR")}</span>
+      <span class="pnl-trades">${d.n_trades} ترید</span>
+    `;
+    el.appendChild(row);
+  });
+}
+
+function renderRecentTrades(trades) {
+  const el = document.getElementById("tradesList");
+  if (!el) return;
+
+  if (!trades || !trades.length) {
+    el.textContent = "هنوز ترید بسته‌شده‌ای ثبت نشده است.";
+    return;
+  }
+
+  el.innerHTML = "";
+  trades.forEach((t) => {
+    const pnl = Number(t.pnl || 0);
+    const pnlClass = pnl > 0 ? "pnl-pos" : pnl < 0 ? "pnl-neg" : "pnl-flat";
+    const sideFa =
+      (t.side || "").toUpperCase() === "LONG" ? "خرید (LONG)" : "فروش (SHORT)";
+
+    const row = document.createElement("div");
+    row.className = "trade-item";
+
+    row.innerHTML = `
+      <div class="trade-header">
+        <span class="trade-side">${sideFa}</span>
+        <span class="trade-time">${formatFaDate(t.timestamp)}</span>
+      </div>
+      <div class="trade-body">
+        <span>ورود: ${Number(t.entry_price || 0).toLocaleString(
+          "fa-IR"
+        )}</span>
+        <span>خروج: ${Number(t.close_price || 0).toLocaleString(
+          "fa-IR"
+        )}</span>
+        <span>حجم: ${Number(t.qty || 0).toLocaleString("fa-IR")}</span>
+        <span class="trade-pnl ${pnlClass}">PnL: ${pnl.toLocaleString(
+          "fa-IR"
+        )}</span>
+      </div>
+    `;
+    el.appendChild(row);
+  });
+}
+
+/* =============================
+   📌 Main Render (Chart + Stats + Perf)
    ============================= */
 
 async function render() {
   try {
-    const prices = await getJSON("/api/prices?limit=300");
-    globalDecisions = await getJSON("/api/decisions?limit=80");
+    const [prices, decisions, perfSummaryRaw, dailyPnl, recentTrades] =
+      await Promise.all([
+        getJSON("/api/prices?limit=300"),
+        getJSON("/api/decisions?limit=80"),
+        getJSON("/api/perf/summary"),
+        getJSON("/api/perf/daily?limit=30"),
+        getJSON("/api/trades/recent?limit=50"),
+      ]);
 
-    const labels = prices.map((p) => p.timestamp);
-    const data = prices.map((p) => p.price);
+    const perfSummary = perfSummaryRaw || {};
+
+    const safePrices = Array.isArray(prices) ? prices : [];
+    const safeDecisions = Array.isArray(decisions) ? decisions : [];
+
+    globalDecisions = safeDecisions;
+
+    /* ----- Build price arrays ----- */
+    const labels = safePrices.map((p) => p.timestamp);
+    const data = safePrices.map((p) => p.price);
 
     const index = {};
     labels.forEach((t, i) => {
       index[t] = i;
     });
 
+    /* ----- Decision-based points ----- */
     const buyPoints = [];
     const sellPoints = [];
     const breakoutPoints = [];
@@ -223,7 +263,9 @@ async function render() {
       let reasons = [];
       try {
         if (d.reasons_json) reasons = JSON.parse(d.reasons_json);
-      } catch (e) {}
+      } catch (e) {
+        // ignore
+      }
       const joined = Array.isArray(reasons)
         ? reasons.join(" ").toLowerCase()
         : (reasons || "").toString().toLowerCase();
@@ -234,7 +276,7 @@ async function render() {
 
     /* ----- Chart ----- */
     const canvas = document.getElementById("priceChart");
-    if (canvas && prices.length) {
+    if (canvas && safePrices.length) {
       const ctx = canvas.getContext("2d");
 
       new Chart(ctx, {
@@ -250,7 +292,7 @@ async function render() {
               borderWidth: 2,
               tension: 0.35,
               fill: true,
-              pointRadius: 0
+              pointRadius: 0,
             },
             {
               type: "scatter",
@@ -259,7 +301,7 @@ async function render() {
               pointBackgroundColor: "#16a34a",
               pointBorderColor: "#ffffff",
               pointRadius: 6,
-              pointStyle: "triangle"
+              pointStyle: "triangle",
             },
             {
               type: "scatter",
@@ -268,9 +310,8 @@ async function render() {
               pointBackgroundColor: "#dc2626",
               pointBorderColor: "#ffffff",
               pointRadius: 6,
-              pointStyle: "triangle"
+              pointStyle: "triangle",
             },
-            // Breakout – استایل B: دایره با بردر
             {
               type: "scatter",
               label: "Breakout",
@@ -280,9 +321,8 @@ async function render() {
               pointHoverRadius: 9,
               pointBackgroundColor: "rgba(59,130,246,0.9)",
               pointBorderColor: "#e5f2ff",
-              pointBorderWidth: 2
+              pointBorderWidth: 2,
             },
-            // Mean Reversion – استایل B: دایره با بردر
             {
               type: "scatter",
               label: "Mean Reversion",
@@ -292,9 +332,9 @@ async function render() {
               pointHoverRadius: 9,
               pointBackgroundColor: "rgba(239,68,68,0.9)",
               pointBorderColor: "#fee2e2",
-              pointBorderWidth: 2
-            }
-          ]
+              pointBorderWidth: 2,
+            },
+          ],
         },
         options: {
           responsive: true,
@@ -307,9 +347,9 @@ async function render() {
                 label: (ctx) =>
                   "قیمت: " +
                   Number(ctx.parsed.y).toLocaleString("fa-IR") +
-                  " تومان"
-              }
-            }
+                  " تومان",
+              },
+            },
           },
           scales: {
             x: { ticks: { display: false } },
@@ -319,11 +359,11 @@ async function render() {
                 color: getComputedStyle(document.body).color,
                 callback: function (value) {
                   return Number(value).toLocaleString("fa-IR");
-                }
-              }
-            }
-          }
-        }
+                },
+              },
+            },
+          },
+        },
       });
     }
 
@@ -333,27 +373,37 @@ async function render() {
 
     if (!last || !summaryEl) {
       if (summaryEl) summaryEl.textContent = "هنوز تصمیمی ثبت نشده است.";
-      return;
+    } else {
+      summaryEl.innerHTML = `
+        <span class="${decisionTagClass(last.decision)}">${decisionFa(
+        last.decision
+      )}</span>
+        ${buildPersianSummary(last)}
+      `;
     }
 
-    summaryEl.innerHTML = `
-      <span class="${decisionTagClass(last.decision)}">${decisionFa(
-      last.decision
-    )}</span>
-      ${buildPersianSummary(last)}
-    `;
-
-    /* ⭐ Signal Strength Meter */
+    /* ⭐ Signal Strength Meter (aggregate_s یا aggregate) */
     const strengthEl = document.getElementById("signalStrengthFill");
-    if (strengthEl && typeof last.aggregate !== "undefined") {
-      const s = Number(last.aggregate); // -1 تا +1
-      const pct = Math.max(0, Math.min(100, ((s + 1) / 2) * 100));
-      strengthEl.style.width = pct + "%";
+    if (strengthEl && last) {
+      const sRaw =
+        last.aggregate_s !== undefined
+          ? last.aggregate_s
+          : last.aggregate !== undefined
+          ? last.aggregate
+          : null;
+
+      if (sRaw !== null) {
+        const s = Number(sRaw); // فرض -1 تا +1
+        const pct = Math.max(0, Math.min(100, ((s + 1) / 2) * 100));
+        strengthEl.style.width = pct + "%";
+      } else {
+        strengthEl.style.width = "0%";
+      }
     }
 
     /* ⭐ Regime Component */
     const regimeBox = document.getElementById("regimeLabel");
-    if (regimeBox) {
+    if (regimeBox && last) {
       const regime = (last.regime || "NEUTRAL").toUpperCase();
 
       regimeBox.classList.remove("regime-low", "regime-neutral", "regime-high");
@@ -370,13 +420,13 @@ async function render() {
       }
     }
 
-    /* ⭐ ADX Component */
+    /* ⭐ ADX Component (اگر از API برگردانده شود) */
     const adxValueEl = document.getElementById("adxValue");
-    if (adxValueEl) {
-      const adx = Number(last.adx || 0);
-
+    if (adxValueEl && last) {
+      const adx = Number(
+        last.adx !== undefined ? last.adx : last.confirm_adx || 0
+      );
       adxValueEl.textContent = adx.toFixed(1);
-
       adxValueEl.classList.remove("adx-weak", "adx-medium", "adx-strong");
 
       if (adx < 20) adxValueEl.classList.add("adx-weak");
@@ -384,17 +434,29 @@ async function render() {
       else adxValueEl.classList.add("adx-strong");
     }
 
-    /* ----- Stats Bar ----- */
-    const stats = buildStats(globalDecisions, prices);
+    /* ----- Stats Bar (real PnL & winrate) ----- */
     const statsBar = document.getElementById("statsBar");
     if (statsBar) {
+      const total = perfSummary.total_trades || 0;
+      const wins = perfSummary.wins || 0;
+      const losses = perfSummary.losses || 0;
+      const winrate = Number(perfSummary.winrate || 0).toFixed(1);
+      const totalPnl = Number(perfSummary.total_pnl || 0).toLocaleString(
+        "fa-IR"
+      );
+
       statsBar.innerHTML = `
-        <div class="stat-pill">سیگنال کل: ${stats.total}</div>
-        <div class="stat-pill">خرید: ${stats.buys}</div>
-        <div class="stat-pill">فروش: ${stats.sells}</div>
-        <div class="stat-pill">وین‌ریت: ${stats.winrate}</div>
+        <div class="stat-pill">معاملات بسته‌شده: ${total}</div>
+        <div class="stat-pill">برد: ${wins}</div>
+        <div class="stat-pill">باخت: ${losses}</div>
+        <div class="stat-pill">وین‌ریت واقعی: ${winrate}%</div>
+        <div class="stat-pill">PnL کل: ${totalPnl}</div>
       `;
     }
+
+    /* ----- Daily PnL & Trades ----- */
+    renderDailyPnl(Array.isArray(dailyPnl) ? dailyPnl : []);
+    renderRecentTrades(Array.isArray(recentTrades) ? recentTrades : []);
 
     /* ----- Decision List + Filter ----- */
     renderDecisionList();
