@@ -1,6 +1,6 @@
-# ==============================================
-#   web_app.py — Refactored, Optimized, Clean
-# ==============================================
+# ===========================================================
+#   web_app.py — Final Stable Version (Full Compatible)
+# ===========================================================
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,14 +12,17 @@ from pathlib import Path
 from datetime import datetime
 import pytz
 
-from database_setup import get_db_path, TABLE_NAME, TRADE_EVENTS_TABLE
+from database_setup import (
+    get_db_path,
+    TABLE_NAME,
+    TRADE_EVENTS_TABLE,
+)
 
+# -----------------------------------------------------------
+#   APP INIT
+# -----------------------------------------------------------
 
-# ==============================================
-#   FastAPI APP INIT
-# ==============================================
-
-app = FastAPI(title="Smart Trader Dashboard")
+app = FastAPI(title="SmartTrader Dashboard")
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,9 +35,9 @@ app.add_middleware(
 DB_PATH = get_db_path()
 
 
-# ==============================================
+# -----------------------------------------------------------
 #   DB Utils
-# ==============================================
+# -----------------------------------------------------------
 
 def db_connect() -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
     conn = sqlite3.connect(DB_PATH)
@@ -50,12 +53,11 @@ def query_db(query: str, params: Tuple = ()) -> List[Dict[str, Any]]:
     return [dict(r) for r in rows]
 
 
-# ==============================================
-#   TIME CONVERSION UTILS
-# ==============================================
+# -----------------------------------------------------------
+#   Timestamp Normalizer
+# -----------------------------------------------------------
 
 def ts_to_unix_ms(ts_value):
-    """ convert DB timestamps (ISO / float / int) → unix ms """
     if ts_value is None:
         return None
 
@@ -63,26 +65,22 @@ def ts_to_unix_ms(ts_value):
     if isinstance(ts_value, str):
         try:
             dt = datetime.fromisoformat(ts_value)
-            tehran = pytz.timezone("Asia/Tehran")
-            dt = dt.astimezone(tehran)
+            dt = dt.astimezone(pytz.timezone("Asia/Tehran"))
             return int(dt.timestamp() * 1000)
         except:
             pass
 
-    # Unix timestamp (seconds)
+    # UNIX seconds
     try:
         return int(float(ts_value) * 1000)
     except:
         return None
 
 
-# ==============================================
-#   API ENDPOINTS
-# ==============================================
+# -----------------------------------------------------------
+#   PRICES
+# -----------------------------------------------------------
 
-# -----------------------------
-#   Prices
-# -----------------------------
 @app.get("/api/prices")
 def get_prices(limit: int = 500):
     rows = query_db(
@@ -103,9 +101,10 @@ def get_prices(limit: int = 500):
     return rows
 
 
-# -----------------------------
-#   Trade Decisions
-# -----------------------------
+# -----------------------------------------------------------
+#   DECISIONS
+# -----------------------------------------------------------
+
 @app.get("/api/decisions")
 def get_decisions(limit: int = 200):
     rows = query_db(
@@ -126,9 +125,10 @@ def get_decisions(limit: int = 200):
     return rows
 
 
-# -----------------------------
-#   Performance Summary
-# -----------------------------
+# -----------------------------------------------------------
+#   PERFORMANCE SUMMARY
+# -----------------------------------------------------------
+
 @app.get("/api/perf/summary")
 def perf_summary():
     rows = query_db(
@@ -148,30 +148,31 @@ def perf_summary():
             "total_trades": 0,
             "wins": 0,
             "losses": 0,
-            "winrate": 0.0,
-            "total_pnl": 0.0,
+            "winrate": 0,
+            "total_pnl": 0,
         }
 
     r = rows[0]
     total = int(r.get("total_trades") or 0)
     wins = int(r.get("wins") or 0)
     losses = int(r.get("losses") or 0)
-    total_pnl = float(r.get("total_pnl") or 0.0)
+    pnl = float(r.get("total_pnl") or 0.0)
 
-    winrate = (wins / total * 100.0) if total > 0 else 0.0
+    winrate = (wins / total * 100) if total else 0
 
     return {
         "total_trades": total,
         "wins": wins,
         "losses": losses,
-        "winrate": winrate,
-        "total_pnl": total_pnl,
+        "winrate": round(winrate, 2),
+        "total_pnl": round(pnl, 3),
     }
 
 
-# -----------------------------
-#   Daily PnL
-# -----------------------------
+# -----------------------------------------------------------
+#   DAILY PERFORMANCE
+# -----------------------------------------------------------
+
 @app.get("/api/perf/daily")
 def perf_daily(limit: int = 30):
     rows = query_db(
@@ -190,13 +191,15 @@ def perf_daily(limit: int = 30):
         """,
         (limit,),
     )
+
     rows.reverse()
     return rows
 
 
-# -----------------------------
-#   Recent Trades
-# -----------------------------
+# -----------------------------------------------------------
+#   RECENT TRADES
+# -----------------------------------------------------------
+
 @app.get("/api/trades/recent")
 def trades_recent(limit: int = 50):
     rows = query_db(
@@ -204,7 +207,6 @@ def trades_recent(limit: int = 50):
         SELECT
             timestamp,
             symbol,
-            trade_id,
             side,
             qty,
             entry_price,
@@ -213,7 +215,7 @@ def trades_recent(limit: int = 50):
             reason
         FROM {TRADE_EVENTS_TABLE}
         WHERE event_type = 'CLOSE'
-        ORDER BY timestamp DESC
+        ORDER BY id DESC
         LIMIT ?
         """,
         (limit,),
@@ -222,12 +224,13 @@ def trades_recent(limit: int = 50):
     for r in rows:
         r["timestamp"] = ts_to_unix_ms(r["timestamp"])
 
+    rows.reverse()
     return rows
 
 
-# ==============================================
+# -----------------------------------------------------------
 #   STATIC FILES
-# ==============================================
+# -----------------------------------------------------------
 
 BASE_DIR = Path(__file__).parent
 static_dir = BASE_DIR / "static"
@@ -240,7 +243,6 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 def index():
     index_file = static_dir / "index.html"
     if not index_file.exists():
-        return HTMLResponse("<h1>Smart Trader</h1><p>index.html هنوز ساخته نشده.</p>")
+        return HTMLResponse("<h1>SmartTrader UI</h1><p>index.html موجود نیست.</p>")
 
     return HTMLResponse(index_file.read_text(encoding="utf-8"))
-
