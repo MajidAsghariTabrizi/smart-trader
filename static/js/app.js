@@ -108,6 +108,26 @@ function buildPersianSummary(dec) {
 
 let globalDecisions = [];
 
+/** نزدیک‌ترین ایندکس قیمت به timestamp تصمیم را برمی‌گرداند */
+function findNearestPriceIndex(ts, labels) {
+  if (!labels || !labels.length) return null;
+
+  const target = Number(ts);
+  if (!Number.isFinite(target)) return null;
+
+  let bestIdx = 0;
+  let bestDiff = Math.abs(Number(labels[0]) - target);
+
+  for (let i = 1; i < labels.length; i++) {
+    const diff = Math.abs(Number(labels[i]) - target);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
 function renderDecisionList(filter = "all") {
   const container = document.getElementById("decisions");
   if (!container) return;
@@ -250,7 +270,13 @@ async function render() {
     const meanrevPoints = [];
 
     globalDecisions.forEach((d) => {
-      const i = index[d.timestamp];
+      // اول تلاش می‌کنیم ایندکس مستقیم پیدا کنیم
+      let i = index[d.timestamp];
+
+      // اگر نبود، نزدیک‌ترین کندل قیمت را انتخاب می‌کنیم
+      if (i == null) {
+        i = findNearestPriceIndex(d.timestamp, labels);
+      }
       if (i == null) return;
 
       const point = { x: labels[i], y: data[i] };
