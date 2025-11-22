@@ -1,52 +1,27 @@
-name: Deploy SmartTrader
+name: SmartTrader Auto Deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: ["main"]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Sync Project to Server
-        uses: appleboy/scp-action@v0.1.7
+      - name: SSH to server and deploy
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SERVER_IP }}
-          username: root
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "."
-          target: "/root/smart-trader"
-
-      - name: Run DB Migration + Restart Services
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: root
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
           script: |
-            echo "===== ENTER SMART-TRADER DIR ====="
             cd /root/smart-trader
-
-            echo "===== STOP BOT ====="
-            systemctl stop smarttrader-bot || true
-
-            echo "===== REMOVE OLD DB ====="
-            rm -f trading_data.db
-
-            echo "===== RUN MIGRATION ====="
-            python3 << 'EOF'
-import database_setup
-ok = database_setup.ensure_schema()
-print("DB MIGRATION RESULT:", ok)
-EOF
-
-            echo "===== RESTART SERVICES ====="
+            git pull origin main
+            source venv/bin/activate
+            pip install -r requirements.txt
             systemctl restart smarttrader-api
             systemctl restart smarttrader-bot
-
-            echo "===== DONE ====="
