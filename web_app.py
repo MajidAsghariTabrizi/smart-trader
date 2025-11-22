@@ -105,7 +105,16 @@ def get_prices(limit: int = 500):
 def get_decisions(limit: int = 200):
     rows = query_db(
         f"""
-        SELECT timestamp, price, decision, regime, reasons_json
+        SELECT
+            timestamp,
+            price,
+            decision,
+            regime,
+            reasons_json,
+            aggregate_s,
+            aggregate,
+            adx,
+            confirm_adx
         FROM {TABLE_NAME}
         WHERE decision IS NOT NULL AND decision <> ''
         ORDER BY id DESC
@@ -119,6 +128,7 @@ def get_decisions(limit: int = 200):
 
     rows.reverse()
     return rows
+
 
 
 # -----------------------------------------------------------
