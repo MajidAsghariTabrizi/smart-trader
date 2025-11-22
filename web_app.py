@@ -1,16 +1,23 @@
-# web_app.py
+# ==============================================
+#   web_app.py — Refactored, Optimized, Clean
+# ==============================================
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 import sqlite3
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 from pathlib import Path
 from datetime import datetime
 import pytz
 
 from database_setup import get_db_path, TABLE_NAME, TRADE_EVENTS_TABLE
+
+
+# ==============================================
+#   FastAPI APP INIT
+# ==============================================
 
 app = FastAPI(title="Smart Trader Dashboard")
 
@@ -25,41 +32,57 @@ app.add_middleware(
 DB_PATH = get_db_path()
 
 
-def ts_to_unix_ms(ts_value):
-    """
-    تبدیل timestamp دیتابیس (ISO یا UNIX) → UNIX میلی‌ثانیه
-    """
-    if ts_value is None:
-        return None
+# ==============================================
+#   DB Utils
+# ==============================================
 
-    # اگر ISO بود
-    if isinstance(ts_value, str):
-        try:
-            dt = datetime.fromisoformat(ts_value)
-            # تبدیل به timezone تهران
-            tehran = pytz.timezone("Asia/Tehran")
-            dt = dt.astimezone(tehran)
-            return int(dt.timestamp() * 1000)
-        except:
-            pass
-
-    # اگر عدد بود (مثلاً UNIX)
-    try:
-        return int(float(ts_value) * 1000)
-    except:
-        return None
-
-
-def query_db(query: str, params=()) -> List[Dict[str, Any]]:
+def db_connect() -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
+    return conn, conn.cursor()
+
+
+def query_db(query: str, params: Tuple = ()) -> List[Dict[str, Any]]:
+    conn, cur = db_connect()
     cur.execute(query, params)
     rows = cur.fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
 
+# ==============================================
+#   TIME CONVERSION UTILS
+# ==============================================
+
+def ts_to_unix_ms(ts_value):
+    """ convert DB timestamps (ISO / float / int) → unix ms """
+    if ts_value is None:
+        return None
+
+    # ISO timestamp
+    if isinstance(ts_value, str):
+        try:
+            dt = datetime.fromisoformat(ts_value)
+            tehran = pytz.timezone("Asia/Tehran")
+            dt = dt.astimezone(tehran)
+            return int(dt.timestamp() * 1000)
+        except:
+            pass
+
+    # Unix timestamp (seconds)
+    try:
+        return int(float(ts_value) * 1000)
+    except:
+        return None
+
+
+# ==============================================
+#   API ENDPOINTS
+# ==============================================
+
+# -----------------------------
+#   Prices
+# -----------------------------
 @app.get("/api/prices")
 def get_prices(limit: int = 500):
     rows = query_db(
@@ -80,6 +103,9 @@ def get_prices(limit: int = 500):
     return rows
 
 
+# -----------------------------
+#   Trade Decisions
+# -----------------------------
 @app.get("/api/decisions")
 def get_decisions(limit: int = 200):
     rows = query_db(
@@ -99,6 +125,10 @@ def get_decisions(limit: int = 200):
     rows.reverse()
     return rows
 
+
+# -----------------------------
+#   Performance Summary
+# -----------------------------
 @app.get("/api/perf/summary")
 def perf_summary():
     rows = query_db(
@@ -137,6 +167,11 @@ def perf_summary():
         "winrate": winrate,
         "total_pnl": total_pnl,
     }
+
+
+# -----------------------------
+#   Daily PnL
+# -----------------------------
 @app.get("/api/perf/daily")
 def perf_daily(limit: int = 30):
     rows = query_db(
@@ -155,9 +190,13 @@ def perf_daily(limit: int = 30):
         """,
         (limit,),
     )
-    # برای نمایش از قدیم به جدید
     rows.reverse()
     return rows
+
+
+# -----------------------------
+#   Recent Trades
+# -----------------------------
 @app.get("/api/trades/recent")
 def trades_recent(limit: int = 50):
     rows = query_db(
@@ -185,10 +224,15 @@ def trades_recent(limit: int = 50):
 
     return rows
 
-# سرو statics
+
+# ==============================================
+#   STATIC FILES
+# ==============================================
+
 BASE_DIR = Path(__file__).parent
 static_dir = BASE_DIR / "static"
 static_dir.mkdir(exist_ok=True)
+
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
@@ -197,4 +241,6 @@ def index():
     index_file = static_dir / "index.html"
     if not index_file.exists():
         return HTMLResponse("<h1>Smart Trader</h1><p>index.html هنوز ساخته نشده.</p>")
+
     return HTMLResponse(index_file.read_text(encoding="utf-8"))
+
