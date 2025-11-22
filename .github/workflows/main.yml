@@ -13,8 +13,8 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: Copy Files To Server
-        uses: appleboy/scp-action@v0.1.4
+      - name: Sync Project to Server
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
           username: root
@@ -29,6 +29,7 @@ jobs:
           username: root
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
+            echo "===== ENTER SMART-TRADER DIR ====="
             cd /root/smart-trader
 
             echo "===== STOP BOT ====="
