@@ -2,17 +2,17 @@ name: Deploy SmartTrader
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Copy project to VPS
+      - name: Upload Code to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -21,7 +21,7 @@ jobs:
           source: "."
           target: "/root/smart-trader"
 
-      - name: Run DB Migration + Restart Services
+      - name: Run DB Migration + Restart
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -30,21 +30,21 @@ jobs:
           script: |
             cd /root/smart-trader
 
-            echo "==== STOP BOT ===="
+            echo "===== STOP BOT ====="
             systemctl stop smarttrader-bot || true
 
-            echo "==== REMOVE OLD DB ===="
+            echo "===== REMOVE OLD DB ====="
             rm -f trading_data.db
 
-            echo "==== RUN MIGRATION ===="
-            python3 - << 'EOF'
+            echo "===== RUN MIGRATION ====="
+            python3 << 'EOF'
 import database_setup
 ok = database_setup.ensure_schema()
 print("DB MIGRATION RESULT:", ok)
 EOF
 
-            echo "==== RESTART SERVICES ===="
+            echo "===== RESTART SERVICES ====="
             systemctl restart smarttrader-api
             systemctl restart smarttrader-bot
 
-            echo "==== DONE ===="
+            echo "===== DONE ====="
