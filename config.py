@@ -34,27 +34,24 @@ STRATEGY = {
         "breakout": float(os.getenv("W_BREAKOUT", "0.20")),
     },
 
-    # هر دو مثبت (علامت فروش در خود لاجیک اعمال می‌شود)
     "s_buy": float(os.getenv("S_BUY", "0.18")),
     "s_sell": float(os.getenv("S_SELL", "0.18")),
 
     "min_adx_for_trend": float(os.getenv("MIN_ADX_FOR_TREND", "18.0")),
     "require_mtf_agreement": _get_bool("REQUIRE_MTF_AGREEMENT", "true"),
 
+    # 🔥 این نسخه دقیقاً همان چیزی است که trading_logic نیاز دارد
     "regime_scale": {
-        "LOW": float(os.getenv("REGIME_SCALE_LOW", "0.70")),
-        "NEUTRAL": float(os.getenv("REGIME_SCALE_NEUTRAL", "1.00")),
-        "HIGH": float(os.getenv("REGIME_SCALE_HIGH", "1.20")),
+        "LOW": float(os.getenv("REGIME_SCALE_LOW", "0.7")),
+        "NEUTRAL": float(os.getenv("REGIME_SCALE_NEUTRAL", "1.0")),
+        "HIGH": float(os.getenv("REGIME_SCALE_HIGH", "1.3")),
     },
 
+    "allow_intracandle": _get_bool("ALLOW_INTRACANDLE", "true"),
     "decision_buffer": float(os.getenv("DECISION_BUFFER", "0.00")),
     "mtf_confirm_bar": float(os.getenv("MTF_CONFIRM_BAR", "0.18")),
-
-    "enable_micro_mr": _get_bool("ENABLE_MICRO_MR", "true"),
-    "micro_mr_risk_mult": float(os.getenv("MICRO_MR_RISK_MULT", "0.30")),
-    "micro_mr_rsi_low": float(os.getenv("MICRO_MR_RSI_LOW", "32")),
-    "micro_mr_rsi_high": float(os.getenv("MICRO_MR_RSI_HIGH", "68")),
-    "micro_mr_band_eps": float(os.getenv("MICRO_MR_BAND_EPS", "0.0018")),
+    "atr_stop_mult": float(os.getenv("ATR_STOP_MULT", "2.0")),
+    "max_risk_per_trade": float(os.getenv("RISK_PER_TRADE", "0.01")),
 }
 
 TELEGRAM = {
@@ -73,12 +70,9 @@ WALLEX = {
 }
 
 START_EQUITY = float(os.getenv("START_EQUITY", "100000000.0"))
-MIN_NOTIONAL = float(os.getenv("MIN_NOTIONAL", "1000000.0"))
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FILE = os.getenv("LOG_FILE", "smart_trader.log")
 LOG_DIR = os.getenv("LOG_DIR", "")
-
-EMOJI_ENABLED = _get_bool("EMOJI_ENABLED", "true")
 
 DATABASE_PATH = os.getenv("DATABASE_PATH", "trading_data.db")
