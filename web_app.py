@@ -1,6 +1,4 @@
-# ===========================================================
-#   web_app.py — Final Stable Version (Full Compatible)
-# ===========================================================
+# web_app.py — FINAL STABLE VERSION
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -61,7 +59,6 @@ def ts_to_unix_ms(ts_value):
     if ts_value is None:
         return None
 
-    # ISO timestamp
     if isinstance(ts_value, str):
         try:
             dt = datetime.fromisoformat(ts_value)
@@ -70,7 +67,6 @@ def ts_to_unix_ms(ts_value):
         except:
             pass
 
-    # UNIX seconds
     try:
         return int(float(ts_value) * 1000)
     except:
