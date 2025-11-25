@@ -12,15 +12,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: SSH to server and deploy
+      - name: SSH to server and deploy full project
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
+            rm -rf /root/smart-trader.tmp
+            git clone https://github.com/MajidAsghariTabrizi/smart-trader /root/smart-trader.tmp
+            rm -rf /root/smart-trader
+            mv /root/smart-trader.tmp /root/smart-trader
             cd /root/smart-trader
-            git pull origin main
+            python3 -m venv venv
             source venv/bin/activate
             pip install -r requirements.txt
             systemctl restart smarttrader-api
