@@ -10,9 +10,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: SSH to server and deploy using deploy.sh
+      - name: Run deploy script on server via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -20,4 +20,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd /root/smart-trader
+            git fetch origin main
+            git reset --hard origin/main
+            chmod +x deploy.sh
             bash deploy.sh
