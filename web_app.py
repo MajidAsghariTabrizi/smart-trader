@@ -238,6 +238,7 @@ def trades_recent(limit: int = 50):
 #   STATIC FILES
 # -----------------------------------------------------------
 
+
 BASE_DIR = Path(__file__).parent
 static_dir = BASE_DIR / "static"
 static_dir.mkdir(exist_ok=True)
@@ -246,9 +247,18 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
 @app.get("/", response_class=HTMLResponse)
-def index():
+def home():
+    """Landing page بیزنسی"""
+    home_file = static_dir / "home.html"
+    if not home_file.exists():
+        return HTMLResponse("<h1>SmartTrader</h1><p>home.html موجود نیست.</p>")
+    return HTMLResponse(home_file.read_text(encoding="utf-8"))
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard():
+    """داشبورد فعلی (index.html)"""
     index_file = static_dir / "index.html"
     if not index_file.exists():
         return HTMLResponse("<h1>SmartTrader UI</h1><p>index.html موجود نیست.</p>")
-
     return HTMLResponse(index_file.read_text(encoding="utf-8"))

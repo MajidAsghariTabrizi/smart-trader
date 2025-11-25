@@ -671,3 +671,324 @@ body.theme-light .adx-pill {
 .trade-pnl {
   font-weight: 700;
 }
+/* ===========================
+   🏠 Home Shell
+   =========================== */
+
+.home-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+/* ===========================
+   🎯 Hero Business
+   =========================== */
+
+.home-hero {
+  position: relative;
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  margin-bottom: 80px;
+  overflow: hidden;
+}
+
+.home-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.home-title {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+.home-title span {
+  display: block;
+  color: #82b1ff;
+}
+
+.home-subtitle {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.home-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.25s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.4);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 14px 40px rgba(37, 99, 235, 0.55);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.6);
+}
+
+.btn-secondary:hover {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.home-meta {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+/* ===========================
+   🎨 Algo Canvas Shapes
+   =========================== */
+
+.algo-canvas {
+  position: absolute;
+  inset: -120px;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.algo-blob {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(40px);
+  opacity: 0.8;
+  animation: floatBlob 18s infinite alternate ease-in-out;
+}
+
+.blob-1 {
+  width: 320px;
+  height: 320px;
+  top: -40px;
+  left: -60px;
+  background: radial-gradient(circle, rgba(59,130,246,0.8), transparent 70%);
+}
+
+.blob-2 {
+  width: 260px;
+  height: 260px;
+  bottom: -60px;
+  right: -40px;
+  background: radial-gradient(circle, rgba(168,85,247,0.85), transparent 70%);
+  animation-delay: 4s;
+}
+
+.algo-ring {
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 999px;
+  border: 1px dashed rgba(148, 163, 184, 0.25);
+  box-shadow: 0 0 70px rgba(59,130,246,0.35);
+  animation: spinRing 26s linear infinite;
+}
+
+.ring-1 {
+  top: 10%;
+  right: 15%;
+}
+
+.algo-grid {
+  position: absolute;
+  inset: 10%;
+  background-image: linear-gradient(
+      to right,
+      rgba(148, 163, 184, 0.15) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(148, 163, 184, 0.15) 1px,
+      transparent 1px
+    );
+  background-size: 40px 40px;
+  opacity: 0.45;
+  mix-blend-mode: screen;
+}
+
+@keyframes floatBlob {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  100% { transform: translate3d(40px, -30px, 0) scale(1.1); }
+}
+
+@keyframes spinRing {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ===========================
+   📚 Logic Section
+   =========================== */
+
+.logic-section {
+  margin-bottom: 80px;
+}
+
+.logic-section h2 {
+  font-size: 18px !important;
+  margin-bottom: 8px;
+}
+
+.logic-intro {
+  font-size: 13px;
+  opacity: 0.8;
+  max-width: 620px;
+  margin-bottom: 20px;
+}
+
+.logic-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.logic-card {
+  background: rgba(15,23,42,0.85);
+  border-radius: 16px;
+  padding: 14px 12px;
+  position: relative;
+  border: 1px solid rgba(148,163,184,0.2);
+}
+
+.logic-step {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(59,130,246,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #bfdbfe;
+}
+
+.logic-card h3 {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.logic-card p {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+@media (max-width: 900px) {
+  .logic-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .home-hero {
+    min-height: 70vh;
+  }
+  .home-title {
+    font-size: 24px;
+  }
+  .logic-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===========================
+   📈 Metrics Section
+   =========================== */
+
+.metrics-section {
+  margin-bottom: 80px;
+}
+
+.metrics-section h2 {
+  font-size: 18px !important;
+}
+
+.metrics-intro {
+  font-size: 13px;
+  opacity: 0.82;
+  max-width: 620px;
+  margin-bottom: 20px;
+}
+
+.metrics-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.metric-card {
+  background: rgba(15,23,42,0.85);
+  border-radius: 16px;
+  padding: 14px 12px;
+  border: 1px solid rgba(148,163,184,0.2);
+}
+
+.metric-label {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-bottom: 6px;
+}
+
+.metric-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #bfdbfe;
+  margin-bottom: 6px;
+}
+
+.metric-caption {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.metrics-footer {
+  margin-top: 24px;
+}
+
+@media (max-width: 900px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>SmartTrader – ربات معاملاتی هوش مصنوعی</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="theme-dark-pro">
+
+  <div class="home-shell">
+
+    <!-- HERO بیزنسی -->
+    <header class="home-hero">
+      <div class="algo-canvas">
+        <div class="algo-blob blob-1"></div>
+        <div class="algo-blob blob-2"></div>
+        <div class="algo-ring ring-1"></div>
+        <div class="algo-grid"></div>
+      </div>
+
+      <div class="home-hero-content">
+        <div class="badge">⚡ SmartTrader – ربات معاملاتی خودکار</div>
+        <h1 class="home-title">
+          رباتی که بازار کریپتو را
+          <span>به‌صورت الگوریتمیک و ۲۴ ساعته</span>
+          رصد و معامله می‌کند.
+        </h1>
+        <p class="home-subtitle">
+          SmartTrader روی داده‌های لایو صرافی، اندیکاتورهای پیشرفته و منطق مدیریت ریسک
+          کار می‌کند تا تصمیم‌های خرید، فروش یا HOLD را با حداقل خطای انسانی بگیرد.
+        </p>
+
+        <div class="home-cta-row">
+          <a href="#logic-section" class="btn-primary">چطور کار می‌کند؟</a>
+          <a href="#metrics-section" class="btn-secondary">مشاهده عملکرد ربات</a>
+        </div>
+
+        <div class="home-meta">
+          <span>⏱ بدون محدودیت زمانی، ۲۴/۷ آنلاین</span>
+          <span>🧠 تصمیم‌گیری بر اساس Multi Timeframe + ADX + ATR</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- سکشن لاجیک ربات -->
+    <section id="logic-section" class="logic-section">
+      <h2>اسمارت‌تریدر چطور تصمیم می‌گیرد؟</h2>
+      <p class="logic-intro">
+        هسته‌ی SmartTrader ترکیبی از پردازش داده، اندیکاتورها و موتور تصمیم‌گیری است.
+        این‌ها چهار لایه‌ی اصلی منطق ربات هستند:
+      </p>
+
+      <div class="logic-grid">
+        <div class="logic-card">
+          <div class="logic-step">۱</div>
+          <h3>جمع‌آوری داده‌ی لایو</h3>
+          <p>
+            قیمت، حجم و کندل‌های چند تایم‌فریم (مثلاً ۲۴۰ و ۶۰ دقیقه) از صرافی دریافت شده
+            و تمیزسازی می‌شوند تا داده‌ی خام قابل اعتماد ساخته شود.
+          </p>
+        </div>
+        <div class="logic-card">
+          <div class="logic-step">۲</div>
+          <h3>محاسبه اندیکاتورها و کانال‌ها</h3>
+          <p>
+            EMA، RSI، ADX، ATR و کانال‌های Donchian روی کندل‌ها محاسبه می‌شوند تا
+            وضعیت روند، مومنتوم، Mean Reversion و Breakout سنجیده شود.
+          </p>
+        </div>
+        <div class="logic-card">
+          <div class="logic-step">۳</div>
+          <h3>موتور سیگنال و Multi Timeframe</h3>
+          <p>
+            موتور سیگنال (SignalEngine) این کانال‌ها را وزن‌دهی می‌کند، با ADX گیت می‌کند
+            و بین تایم‌فریم اصلی و تایم‌فریم تأییدی به‌دنبال هم‌جهتی (MTF agreement) می‌گردد.
+          </p>
+        </div>
+        <div class="logic-card">
+          <div class="logic-step">۴</div>
+          <h3>مدیریت ریسک و اجرای ترید</h3>
+          <p>
+            اگر سیگنال از آستانه‌ی خرید/فروش عبور کند، حجم معامله بر اساس درصد ریسک
+            هر ترید محاسبه می‌شود، حد ضرر با ATR تنظیم می‌شود و ترید در دیتابیس ثبت می‌گردد.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- سکشن متریک‌ها و خلاصه عملکرد -->
+    <section id="metrics-section" class="metrics-section">
+      <h2>خلاصه عملکرد ربات تا این لحظه</h2>
+      <p class="metrics-intro">
+        این بخش یک عکس فوری از رفتار واقعی ربات روی حساب زنده را نشان می‌دهد.
+        داده‌ها مستقیماً از دیتابیس SmartTrader خوانده شده‌اند.
+      </p>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">ضریب ریسک هر ترید</div>
+          <div class="metric-value" id="metric-risk">–</div>
+          <div class="metric-caption">
+            درصد حداکثر سرمایه که در هر معامله در معرض ریسک قرار می‌گیرد.
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">نرخ خطا (Error Rate)</div>
+          <div class="metric-value" id="metric-error-rate">–</div>
+          <div class="metric-caption">
+            درصد معاملاتی که منفی بسته شده‌اند نسبت به کل معاملات بسته‌شده.
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">تعداد پیش‌بینی‌های موفق</div>
+          <div class="metric-value" id="metric-correct-trades">–</div>
+          <div class="metric-caption">
+            تعداد تریدهایی که با سود بسته شده‌اند (برد).
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">سود/زیان تحقق‌یافته تا الان</div>
+          <div class="metric-value" id="metric-total-pnl">–</div>
+          <div class="metric-caption">
+            مجموع PnL همه‌ی معاملات بسته‌شده (روی دیتای واقعی).
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">قیمت لحظه‌ای بیت‌کوین به تومان</div>
+          <div class="metric-value" id="metric-btc-price">–</div>
+          <div class="metric-caption">
+            قیمت BTC/IRT از صرافی (قابل اتصال به Bitpin/Wallex).
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">آخرین تصمیم ربات</div>
+          <div class="metric-value" id="metric-last-decision">–</div>
+          <div class="metric-caption" id="metric-last-decision-caption">
+            تصمیم اخیر ربات (BUY / SELL / HOLD) روی آخرین کندل.
+          </div>
+        </div>
+      </div>
+
+      <div class="metrics-footer">
+        <a href="/dashboard" class="btn-primary">
+          مشاهده داشبورد کامل و نمودارهای زنده
+        </a>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="/static/js/home.js"></script>
+</body>
+</html>
