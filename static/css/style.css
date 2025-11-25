@@ -1,51 +1,160 @@
-/* ===========================
-   🔥 Global Style
-   =========================== */
+/* =========================================================
+   🎨 SmartTrader v2 UI
+   Futuristic Neural Matrix – RTL / IRANSans
+   ========================================================= */
 
+:root {
+  --bg-main: radial-gradient(circle at top, #0b1020 0, #050612 35%, #020308 100%);
+  --bg-card: rgba(15, 23, 42, 0.8);
+  --bg-card-soft: rgba(15, 23, 42, 0.65);
+  --border-soft: rgba(148, 163, 184, 0.22);
+  --text-main: #f9fafb;
+  --text-muted: #9ca3af;
+  --accent-blue: #60a5fa;
+  --accent-blue-soft: rgba(96, 165, 250, 0.2);
+  --accent-purple: #8b5cf6;
+  --accent-green: #22c55e;
+  --accent-red: #ef4444;
+  --radius-lg: 18px;
+  --radius-md: 14px;
+  --shadow-card: 0 24px 60px rgba(0, 0, 0, 0.75);
+}
+
+/* =========================================================
+   🧱 Base
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
 body {
   margin: 0;
   padding: 0;
-  background: radial-gradient(circle at top, #0b1020 0, #050612 35%, #020308 100%);
-  font-family: "IRANSans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #f5f7ff;
+  direction: rtl;
 }
 
+body {
+  min-height: 100vh;
+  font-family: "IRANSans", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  color: var(--text-main);
+  background: var(--bg-main);
+  overflow-x: hidden;
+  animation: bgShift 40s ease-in-out infinite alternate;
+}
+
+/* پس‌زمینه گرادیان متحرک */
+@keyframes bgShift {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 100%;
+  }
+}
+
+/* کانتینر عمومی داشبورد (index) */
 .container {
   max-width: 1300px;
   margin: 0 auto;
-  padding: 20px 16px 40px;
+  padding: 20px 16px 48px;
 }
 
+/* کانتینر صفحه اصلی (home) */
+.home-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 80px;
+}
 
-/* ===========================
-   🔥 Hero Section
-   =========================== */
+/* اسکرول‌بار شیک‌تر */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+}
+
+/* =========================================================
+   🔠 Typography
+   ========================================================= */
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 700;
+  font-family: "IRANSans", system-ui;
+}
+
+h2 {
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  letter-spacing: 0.01em;
+}
+
+h2 .small {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.text-muted {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* =========================================================
+   🎯 Hero (Dashboard – index.html)
+   ========================================================= */
 
 .hero {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
+  position: relative;
 }
 
 .badge {
   align-self: flex-start;
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: 999px;
   background: rgba(129, 212, 250, 0.08);
   border: 1px solid rgba(129, 212, 250, 0.35);
   font-size: 11px;
   color: #80d8ff;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.8);
 }
 
 .title {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 800;
-  line-height: 1.4;
-}
-.title, h2 {
-  font-weight: 700 !important;
-  font-family: "IRANSans", system-ui !important;
+  line-height: 1.6;
 }
 
 .title span {
@@ -53,44 +162,119 @@ body {
 }
 
 .subtitle {
-  font-size: 14px;
-  opacity: 0.78;
-  max-width: 540px;
+  font-size: 13px;
+  opacity: 0.8;
+  max-width: 480px;
 }
 
+/* نوار Live کوچک بالا */
+.live-strip {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at right,
+    rgba(56, 189, 248, 0.20),
+    transparent 65%
+  );
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
 
-/* ===========================
-   🔥 Layout Structure
-   =========================== */
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.85);
+  animation: pulseLive 1.4s ease-in-out infinite;
+}
+
+@keyframes pulseLive {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(1.6);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* =========================================================
+   🎛 Theme Toggle (index)
+   ========================================================= */
+
+.theme-toggle {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.theme-toggle button {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 7px 14px;
+  border-radius: 12px;
+  font-family: "IRANSans";
+  cursor: pointer;
+  font-size: 13px;
+  color: #f9fafb;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(14px);
+}
+
+.theme-toggle .icon {
+  font-size: 16px;
+}
+
+.theme-toggle button:hover {
+  transform: scale(1.05) translateY(-1px);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* =========================================================
+   🧊 Cards & Layout
+   ========================================================= */
 
 .layout {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 20px;
+  gap: 18px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 980px) {
   .layout {
     grid-template-columns: 1fr;
   }
 }
 
-
-/* ===========================
-   🔥 Glass Card
-   =========================== */
-
 .card {
-  background: rgba(15, 23, 42, 0.65);
-  border-radius: 14px !important;
-  padding: 14px 16px 18px !important;
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  backdrop-filter: blur(22px);
-  box-shadow: 0 25px 40px rgba(0, 0, 0, 0.45);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px 20px;
+  border: 1px solid var(--border-soft);
+  backdrop-filter: blur(24px);
+  box-shadow: var(--shadow-card);
   position: relative;
   overflow: hidden;
+  transform: translateY(0);
+  transition: transform 0.25s ease, box-shadow 0.25s ease,
+    border-color 0.25s ease, background 0.25s ease;
 }
 
+/* Glow گوشه کارت */
 .card::before {
   content: "";
   position: absolute;
@@ -98,43 +282,57 @@ body {
   left: -80px;
   width: 180px;
   height: 180px;
-  background: radial-gradient(circle, rgba(0,150,255,0.25), transparent 70%);
-  filter: blur(30px);
+  background: radial-gradient(
+    circle,
+    rgba(59, 130, 246, 0.28),
+    transparent 70%
+  );
+  filter: blur(26px);
+  opacity: 0.8;
+  pointer-events: none;
 }
 
-h2 {
-  font-size: 14px !important;
-  margin-bottom: 10px;
-  font-weight: 700;
-  color: #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.95);
+  border-color: rgba(129, 212, 250, 0.6);
 }
 
-h2 .small {
-  font-size: 11px;
-  font-weight: 400;
-  opacity: 0.6;
+/* کارت ساده‌تر (مثلاً داخل gridها) */
+.card--soft {
+  background: var(--bg-card-soft);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
 }
 
-
-/* ===========================
-   🔥 Chart
-   =========================== */
+/* =========================================================
+   📈 Chart
+   ========================================================= */
 
 #priceChart {
-  height: 300px !important;
+  height: 320px !important;
 }
 
+.chart-wrapper {
+  position: relative;
+}
 
-/* ===========================
-   🔥 Summary (Persian AI Analysis)
-   =========================== */
+/* حلقه‌ی دکوری اطراف چارت */
+.chart-orbit {
+  position: absolute;
+  inset: 10px 20px;
+  border-radius: 999px;
+  border: 1px dashed rgba(148, 163, 184, 0.14);
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+/* =========================================================
+   🧠 Persian AI Summary + Signal Strength
+   ========================================================= */
 
 .summary {
   margin-top: 16px;
-  padding-top: 14px;
+  padding-top: 12px;
   border-top: 1px dashed rgba(148, 163, 184, 0.35);
   font-size: 13px;
   line-height: 1.9;
@@ -160,32 +358,163 @@ h2 .small {
 }
 
 .summary-tag.buy {
-  background: rgba(16, 185, 129, 0.4);
+  background: rgba(34, 197, 94, 0.45);
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.55);
 }
 
 .summary-tag.sell {
-  background: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.45);
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.65);
 }
 
 .summary-tag.hold {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgba(148, 163, 184, 0.5);
 }
 
+.signal-strength-box {
+  margin-top: 10px;
+}
 
-/* ===========================
-   🔥 Decisions List
-   =========================== */
+.signal-strength-bar {
+  width: 100%;
+  height: 10px;
+  background: rgba(15, 23, 42, 0.85);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+#signalStrengthFill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #f97316, #facc15, #4ade80);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.7);
+  transition: width 0.4s ease-out;
+}
+
+/* =========================================================
+   🧬 Regime + ADX Components
+   ========================================================= */
+
+.regime-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 10px;
+  padding: 9px 12px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  backdrop-filter: blur(18px);
+}
+
+.regime-title {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.regime-pill {
+  padding: 4px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  animation: pulseGlow 2.4s infinite;
+}
+
+.regime-low {
+  background: rgba(56, 189, 248, 0.32);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.5);
+}
+.regime-neutral {
+  background: rgba(234, 179, 8, 0.32);
+  box-shadow: 0 0 14px rgba(234, 179, 8, 0.55);
+}
+.regime-high {
+  background: rgba(244, 63, 94, 0.35);
+  box-shadow: 0 0 16px rgba(244, 63, 94, 0.6);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.22);
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(255, 255, 255, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.22);
+  }
+}
+
+/* ADX box */
+
+.adx-box {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.95);
+  padding: 9px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  backdrop-filter: blur(18px);
+}
+
+.adx-title {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.adx-pill {
+  padding: 4px 11px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.adx-weak {
+  background: rgba(250, 204, 21, 0.22);
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.6);
+}
+.adx-medium {
+  background: rgba(59, 130, 246, 0.28);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.65);
+}
+.adx-strong {
+  background: rgba(248, 113, 113, 0.32);
+  box-shadow: 0 0 14px rgba(248, 113, 113, 0.7);
+}
+
+/* =========================================================
+   📋 Decisions List
+   ========================================================= */
 
 .decisions-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .decisions-header select {
-  background: rgba(15,23,42,0.7);
+  background: rgba(15, 23, 42, 0.9);
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.5);
   padding: 4px 12px;
   font-size: 12px;
   color: #e5e7eb;
@@ -196,19 +525,29 @@ h2 .small {
   max-height: 540px;
   overflow-y: auto;
   padding-right: 4px;
+  margin-top: 10px;
 }
 
 .decision-item {
-  background: rgba(15, 23, 42, 0.85);
-  padding: 12px 14px;
-  border-radius: 12px;
-  margin-bottom: 10px;
+  background: rgba(15, 23, 42, 0.95);
+  padding: 11px 13px;
+  border-radius: 14px;
+  margin-bottom: 9px;
   border-right: 4px solid transparent;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.6);
+  font-size: 12px;
+  animation: fadeIn 0.25s ease-out;
 }
 
-.decision-buy { border-right-color: #22c55e; }
-.decision-sell { border-right-color: #ef4444; }
-.decision-hold { border-right-color: #64748b; }
+.decision-buy {
+  border-right-color: #22c55e;
+}
+.decision-sell {
+  border-right-color: #ef4444;
+}
+.decision-hold {
+  border-right-color: #64748b;
+}
 
 .decision-label {
   font-size: 13px;
@@ -218,7 +557,7 @@ h2 .small {
 .decision-price {
   margin-top: 4px;
   font-size: 12px;
-  opacity: 0.75;
+  opacity: 0.8;
 }
 
 .decision-time {
@@ -227,18 +566,9 @@ h2 .small {
   color: #9ca3af;
 }
 
-.decision-pill {
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: rgba(31, 41, 55, 0.9);
-  color: #cbd5e1;
-}
-
-
-/* ===========================
-   🔥 Stats Bar
-   =========================== */
+/* =========================================================
+   📊 Stats Bar
+   ========================================================= */
 
 .stats-card {
   margin-top: 26px;
@@ -247,15 +577,16 @@ h2 .small {
 .stats-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .stat-pill {
-  background: rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 999px;
-  padding: 6px 12px;
-  border: 1px solid rgba(148,163,184,0.25);
-  backdrop-filter: blur(12px);
+  padding: 6px 11px;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  backdrop-filter: blur(14px);
+  font-size: 11px;
 }
 
 .stat-label {
@@ -267,354 +598,23 @@ h2 .small {
   color: #fff;
 }
 
-
-/* ===========================
-   🔥 Mobile Improvements
-   =========================== */
-
-@media (max-width: 600px) {
-  .title {
-    font-size: 22px;
-  }
-  .card {
-    padding: 16px;
-  }
-  #priceChart {
-    height: 220px !important;
-  }
-}
-
-/* =====================================================
-   🌕 Light Mode Theme
-   ===================================================== */
-
-body.theme-light {
-  background: #f8fafc;
-  color: #111827;
-}
-
-body.theme-light .card {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(0, 0, 0, 0.08);
-  color: #111;
-}
-
-body.theme-light h2 {
-  color: #1f2937;
-}
-
-body.theme-light .summary,
-body.theme-light .decision-price,
-body.theme-light .decision-time {
-  color: #374151;
-}
-
-body.theme-light .badge {
-  background: rgba(0, 0, 0, 0.05);
-  color: #1e40af;
-}
-
-body.theme-light .decision-item {
-  background: #ffffff;
-  border-right-color: #ccc;
-}
-
-body.theme-light .stat-pill {
-  background: rgba(0,0,0,0.04);
-  color: #111;
-}
-
-body.theme-light .theme-toggle button {
-  background: #fff !important;
-  color: #1f2937 !important;
-  border-color: #cbd5e1;
-}
-
-/* =====================================================
-   🌑 Dark Pro Theme (Gradient Blue/Purple)
-   ===================================================== */
-
-body.theme-dark-pro {
-  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-  color: #f8faff;
-}
-
-body.theme-dark-pro .card {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-body.theme-dark-pro h2 {
-  color: #e0e7ff;
-}
-
-body.theme-dark-pro .summary-title {
-  color: #a5b4fc;
-}
-
-body.theme-dark-pro .badge {
-  background: rgba(129, 212, 250, 0.15);
-  border-color: rgba(129, 212, 250, 0.35);
-}
-
-body.theme-dark-pro .decision-item {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-body.theme-dark-pro .stat-pill {
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-}
-
-body.theme-dark-pro .theme-toggle button {
-  background: rgba(255,255,255,0.15) !important;
-  color: #fff !important;
-  border-color: rgba(255,255,255,0.2);
-}
-/* =====================================================
-   🎛 Theme Toggle Button
-   ===================================================== */
-
-.theme-toggle {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 16px;
-}
-
-.theme-toggle button {
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.25);
-  padding: 8px 14px;
-  border-radius: 12px;
-    font-family: "IRANSans";
-  cursor: pointer;
-  font-size: 13px;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(12px);
-}
-
-.theme-toggle button:hover {
-  transform: scale(1.05);
-  background: rgba(255,255,255,0.22);
-}
-
-.theme-toggle .icon {
-  font-size: 16px;
-}
-body.theme-light {
-  color: #1d1d1f !important;
-}
-
-body.theme-light .card {
-  color: #1d1d1f !important;
-  background: rgba(255,255,255,0.9) !important;
-}
-
-body.theme-light .summary,
-body.theme-light .decision-price,
-body.theme-light .decision-time {
-  color: #1f2937 !important;
-}
-
-body.theme-light .decision-item {
-  background: #ffffff !important;
-  border-right-color: #94a3b8 !important;
-}
-
-body.theme-light #priceChart {
-  filter: drop-shadow(0 0 4px rgba(0,0,0,0.1));
-}
-
-body.theme-light .stat-pill {
-  background: rgba(0,0,0,0.05) !important;
-  color: #1f2937 !important;
-}
-/* =====================================================
-   ⭐ Regime Component UI
-   ===================================================== */
-
-.regime-box {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 6px 0 14px 0;
-  padding: 10px 14px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.regime-title {
-  font-size: 13px;
-  opacity: 0.8;
-}
-
-.regime-pill {
-  padding: 4px 12px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  display: inline-flex;
-  align-items: center;
-  animation: fadeIn 0.4s ease-out;
-}
-
-/* رنگ‌ها */
-.regime-low {
-  background: rgba(56, 189, 248, 0.35);
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
-}
-
-.regime-neutral {
-  background: rgba(234, 179, 8, 0.35);
-  box-shadow: 0 0 12px rgba(234, 179, 8, 0.45);
-}
-
-.regime-high {
-  background: rgba(244, 63, 94, 0.35);
-  box-shadow: 0 0 12px rgba(244, 63, 94, 0.45);
-}
-
-/* انیمیشن‌های زیباسازی */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulseGlow {
-  0% { box-shadow: 0 0 12px rgba(255,255,255,0.2); }
-  50% { box-shadow: 0 0 25px rgba(255,255,255,0.35); }
-  100% { box-shadow: 0 0 12px rgba(255,255,255,0.2); }
-}
-
-.regime-pill {
-  animation: pulseGlow 2.8s infinite;
-}
-
-/* Light Mode اصلاح شده */
-body.theme-light .regime-box {
-  background: rgba(0,0,0,0.05);
-  border-color: rgba(0,0,0,0.1);
-}
-
-body.theme-light .regime-title {
-  color: #1e293b;
-}
-
-body.theme-light .regime-pill {
-  color: #111;
-}
-
-body.theme-light .regime-low {
-  background: rgba(14,165,233,0.25);
-}
-
-body.theme-light .regime-neutral {
-  background: rgba(234,179,8,0.25);
-}
-
-body.theme-light .regime-high {
-  background: rgba(244,63,94,0.25);
-}
-/* =============================
-   ⭐ ADX Component
-   ============================= */
-
-.adx-box {
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(255,255,255,0.05);
-  padding: 10px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.13);
-  backdrop-filter: blur(12px);
-}
-
-.adx-title {
-  font-size: 13px;
-  opacity: 0.9;
-}
-
-.adx-pill {
-  padding: 4px 12px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 700;
-  animation: fadeIn 0.4s ease-out;
-}
-
-/* رنگ‌های ADX */
-.adx-weak {
-  background: rgba(255, 199, 60, 0.25);
-  box-shadow: 0 0 10px rgba(255, 199, 60, 0.4);
-}
-
-.adx-medium {
-  background: rgba(96, 165, 250, 0.25);
-  box-shadow: 0 0 12px rgba(96, 165, 250, 0.4);
-}
-
-.adx-strong {
-  background: rgba(239, 68, 68, 0.25);
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.45);
-}
-
-/* لایت مود */
-body.theme-light .adx-box {
-  background: rgba(0,0,0,0.05);
-  border: 1px solid rgba(0,0,0,0.1);
-}
-
-body.theme-light .adx-pill {
-  color: #1f2937;
-}
-/* =============================
-   ⭐ Signal Strength Meter
-   ============================= */
-
-.signal-strength-box {
-  margin-top: 12px;
-}
-
-.signal-strength-bar {
-  width: 100%;
-  height: 10px;
-  background: rgba(255,255,255,0.08);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-#signalStrengthFill {
-  height: 100%;
-  width: 50%;
-  background: linear-gradient(90deg, #f87171, #4ade80);
-  transition: width .4s ease-out;
-}
-/* ===========================
-   🔢 Daily PnL & Trades
-   =========================== */
+/* =========================================================
+   💰 Daily PnL & Trades
+   ========================================================= */
 
 .pnl-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
 }
 
 .pnl-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: rgba(15,23,42,0.85);
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.95);
   font-size: 12px;
 }
 
@@ -641,13 +641,13 @@ body.theme-light .adx-pill {
 .trade-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
 }
 
 .trade-item {
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: rgba(15,23,42,0.9);
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.98);
   font-size: 12px;
 }
 
@@ -664,30 +664,104 @@ body.theme-light .adx-pill {
 .trade-body {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 16px;
+  gap: 6px 14px;
   opacity: 0.9;
 }
 
 .trade-pnl {
   font-weight: 700;
 }
-/* ===========================
-   🏠 Home Shell
-   =========================== */
 
-.home-shell {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px 16px 64px;
+/* =========================================================
+   🌕 Light Theme
+   ========================================================= */
+
+body.theme-light {
+  background: #f8fafc;
+  color: #111827;
 }
 
-/* ===========================
-   🎯 Hero Business
-   =========================== */
+body.theme-light .card {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(15, 23, 42, 0.06);
+  color: #111827;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.09);
+}
+
+body.theme-light .card::before {
+  background: radial-gradient(
+    circle,
+    rgba(37, 99, 235, 0.16),
+    transparent 65%
+  );
+}
+
+body.theme-light h2 {
+  color: #111827;
+}
+
+body.theme-light .summary,
+body.theme-light .decision-price,
+body.theme-light .decision-time {
+  color: #1f2937;
+}
+
+body.theme-light .decision-item {
+  background: #ffffff;
+  border-right-color: #94a3b8;
+}
+
+body.theme-light .stat-pill {
+  background: rgba(0, 0, 0, 0.03);
+  color: #111827;
+}
+
+body.theme-light .theme-toggle button {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #111827;
+}
+
+body.theme-light #priceChart {
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.08));
+}
+
+body.theme-light .regime-box,
+body.theme-light .adx-box {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+body.theme-light .regime-title,
+body.theme-light .adx-title {
+  color: #111827;
+}
+
+body.theme-light .regime-pill,
+body.theme-light .adx-pill {
+  color: #111827;
+}
+
+/* =========================================================
+   🌑 Dark Pro Theme (gradient blue/purple)
+   ========================================================= */
+
+body.theme-dark-pro {
+  background: linear-gradient(135deg, #020617, #0f172a, #111827);
+  color: #f9fafb;
+}
+
+body.theme-dark-pro .card {
+  background: rgba(15, 23, 42, 0.96);
+}
+
+/* =========================================================
+   🏠 Home Hero (Landing – home.html)
+   ========================================================= */
 
 .home-hero {
   position: relative;
-  min-height: 80vh;
+  min-height: 82vh;
   display: flex;
   align-items: center;
   margin-bottom: 80px;
@@ -697,7 +771,7 @@ body.theme-light .adx-pill {
 .home-hero-content {
   position: relative;
   z-index: 2;
-  max-width: 600px;
+  max-width: 580px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -706,7 +780,7 @@ body.theme-light .adx-pill {
 .home-title {
   font-size: 32px;
   font-weight: 800;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 .home-title span {
@@ -716,7 +790,7 @@ body.theme-light .adx-pill {
 
 .home-subtitle {
   font-size: 14px;
-  opacity: 0.85;
+  opacity: 0.86;
 }
 
 .home-cta-row {
@@ -726,6 +800,16 @@ body.theme-light .adx-pill {
   margin-top: 8px;
 }
 
+.home-meta {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  opacity: 0.82;
+}
+
+/* CTA buttons shared */
 .btn-primary,
 .btn-secondary {
   display: inline-flex;
@@ -737,91 +821,44 @@ body.theme-light .adx-pill {
   text-decoration: none;
   cursor: pointer;
   border: 1px solid transparent;
-  transition: all 0.25s ease;
+  transition: all 0.23s ease;
+  font-family: "IRANSans";
 }
 
 .btn-primary {
   background: linear-gradient(135deg, #2563eb, #7c3aed);
   color: #fff;
-  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 12px 34px rgba(37, 99, 235, 0.5);
 }
 
 .btn-primary:hover {
   transform: translateY(-1px) scale(1.02);
-  box-shadow: 0 14px 40px rgba(37, 99, 235, 0.55);
+  box-shadow: 0 18px 44px rgba(37, 99, 235, 0.75);
 }
 
 .btn-secondary {
   background: transparent;
   color: #e5e7eb;
-  border-color: rgba(148, 163, 184, 0.6);
+  border-color: rgba(148, 163, 184, 0.7);
 }
 
 .btn-secondary:hover {
-  background: rgba(148, 163, 184, 0.12);
+  background: rgba(148, 163, 184, 0.15);
 }
 
-.home-meta {
-  margin-top: 10px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  font-size: 11px;
-  opacity: 0.8;
-}
-
-/* ===========================
-   🎨 Algo Canvas Shapes
-   =========================== */
+/* =========================================================
+   🧠 Home – Algo Canvas (شبکه نودها)
+   ========================================================= */
 
 .algo-canvas {
   position: absolute;
-  inset: -120px;
+  inset: -140px;
   pointer-events: none;
   overflow: hidden;
   z-index: 1;
 }
 
-.algo-blob {
-  position: absolute;
-  border-radius: 999px;
-  filter: blur(40px);
-  opacity: 0.8;
-  animation: floatBlob 18s infinite alternate ease-in-out;
-}
-
-.blob-1 {
-  width: 320px;
-  height: 320px;
-  top: -40px;
-  left: -60px;
-  background: radial-gradient(circle, rgba(59,130,246,0.8), transparent 70%);
-}
-
-.blob-2 {
-  width: 260px;
-  height: 260px;
-  bottom: -60px;
-  right: -40px;
-  background: radial-gradient(circle, rgba(168,85,247,0.85), transparent 70%);
-  animation-delay: 4s;
-}
-
-.algo-ring {
-  position: absolute;
-  width: 420px;
-  height: 420px;
-  border-radius: 999px;
-  border: 1px dashed rgba(148, 163, 184, 0.25);
-  box-shadow: 0 0 70px rgba(59,130,246,0.35);
-  animation: spinRing 26s linear infinite;
-}
-
-.ring-1 {
-  top: 10%;
-  right: 15%;
-}
-
+/* شبکه پس‌زمینه */
 .algo-grid {
   position: absolute;
   inset: 10%;
@@ -830,42 +867,205 @@ body.theme-light .adx-pill {
       rgba(148, 163, 184, 0.15) 1px,
       transparent 1px
     ),
-    linear-gradient(
-      to bottom,
-      rgba(148, 163, 184, 0.15) 1px,
-      transparent 1px
-    );
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.15) 1px, transparent 1px);
   background-size: 40px 40px;
   opacity: 0.45;
   mix-blend-mode: screen;
 }
 
+.algo-blob {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(38px);
+  opacity: 0.9;
+  animation: floatBlob 18s infinite alternate ease-in-out;
+}
+
+.blob-1 {
+  width: 320px;
+  height: 320px;
+  top: -40px;
+  left: -60px;
+  background: radial-gradient(
+    circle,
+    rgba(59, 130, 246, 0.85),
+    transparent 70%
+  );
+}
+
+.blob-2 {
+  width: 260px;
+  height: 260px;
+  bottom: -60px;
+  right: -40px;
+  background: radial-gradient(
+    circle,
+    rgba(168, 85, 247, 0.9),
+    transparent 70%
+  );
+  animation-delay: 4s;
+}
+
+.algo-ring {
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 999px;
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+  box-shadow: 0 0 70px rgba(59, 130, 246, 0.4);
+  animation: spinRing 26s linear infinite;
+}
+
+.ring-1 {
+  top: 12%;
+  right: 14%;
+}
+
+/* نودها و خطوط داده */
+.algo-node {
+  position: absolute;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  backdrop-filter: blur(14px);
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #e5e7eb;
+  animation: floatNode 10s ease-in-out infinite alternate;
+}
+
+.algo-node::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+}
+
+.node-buy {
+  top: 22%;
+  right: 18%;
+  animation-delay: 0.4s;
+  border-color: rgba(34, 197, 94, 0.8);
+}
+.node-buy::before {
+  background: #22c55e;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.9);
+}
+
+.node-sell {
+  bottom: 20%;
+  right: 8%;
+  animation-delay: 1.2s;
+  border-color: rgba(239, 68, 68, 0.85);
+}
+.node-sell::before {
+  background: #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.9);
+}
+
+.node-hold {
+  top: 36%;
+  left: 12%;
+  animation-delay: 2s;
+}
+.node-hold::before {
+  background: #fbbf24;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.9);
+}
+
+/* خطوط متحرک بین نودها */
+.algo-link {
+  position: absolute;
+  width: 260px;
+  height: 1px;
+  background: linear-gradient(
+    to left,
+    rgba(59, 130, 246, 0),
+    rgba(59, 130, 246, 0.9),
+    rgba(59, 130, 246, 0)
+  );
+  opacity: 0.6;
+  transform-origin: left center;
+  animation: sweepLink 3.6s linear infinite;
+}
+
+.link-1 {
+  top: 26%;
+  right: 24%;
+  transform: rotate(-12deg);
+}
+.link-2 {
+  bottom: 24%;
+  right: 16%;
+  transform: rotate(18deg);
+}
+.link-3 {
+  top: 40%;
+  left: 18%;
+  transform: rotate(-8deg);
+}
+
 @keyframes floatBlob {
-  0% { transform: translate3d(0, 0, 0) scale(1); }
-  100% { transform: translate3d(40px, -30px, 0) scale(1.1); }
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(40px, -30px, 0) scale(1.08);
+  }
 }
 
 @keyframes spinRing {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-/* ===========================
-   📚 Logic Section
-   =========================== */
+@keyframes floatNode {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-10px, -14px, 0);
+  }
+}
+
+@keyframes sweepLink {
+  0% {
+    opacity: 0.1;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  80% {
+    opacity: 0.2;
+  }
+  100% {
+    opacity: 0.1;
+  }
+}
+
+/* =========================================================
+   📚 Home – Logic & Metrics Sections
+   ========================================================= */
 
 .logic-section {
   margin-bottom: 80px;
 }
 
 .logic-section h2 {
-  font-size: 18px !important;
+  font-size: 18px;
   margin-bottom: 8px;
 }
 
 .logic-intro {
   font-size: 13px;
-  opacity: 0.8;
+  opacity: 0.82;
   max-width: 620px;
   margin-bottom: 20px;
 }
@@ -877,11 +1077,12 @@ body.theme-light .adx-pill {
 }
 
 .logic-card {
-  background: rgba(15,23,42,0.85);
+  background: rgba(15, 23, 42, 0.96);
   border-radius: 16px;
   padding: 14px 12px;
   position: relative;
-  border: 1px solid rgba(148,163,184,0.2);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
 }
 
 .logic-step {
@@ -891,7 +1092,7 @@ body.theme-light .adx-pill {
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  background: rgba(59,130,246,0.15);
+  background: rgba(59, 130, 246, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -906,7 +1107,7 @@ body.theme-light .adx-pill {
 
 .logic-card p {
   font-size: 12px;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 @media (max-width: 900px) {
@@ -919,24 +1120,24 @@ body.theme-light .adx-pill {
   .home-hero {
     min-height: 70vh;
   }
+
   .home-title {
     font-size: 24px;
   }
+
   .logic-grid {
     grid-template-columns: 1fr;
   }
 }
 
-/* ===========================
-   📈 Metrics Section
-   =========================== */
+/* متریک‌ها در لندینگ */
 
 .metrics-section {
   margin-bottom: 80px;
 }
 
 .metrics-section h2 {
-  font-size: 18px !important;
+  font-size: 18px;
 }
 
 .metrics-intro {
@@ -953,10 +1154,11 @@ body.theme-light .adx-pill {
 }
 
 .metric-card {
-  background: rgba(15,23,42,0.85);
+  background: rgba(15, 23, 42, 0.96);
   border-radius: 16px;
   padding: 14px 12px;
-  border: 1px solid rgba(148,163,184,0.2);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
 }
 
 .metric-label {
@@ -974,11 +1176,11 @@ body.theme-light .adx-pill {
 
 .metric-caption {
   font-size: 11px;
-  opacity: 0.75;
+  opacity: 0.78;
 }
 
 .metrics-footer {
-  margin-top: 24px;
+  margin-top: 26px;
 }
 
 @media (max-width: 900px) {
@@ -990,5 +1192,9 @@ body.theme-light .adx-pill {
 @media (max-width: 600px) {
   .metrics-grid {
     grid-template-columns: 1fr;
+  }
+
+  .title {
+    font-size: 22px;
   }
 }

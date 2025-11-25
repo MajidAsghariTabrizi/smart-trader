@@ -1,118 +1,119 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
-<head>
-  <meta charset="UTF-8" />
-  <title>اسمارت‌تریدر – ربات هوش مصنوعی بازار</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <head>
+    <meta charset="UTF-8" />
+    <title>اسمارت‌تریدر – داشبورد ربات هوش مصنوعی</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- چارت -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- چارت -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- CSS جدید -->
-  <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="css/style.css">
-</head>
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
 
-<body>
-
-  <div class="container">
-
-    <!-- Hero -->
-    <div class="hero">
-      <div class="badge">⚡ ربات هوش مصنوعی اسمارت‌تریدر</div>
-      <div class="title">
-        رباتی که <span>ستاپ‌های معاملاتی</span> را ۲۴ ساعته رصد می‌کند.
+  <body>
+    <div class="container">
+      <!-- Theme Toggle -->
+      <div class="theme-toggle">
+        <button id="toggleThemeBtn">
+          <span class="icon">🌙</span>
+          <span class="label">تغییر تم</span>
+        </button>
       </div>
-      <div class="subtitle">
-        این داشبورد تصمیمات لحظه‌ای ربات را روی نمودار قیمت نمایش می‌دهد.
-      </div>
-    </div>
-<!-- Theme Toggle -->
-<div class="theme-toggle">
-    <button id="toggleThemeBtn">
-        <span class="icon">🌙</span>
-        <span class="label">تغییر تم</span>
-    </button>
-</div>
 
-    <div class="layout">
-      
-      <!-- چارت -->
-      <div class="card">
-        <h2>
-          نمودار قیمت
-          <span class="small">+ سیگنال‌های خرید / فروش توسط AI</span>
-        </h2>
-<!-- ⭐ Regime Component -->
-<div id="regimeStatus" class="regime-box">
-    <span class="regime-title">وضعیت رژیم:</span>
-    <span id="regimeLabel" class="regime-pill regime-neutral">...</span>
-</div>
-<div id="adxStatus" class="adx-box">
-    <span class="adx-title">قدرت روند (ADX):</span>
-    <span id="adxValue" class="adx-pill">--</span>
-</div>
+      <!-- Hero -->
+      <div class="hero">
+        <div class="badge">⚡ ربات هوش مصنوعی اسمارت‌تریدر</div>
+        <div class="title">
+          رباتی که <span>ستاپ‌های معاملاتی</span> را ۲۴ ساعته رصد می‌کند.
+        </div>
+        <div class="subtitle">
+          این داشبورد تصمیمات لحظه‌ای ربات را روی نمودار قیمت نمایش می‌دهد.
+        </div>
 
-        <canvas id="priceChart"></canvas>
-
-        <!-- خلاصه تحلیلی -->
-        <div class="summary">
-          <div class="summary-title">آخرین تحلیل بات</div>
-          <div id="lastSummaryText">لطفاً صبر کنید...</div>
-		  <div class="signal-strength-box">
-  <div class="signal-strength-bar">
-    <div id="signalStrengthFill"></div>
-  </div>
-</div>
+        <div class="live-strip">
+          <div class="live-dot"></div>
+          <span>حساب زنده SmartTrader متصل است.</span>
+          <span class="text-muted">وین‌ریت و PnL در لحظه از دیتابیس خوانده می‌شود.</span>
         </div>
       </div>
 
-      <!-- لیست تصمیم‌ها -->
-      <div class="card">
-        <div class="decisions-header">
-          <h2>آخرین تصمیم‌های معاملاتی</h2>
-          <select id="filterSelect">
-            <option value="all">همه</option>
-            <option value="buy">خرید</option>
-            <option value="sell">فروش</option>
-            <option value="hold">HOLD</option>
-          </select>
+      <!-- Layout اصلی -->
+      <div class="layout">
+        <!-- چارت -->
+        <div class="card chart-card">
+          <h2>
+            نمودار قیمت
+            <span class="small">+ سیگنال‌های خرید / فروش توسط AI</span>
+          </h2>
+
+          <!-- Regime + ADX -->
+          <div id="regimeStatus" class="regime-box">
+            <span class="regime-title">وضعیت رژیم:</span>
+            <span id="regimeLabel" class="regime-pill regime-neutral">...</span>
+          </div>
+
+          <div id="adxStatus" class="adx-box">
+            <span class="adx-title">قدرت روند (ADX):</span>
+            <span id="adxValue" class="adx-pill">--</span>
+          </div>
+
+          <!-- چارت + اوربیت -->
+          <div class="chart-wrapper">
+            <div class="chart-orbit"></div>
+            <canvas id="priceChart"></canvas>
+          </div>
+
+          <!-- خلاصه تحلیلی -->
+          <div class="summary">
+            <div class="summary-title">آخرین تحلیل بات</div>
+            <div id="lastSummaryText">لطفاً صبر کنید...</div>
+
+            <!-- شدت سیگنال -->
+            <div class="signal-strength-box">
+              <div class="signal-strength-bar">
+                <div id="signalStrengthFill"></div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="decisions-list" id="decisions"></div>
+
+        <!-- لیست تصمیم‌ها -->
+        <div class="card">
+          <div class="decisions-header">
+            <h2>آخرین تصمیم‌های معاملاتی</h2>
+            <select id="filterSelect">
+              <option value="all">همه</option>
+              <option value="buy">خرید</option>
+              <option value="sell">فروش</option>
+              <option value="hold">HOLD</option>
+            </select>
+          </div>
+          <div class="decisions-list" id="decisions"></div>
+        </div>
       </div>
 
+      <!-- آمار عملکرد -->
+      <div class="stats-card card">
+        <h2>خلاصه عملکرد ربات</h2>
+        <div id="statsBar" class="stats-bar"></div>
+      </div>
+
+      <!-- سود و زیان روزانه -->
+      <div class="card" style="margin-top: 18px">
+        <h2>سود و زیان روزانه</h2>
+        <div id="pnlDailyList" class="pnl-list"></div>
+      </div>
+
+      <!-- آخرین تریدهای بسته‌شده -->
+      <div class="card" style="margin-top: 18px">
+        <h2>آخرین معاملات بسته‌شده</h2>
+        <div id="tradesList" class="trade-list"></div>
+      </div>
     </div>
 
-    <!-- آمار عملکرد -->
-    <div class="stats-card card">
-      <h2>خلاصه عملکرد ربات</h2>
-      <div id="statsBar" class="stats-bar"></div>
-    </div>
-
-          <!-- آمار عملکرد -->
-    <div class="stats-card card">
-      <h2>خلاصه عملکرد ربات</h2>
-      <div id="statsBar" class="stats-bar"></div>
-    </div>
-
-    <!-- سود و زیان روزانه -->
-    <div class="card" style="margin-top: 18px;">
-      <h2>سود و زیان روزانه</h2>
-      <div id="pnlDailyList" class="pnl-list"></div>
-    </div>
-
-    <!-- آخرین تریدهای بسته‌شده -->
-    <div class="card" style="margin-top: 18px;">
-      <h2>آخرین معاملات بسته‌شده</h2>
-      <div id="tradesList" class="trade-list"></div>
-    </div>
-
-
-  </div>
-
-
-  <!-- JS جدید -->
-  <script src="/static/js/app.js"></script>
-
-</body>
+    <!-- JS -->
+    <script src="/static/js/app.js"></script>
+  </body>
 </html>
