@@ -1,5 +1,3 @@
-# web_app.py — FINAL STABLE VERSION
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -45,10 +43,12 @@ def db_connect() -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
 
 def query_db(query: str, params: Tuple = ()) -> List[Dict[str, Any]]:
     conn, cur = db_connect()
-    cur.execute(query, params)
-    rows = cur.fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+    try:
+        cur.execute(query, params)
+        rows = cur.fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
 
 
 # -----------------------------------------------------------
@@ -56,20 +56,28 @@ def query_db(query: str, params: Tuple = ()) -> List[Dict[str, Any]]:
 # -----------------------------------------------------------
 
 def ts_to_unix_ms(ts_value):
+    """
+    ورودی می‌تواند:
+      - رشته ISO
+      - ثانیه‌ی یونیکس (float/int)
+    خروجی: میلی‌ثانیه‌ی یونیکس (int) در تایم‌زون تهران
+    """
     if ts_value is None:
         return None
 
+    # اگر رشته‌ی ISO باشد
     if isinstance(ts_value, str):
         try:
             dt = datetime.fromisoformat(ts_value)
             dt = dt.astimezone(pytz.timezone("Asia/Tehran"))
             return int(dt.timestamp() * 1000)
-        except:
+        except Exception:
             pass
 
+    # اگر مقدار عددی (ثانیه‌ی یونیکس) باشد
     try:
         return int(float(ts_value) * 1000)
-    except:
+    except Exception:
         return None
 
 
@@ -79,6 +87,9 @@ def ts_to_unix_ms(ts_value):
 
 @app.get("/api/prices")
 def get_prices(limit: int = 500):
+    """
+    آخرین قیمت‌ها (برای چارت اصلی)
+    """
     rows = query_db(
         f"""
         SELECT timestamp, price, tf
@@ -93,6 +104,7 @@ def get_prices(limit: int = 500):
     for r in rows:
         r["timestamp"] = ts_to_unix_ms(r["timestamp"])
 
+    # چارت از قدیم به جدید
     rows.reverse()
     return rows
 
@@ -103,6 +115,13 @@ def get_prices(limit: int = 500):
 
 @app.get("/api/decisions")
 def get_decisions(limit: int = 200):
+    """
+    آخرین تصمیم‌های معاملاتی.
+
+    نکته مهم:
+    در دیتابیس ستون aggregate_s داریم ولی aggregate نداریم،
+    پس فقط aggregate_s (و confirm_s) را برمی‌گردانیم تا ارور 500 نگیریم.
+    """
     rows = query_db(
         f"""
         SELECT
@@ -112,7 +131,7 @@ def get_decisions(limit: int = 200):
             regime,
             reasons_json,
             aggregate_s,
-            aggregate,
+            confirm_s,
             adx,
             confirm_adx
         FROM {TABLE_NAME}
@@ -129,6 +148,37 @@ def get_decisions(limit: int = 200):
     rows.reverse()
     return rows
 
+
+# -----------------------------------------------------------
+#   BTC PRICE (TMN)
+# -----------------------------------------------------------
+
+@app.get("/api/btc_price")
+def btc_price():
+    """
+    قیمت لحظه‌ای بیت‌کوین به تومان برای لندینگ (home.js).
+
+    فعلاً از آخرین رکورد جدول trading_logs استفاده می‌کنیم.
+    اگر بعداً چند سیمبل داشتی، اینجا می‌تونی فیلتر symbol اضافه کنی.
+    """
+    rows = query_db(
+        f"""
+        SELECT timestamp, price
+        FROM {TABLE_NAME}
+        WHERE price IS NOT NULL
+        ORDER BY id DESC
+        LIMIT 1
+        """
+    )
+
+    if not rows:
+        return {"price_tmn": None, "timestamp": None}
+
+    r = rows[0]
+    return {
+        "price_tmn": float(r.get("price") or 0.0),
+        "timestamp": ts_to_unix_ms(r.get("timestamp")),
+    }
 
 
 # -----------------------------------------------------------
@@ -164,7 +214,7 @@ def perf_summary():
     losses = int(r.get("losses") or 0)
     pnl = float(r.get("total_pnl") or 0.0)
 
-    winrate = (wins / total * 100) if total else 0
+    winrate = (wins / total * 100) if total else 0.0
 
     return {
         "total_trades": total,
@@ -235,9 +285,8 @@ def trades_recent(limit: int = 50):
 
 
 # -----------------------------------------------------------
-#   STATIC FILES
+#   STATIC FILES & ROUTES (Home + Dashboard)
 # -----------------------------------------------------------
-
 
 BASE_DIR = Path(__file__).parent
 static_dir = BASE_DIR / "static"
@@ -248,17 +297,23 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 def home():
-    """Landing page بیزنسی"""
+    """
+    لندینگ بیزنسی جدید (home.html)
+    """
     home_file = static_dir / "home.html"
     if not home_file.exists():
         return HTMLResponse("<h1>SmartTrader</h1><p>home.html موجود نیست.</p>")
+
     return HTMLResponse(home_file.read_text(encoding="utf-8"))
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard():
-    """داشبورد فعلی (index.html)"""
+    """
+    داشبورد تحلیل و چارت زنده (index.html)
+    """
     index_file = static_dir / "index.html"
     if not index_file.exists():
         return HTMLResponse("<h1>SmartTrader UI</h1><p>index.html موجود نیست.</p>")
+
     return HTMLResponse(index_file.read_text(encoding="utf-8"))
