@@ -1,27 +1,18 @@
 #!/bin/bash
-
 set -e
 
+echo "📥 Pull latest code"
 cd /root/smart-trader
-
-echo "🟦 Pull latest"
 git fetch origin main
 git reset --hard origin/main
 
-echo "🟨 Build frontend"
-cd frontend
-npm install
-npm run build
-
-echo "🟧 Sync static"
+echo "🛠  Sync static files"
 rm -rf /root/smart-trader/static/*
-cp -r dist/* /root/smart-trader/static/
+cp -r static/* /root/smart-trader/static/
 
-cd /root/smart-trader
-
-echo "🟩 Restart API"
+echo "🚀 Restart backend"
 systemctl restart smarttrader-api.service
 systemctl restart smarttrader-bot.service
 
-echo "🟪 Reload nginx"
+echo "🔃 Reload nginx"
 systemctl reload nginx
