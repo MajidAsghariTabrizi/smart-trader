@@ -2,117 +2,92 @@
 set -euo pipefail
 
 ############################################
-# SMARTTRADER DEPLOY v5 — Clean & Advanced
+# SMARTTRADER — CLEAN DEPLOY v6 (FINAL)
 ############################################
 
 PROJECT_DIR="/root/smart-trader"
 VENV_DIR="$PROJECT_DIR/venv"
 BACKUP_DIR="$PROJECT_DIR/.rollback"
-API_HEALTH_URL="http://127.0.0.1:8000/api/health"   # or /health if exists
+API_URL="http://127.0.0.1:8000/api/health"
 
-# --- COLORS ---
-GREEN="\e[32m"
-YELLOW="\e[33m"
-RED="\e[31m"
-CYAN="\e[36m"
-NC="\e[0m"
+# colors
+GREEN="\e[32m"; YELLOW="\e[33m"; RED="\e[31m"; CYAN="\e[36m"; NC="\e[0m"
+step() { echo -e "${CYAN}\n▶ $1${NC}"; }
+ok()   { echo -e "${GREEN}✔ $1${NC}"; }
+warn() { echo -e "${YELLOW}⚠ $1${NC}"; }
+err()  { echo -e "${RED}✘ $1${NC}"; }
 
-step()  { echo -e "${CYAN}\n▶ $1 ${NC}"; }
-ok()    { echo -e "${GREEN}✔ $1 ${NC}"; }
-warn()  { echo -e "${YELLOW}⚠ $1 ${NC}"; }
-err()   { echo -e "${RED}✘ $1 ${NC}"; }
-
-############################################
-# 1) Go to project directory
 ############################################
 step "Switching to project directory..."
 cd "$PROJECT_DIR"
 
 ############################################
-# 2) Fetch updates & skip if no change
-############################################
-step "Checking for new commits..."
+step "Checking for git updates..."
 git fetch origin main
-
 LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse origin/main)
 
 if [[ "$LOCAL" == "$REMOTE" ]]; then
-    ok "No changes — deployment not required."
+    ok "No changes — deploy skipped."
     exit 0
 fi
 
-warn "Changes detected → Deployment starting."
+warn "Changes detected → starting deployment."
 
 ############################################
-# 3) Create rollback point
-############################################
-step "Creating rollback backup..."
+step "Creating rollback snapshot (safe tar)..."
 
 rm -rf "$BACKUP_DIR"
 mkdir -p "$BACKUP_DIR"
 
-tar --exclude='./venv' \
+tar -czf "$BACKUP_DIR/snapshot.tar.gz" \
+    --exclude='./venv' \
     --exclude='./static' \
     --exclude='./logs' \
-    --exclude='./__pycache__' \
     --exclude='./*.db' \
+    --exclude='./__pycache__' \
     --warning=no-file-changed \
-    -czf "$BACKUP_DIR/snapshot.tar.gz" .
+    .
 
-############################################
-# 4) Pull new code
+ok "Rollback snapshot created."
+
 ############################################
 step "Pulling latest code..."
 git reset --hard origin/main
 ok "Code updated."
 
 ############################################
-# 5) Load .env
-############################################
-step "Loading environment variables..."
-
+step "Loading .env if exists..."
 if [[ -f ".env" ]]; then
-    export $(grep -v '^#' .env | xargs)
+    set -a
+    source .env
+    set +a
     ok ".env loaded."
 else
-    warn ".env not found — continuing."
+    warn "No .env file found"
 fi
 
 ############################################
-# 6) Ensure virtualenv
-############################################
-step "Checking Python virtual environment..."
+step "Ensuring virtualenv..."
 
 if [[ ! -d "$VENV_DIR" ]]; then
-    warn "Virtual env missing — creating..."
+    warn "venv missing — creating..."
     python3 -m venv "$VENV_DIR"
 fi
 
 source "$VENV_DIR/bin/activate"
-ok "Virtualenv activated."
+ok "Virtualenv ready."
 
 ############################################
-# 7) Install dependencies
-############################################
-step "Upgrading dependencies..."
+step "Installing dependencies..."
 
-pip install --upgrade pip setuptools wheel
+pip install --upgrade pip wheel setuptools
 pip install -r requirements.txt --upgrade
 
 pip check || true
 
 ok "Dependencies updated."
 
-############################################
-# 8) Clean pycache
-############################################
-step "Cleaning Python caches..."
-find . -type d -name "__pycache__" -exec rm -rf {} +
-ok "Cache cleaned."
-
-############################################
-# 9) Restart services
 ############################################
 step "Restarting SmartTrader services..."
 
@@ -122,36 +97,27 @@ systemctl restart smarttrader-bot.service
 ok "Services restarted."
 
 ############################################
-# 10) API Health Check
-############################################
 step "Checking API health..."
 
 sleep 2
 
-if curl -fs "$API_HEALTH_URL" | grep -q "ok"; then
+if curl -fs "$API_URL" | grep -q "ok"; then
     ok "API is healthy."
 else
-    err "API health FAILED!"
-    warn "Rolling back..."
+    err "API health check failed — rolling back."
 
     tar -xzf "$BACKUP_DIR/snapshot.tar.gz" -C .
-
     systemctl restart smarttrader-api.service
     systemctl restart smarttrader-bot.service
 
-    err "Rollback complete due to failed deploy."
+    err "Rollback done."
     exit 1
 fi
 
 ############################################
-# 11) Reload nginx
-############################################
-step "Reloading NGINX..."
+step "Reloading nginx..."
 systemctl reload nginx
-ok "NGINX reloaded."
 
-############################################
-# 12) Done
 ############################################
 ok "🎉 Deployment completed successfully!"
 exit 0
