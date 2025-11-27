@@ -1,32 +1,27 @@
 #!/bin/bash
 
-echo "🚀 SmartTrader Deploy Started"
+set -e
 
-cd /root/smart-trader || exit
+cd /root/smart-trader
 
-echo "📥 Pull latest code"
+echo "🟦 Pull latest"
 git fetch origin main
 git reset --hard origin/main
 
-echo "🧹 Clean static/"
-rm -rf /root/smart-trader/static/*
-mkdir -p /root/smart-trader/static/
-
-echo "📦 Build frontend"
+echo "🟨 Build frontend"
 cd frontend
 npm install
 npm run build
 
-echo "📦 Copy new build → static/"
+echo "🟧 Sync static"
+rm -rf /root/smart-trader/static/*
 cp -r dist/* /root/smart-trader/static/
 
 cd /root/smart-trader
 
-echo "🔄 Restart backend"
+echo "🟩 Restart API"
 systemctl restart smarttrader-api.service
 systemctl restart smarttrader-bot.service
 
-echo "🌐 Reload nginx"
+echo "🟪 Reload nginx"
 systemctl reload nginx
-
-echo "✅ Deploy completed successfully!"

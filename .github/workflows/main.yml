@@ -19,12 +19,5 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          echo "🚀 Deploying..."
-          cd /root/smart-trader
-          git fetch origin main
-          git reset --hard origin/main
-          rm -rf /root/smart-trader/static/*
-          cp -r static/* /root/smart-trader/static/
-          systemctl restart smarttrader-api.service
-          systemctl restart smarttrader-bot.service
-          nginx -s reload
+          chmod +x /root/smart-trader/deploy.sh
+          /root/smart-trader/deploy.sh
