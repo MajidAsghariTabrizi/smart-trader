@@ -9,15 +9,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+    - name: Checkout repo
+      uses: actions/checkout@v3
 
-      - name: Deploy to Server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            chmod +x ~/smart-trader/deploy.sh
-            ~/smart-trader/deploy.sh
+    - name: Deploy to Server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          echo "🚀 Deploying..."
+          cd /root/smart-trader
+          git fetch origin main
+          git reset --hard origin/main
+          rm -rf /root/smart-trader/static/*
+          cp -r static/* /root/smart-trader/static/
+          systemctl restart smarttrader-api.service
+          systemctl restart smarttrader-bot.service
+          nginx -s reload
