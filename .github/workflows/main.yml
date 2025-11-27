@@ -8,7 +8,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -18,9 +17,8 @@ jobs:
         with:
           host: ${{ secrets.VPS_HOST }}
           username: root
-          key: ${{ secrets.VPS_KEY }}
+          key: ${{ secrets.VPS_PRIVATE_KEY }}
           script: |
             cd /root/smart-trader
-            git reset --hard
             git pull origin main
             bash deploy.sh
