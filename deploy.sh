@@ -21,14 +21,25 @@ echo -e "${YELLOW}⬇ Pulling latest code...${NC}"
 git pull origin main
 
 echo -e "${YELLOW}📦 Updating dependencies...${NC}"
-source venv/bin/activate
-pip install -r requirements.txt --upgrade
+
+if [ -d ".venv" ]; then
+    source .venv/bin/activate
+elif [ -d "venv" ]; then
+    source venv/bin/activate
+else
+    echo -e "${YELLOW}⚙ Creating virtual environment...${NC}"
+    python3 -m venv .venv
+    source .venv/bin/activate
+fi
+
+pip install --upgrade pip
+pip install -r requirements.txt
 
 echo -e "${YELLOW}🧹 Clearing Python cache...${NC}"
 find . -type d -name "__pycache__" -exec rm -rf {} +
 
 echo -e "${YELLOW}🚀 Restarting services...${NC}"
-systemctl restart smarttrader-api.service
-systemctl restart smarttrader-bot.service
+systemctl restart smarttrader-api
+systemctl restart smarttrader-bot
 
-echo -e "${GREEN}✅ Deployment successful!${NC}"
+echo -e "${GREEN}🎉 Deployment successful!${NC}"
