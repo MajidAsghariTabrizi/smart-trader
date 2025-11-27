@@ -9,25 +9,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+    - name: Checkout repo
+      uses: actions/checkout@v3
 
-      - name: Build frontend
-        run: |
-          npm install
-          npm run build
-
-      - name: Copy build to artifacts
-        run: |
-          mkdir -p artifacts
-          cp -r dist/* artifacts/
-
-      - name: Deploy to Server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            chmod +x /root/smart-trader/deploy.sh
-            /root/smart-trader/deploy.sh
+    - name: Deploy to Server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: root
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        script: |
+          chmod +x /root/smart-trader/deploy.sh
+          /root/smart-trader/deploy.sh
