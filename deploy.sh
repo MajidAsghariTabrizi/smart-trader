@@ -52,12 +52,13 @@ step "Creating rollback backup..."
 rm -rf "$BACKUP_DIR"
 mkdir -p "$BACKUP_DIR"
 
-tar -czf "$BACKUP_DIR/snapshot.tar.gz" \
-    --exclude=venv \
-    --exclude=__pycache__ \
-    .
-
-ok "Rollback snapshot saved."
+tar --exclude='./venv' \
+    --exclude='./static' \
+    --exclude='./logs' \
+    --exclude='./__pycache__' \
+    --exclude='./*.db' \
+    --warning=no-file-changed \
+    -czf "$BACKUP_DIR/snapshot.tar.gz" .
 
 ############################################
 # 4) Pull new code
