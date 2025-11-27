@@ -1,9 +1,18 @@
-.env
-*.db
-*.pyc
+# python caches
 __pycache__/
-smart_trader.log
-*.log
-logs/
-.env.backup
+*.pyc
+*.pyo
+
+# virtual env
+.venv/
 venv/
+
+# logs
+logs/
+
+# environment files
+.env
+
+# system files
+.DS_Store
+Thumbs.db

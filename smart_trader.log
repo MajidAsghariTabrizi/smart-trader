@@ -1,0 +1,639 @@
+2025-11-22 09:14:23 | INFO | smart_trader | Initializing database...
+2025-11-22 09:25:57 | INFO | smart_trader | Initializing database...
+2025-11-22 09:28:09 | INFO | smart_trader | Initializing database...
+2025-11-22 09:29:34 | INFO | smart_trader | Initializing database...
+2025-11-22 09:29:34 | INFO | smart_trader | Telegram cfg: enabled=True chat_id=set token_prefix=799317...
+2025-11-22 09:29:35 | INFO | smart_trader | Startup Telegram ping sent.
+2025-11-22 09:29:35 | INFO | smart_trader | Re-checking database initialization...
+2025-11-22 09:29:36 | ERROR | smart_trader | Error in main loop: 'float' object has no attribute 'get'
+Traceback (most recent call last):
+  File "C:\Users\ma.asghari\PycharmProjects\pythonProject\Trade\stractued-trade\main.py", line 677, in main
+    analyze_once(iteration)
+  File "C:\Users\ma.asghari\PycharmProjects\pythonProject\Trade\stractued-trade\main.py", line 441, in analyze_once
+    dc240 = signal_engine.gate_and_weight(dc240)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ma.asghari\PycharmProjects\pythonProject\Trade\stractued-trade\trading_logic.py", line 140, in gate_and_weight
+    regime_scale = p.regime_scale.get(dc.regime, 1.0)
+                   ^^^^^^^^^^^^^^^^^^
+AttributeError: 'float' object has no attribute 'get'
+2025-11-22 09:30:53 | INFO | smart_trader | Initializing database...
+2025-11-22 09:30:53 | INFO | smart_trader | Telegram cfg: enabled=True chat_id=set token_prefix=799317...
+2025-11-22 09:30:53 | INFO | smart_trader | Startup Telegram ping sent.
+2025-11-22 09:30:53 | INFO | smart_trader | Re-checking database initialization...
+2025-11-22 09:30:54 | ERROR | smart_trader | Failed to log analysis to database: cannot import name 'dc_to_row' from 'database_setup' (C:\Users\ma.asghari\PycharmProjects\pythonProject\Trade\stractued-trade\database_setup.py)
+2025-11-22 09:30:54 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 1  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9631487279.00
+-- Raw Channels (240) --
+trend_raw: -0.898  momentum_raw: -0.078  meanrev_raw: 0.826  breakout_raw: 0.121
+adx: 43.773  atr: 116306119.03  regime: LOW
+-- Post-Gate (240) --
+trend: -0.898  momentum: -0.078  meanrev: 0.826  breakout: 0.121
+Aggregate S (240): -0.101 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.101  trend: -0.898  mom: -0.078  mr: 0.826  bo: 0.121
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.101 (regime_scale=0.70)
+  - MTF reject: confirm=-0.101 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.101, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:31:26 | ERROR | smart_trader | Failed to log analysis to database: cannot import name 'dc_to_row' from 'database_setup' (C:\Users\ma.asghari\PycharmProjects\pythonProject\Trade\stractued-trade\database_setup.py)
+2025-11-22 09:31:57 | ERROR | smart_trader | Failed to log analysis to database: cannot import name 'dc_to_row' from 'database_setup' (C:\Users\ma.asghari\PycharmProjects\pythonProject\Trade\stractued-trade\database_setup.py)
+2025-11-22 09:32:28 | ERROR | smart_trader | Failed to log analysis to database: cannot import name 'dc_to_row' from 'database_setup' (C:\Users\ma.asghari\PycharmProjects\pythonProject\Trade\stractued-trade\database_setup.py)
+2025-11-22 09:32:28 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 4  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9654999999.00
+-- Raw Channels (240) --
+trend_raw: -0.894  momentum_raw: -0.012  meanrev_raw: 0.782  breakout_raw: 0.160
+adx: 43.773  atr: 117198929.39  regime: LOW
+-- Post-Gate (240) --
+trend: -0.894  momentum: -0.012  meanrev: 0.782  breakout: 0.160
+Aggregate S (240): -0.089 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.089  trend: -0.894  mom: -0.012  mr: 0.782  bo: 0.160
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.089 (regime_scale=0.70)
+  - MTF reject: confirm=-0.089 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.089, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:34:06 | INFO | smart_trader | Initializing database...
+2025-11-22 09:34:06 | INFO | smart_trader | Telegram cfg: enabled=True chat_id=set token_prefix=799317...
+2025-11-22 09:34:08 | INFO | smart_trader | Startup Telegram ping sent.
+2025-11-22 09:34:08 | INFO | smart_trader | Re-checking database initialization...
+2025-11-22 09:34:09 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 1  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9655000000.00
+-- Raw Channels (240) --
+trend_raw: -0.894  momentum_raw: -0.012  meanrev_raw: 0.782  breakout_raw: 0.160
+adx: 43.773  atr: 117198929.46  regime: LOW
+-- Post-Gate (240) --
+trend: -0.894  momentum: -0.012  meanrev: 0.782  breakout: 0.160
+Aggregate S (240): -0.089 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.089  trend: -0.894  mom: -0.012  mr: 0.782  bo: 0.160
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.089 (regime_scale=0.70)
+  - MTF reject: confirm=-0.089 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.089, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:35:13 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 3  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9632889016.00
+-- Raw Channels (240) --
+trend_raw: -0.896  momentum_raw: -0.074  meanrev_raw: 0.823  breakout_raw: 0.123
+adx: 43.773  atr: 117198929.46  regime: LOW
+-- Post-Gate (240) --
+trend: -0.896  momentum: -0.074  meanrev: 0.823  breakout: 0.123
+Aggregate S (240): -0.100 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.100  trend: -0.896  mom: -0.074  mr: 0.823  bo: 0.123
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.100 (regime_scale=0.70)
+  - MTF reject: confirm=-0.100 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.100, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:36:49 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 6  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9660930924.00
+-- Raw Channels (240) --
+trend_raw: -0.892  momentum_raw: 0.005  meanrev_raw: 0.770  breakout_raw: 0.170
+adx: 43.773  atr: 117622566.89  regime: LOW
+-- Post-Gate (240) --
+trend: -0.892  momentum: 0.005  meanrev: 0.770  breakout: 0.170
+Aggregate S (240): -0.086 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.086  trend: -0.892  mom: 0.005  mr: 0.770  bo: 0.170
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.086 (regime_scale=0.70)
+  - MTF reject: confirm=-0.086 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.086, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:37:52 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 8  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9655000000.00
+-- Raw Channels (240) --
+trend_raw: -0.893  momentum_raw: -0.012  meanrev_raw: 0.782  breakout_raw: 0.160
+adx: 43.773  atr: 117622566.89  regime: LOW
+-- Post-Gate (240) --
+trend: -0.893  momentum: -0.012  meanrev: 0.782  breakout: 0.160
+Aggregate S (240): -0.089 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.089  trend: -0.893  mom: -0.012  mr: 0.782  bo: 0.160
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.089 (regime_scale=0.70)
+  - MTF reject: confirm=-0.089 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.089, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:38:24 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 9  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9660930793.00
+-- Raw Channels (240) --
+trend_raw: -0.892  momentum_raw: 0.005  meanrev_raw: 0.770  breakout_raw: 0.170
+adx: 43.773  atr: 117622566.89  regime: LOW
+-- Post-Gate (240) --
+trend: -0.892  momentum: 0.005  meanrev: 0.770  breakout: 0.170
+Aggregate S (240): -0.086 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.086  trend: -0.892  mom: 0.005  mr: 0.770  bo: 0.170
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.086 (regime_scale=0.70)
+  - MTF reject: confirm=-0.086 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.086, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:39:27 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 11  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9632889150.00
+-- Raw Channels (240) --
+trend_raw: -0.895  momentum_raw: -0.074  meanrev_raw: 0.823  breakout_raw: 0.123
+adx: 43.773  atr: 117622566.89  regime: LOW
+-- Post-Gate (240) --
+trend: -0.895  momentum: -0.074  meanrev: 0.823  breakout: 0.123
+Aggregate S (240): -0.100 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.100  trend: -0.895  mom: -0.074  mr: 0.823  bo: 0.123
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.100 (regime_scale=0.70)
+  - MTF reject: confirm=-0.100 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.100, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:39:59 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 12  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9660930594.00
+-- Raw Channels (240) --
+trend_raw: -0.892  momentum_raw: 0.005  meanrev_raw: 0.770  breakout_raw: 0.170
+adx: 43.773  atr: 117622566.89  regime: LOW
+-- Post-Gate (240) --
+trend: -0.892  momentum: 0.005  meanrev: 0.770  breakout: 0.170
+Aggregate S (240): -0.086 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.086  trend: -0.892  mom: 0.005  mr: 0.770  bo: 0.170
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.086 (regime_scale=0.70)
+  - MTF reject: confirm=-0.086 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.086, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:40:41 | INFO | smart_trader | Initializing database...
+2025-11-22 09:40:41 | INFO | smart_trader | Telegram cfg: enabled=True chat_id=set token_prefix=799317...
+2025-11-22 09:40:41 | INFO | smart_trader | Startup Telegram ping sent.
+2025-11-22 09:40:41 | INFO | smart_trader | Re-checking database initialization...
+2025-11-22 09:40:42 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 1  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9655000000.00
+-- Raw Channels (240) --
+trend_raw: -0.893  momentum_raw: -0.012  meanrev_raw: 0.782  breakout_raw: 0.160
+adx: 43.773  atr: 117622566.89  regime: LOW
+-- Post-Gate (240) --
+trend: -0.893  momentum: -0.012  meanrev: 0.782  breakout: 0.160
+Aggregate S (240): -0.089 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.089  trend: -0.893  mom: -0.012  mr: 0.782  bo: 0.160
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.089 (regime_scale=0.70)
+  - MTF reject: confirm=-0.089 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.089, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:41:14 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 2  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9632889242.00
+-- Raw Channels (240) --
+trend_raw: -0.895  momentum_raw: -0.074  meanrev_raw: 0.823  breakout_raw: 0.123
+adx: 43.773  atr: 117622566.89  regime: LOW
+-- Post-Gate (240) --
+trend: -0.895  momentum: -0.074  meanrev: 0.823  breakout: 0.123
+Aggregate S (240): -0.100 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.100  trend: -0.895  mom: -0.074  mr: 0.823  bo: 0.123
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.100 (regime_scale=0.70)
+  - MTF reject: confirm=-0.100 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.100, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:44:22 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 8  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9660930393.00
+-- Raw Channels (240) --
+trend_raw: -0.892  momentum_raw: 0.005  meanrev_raw: 0.770  breakout_raw: 0.170
+adx: 43.773  atr: 117622566.89  regime: LOW
+-- Post-Gate (240) --
+trend: -0.892  momentum: 0.005  meanrev: 0.770  breakout: 0.170
+Aggregate S (240): -0.086 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.086  trend: -0.892  mom: 0.005  mr: 0.770  bo: 0.170
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.086 (regime_scale=0.70)
+  - MTF reject: confirm=-0.086 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.086, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:45:25 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 10  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9660900359.00
+-- Raw Channels (240) --
+trend_raw: -0.892  momentum_raw: 0.005  meanrev_raw: 0.770  breakout_raw: 0.170
+adx: 43.773  atr: 117622566.89  regime: LOW
+-- Post-Gate (240) --
+trend: -0.892  momentum: 0.005  meanrev: 0.770  breakout: 0.170
+Aggregate S (240): -0.086 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.086  trend: -0.892  mom: 0.005  mr: 0.770  bo: 0.170
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.086 (regime_scale=0.70)
+  - MTF reject: confirm=-0.086 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.086, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:46:28 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 12  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9660930570.00
+-- Raw Channels (240) --
+trend_raw: -0.892  momentum_raw: 0.005  meanrev_raw: 0.770  breakout_raw: 0.170
+adx: 43.773  atr: 117622566.89  regime: LOW
+-- Post-Gate (240) --
+trend: -0.892  momentum: 0.005  meanrev: 0.770  breakout: 0.170
+Aggregate S (240): -0.086 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.086  trend: -0.892  mom: 0.005  mr: 0.770  bo: 0.170
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.086 (regime_scale=0.70)
+  - MTF reject: confirm=-0.086 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.086, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:47:00 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 13  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9646894924.00
+-- Raw Channels (240) --
+trend_raw: -0.894  momentum_raw: -0.035  meanrev_raw: 0.798  breakout_raw: 0.146
+adx: 43.773  atr: 117622566.89  regime: LOW
+-- Post-Gate (240) --
+trend: -0.894  momentum: -0.035  meanrev: 0.798  breakout: 0.146
+Aggregate S (240): -0.093 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.093  trend: -0.894  mom: -0.035  mr: 0.798  bo: 0.146
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.093 (regime_scale=0.70)
+  - MTF reject: confirm=-0.093 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.093, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:47:32 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 14  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9646894940.00
+-- Raw Channels (240) --
+trend_raw: -0.893  momentum_raw: -0.035  meanrev_raw: 0.798  breakout_raw: 0.146
+adx: 43.773  atr: 118011956.39  regime: LOW
+-- Post-Gate (240) --
+trend: -0.893  momentum: -0.035  meanrev: 0.798  breakout: 0.146
+Aggregate S (240): -0.093 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.093  trend: -0.893  mom: -0.035  mr: 0.798  bo: 0.146
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.093 (regime_scale=0.70)
+  - MTF reject: confirm=-0.093 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.093, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:49:23 | INFO | smart_trader | Initializing database...
+2025-11-22 09:49:23 | INFO | smart_trader | Telegram cfg: enabled=True chat_id=set token_prefix=799317...
+2025-11-22 09:49:24 | INFO | smart_trader | Startup Telegram ping sent.
+2025-11-22 09:49:24 | INFO | smart_trader | Re-checking database initialization...
+2025-11-22 09:49:25 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 1  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9646894940.00
+-- Raw Channels (240) --
+trend_raw: -0.893  momentum_raw: -0.035  meanrev_raw: 0.798  breakout_raw: 0.146
+adx: 43.773  atr: 118011956.39  regime: LOW
+-- Post-Gate (240) --
+trend: -0.893  momentum: -0.035  meanrev: 0.798  breakout: 0.146
+Aggregate S (240): -0.093 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.093  trend: -0.893  mom: -0.035  mr: 0.798  bo: 0.146
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.093 (regime_scale=0.70)
+  - MTF reject: confirm=-0.093 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.093, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:52:02 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 6  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9666382448.00
+-- Raw Channels (240) --
+trend_raw: -0.891  momentum_raw: 0.020  meanrev_raw: 0.758  breakout_raw: 0.179
+adx: 43.773  atr: 118011961.46  regime: LOW
+-- Post-Gate (240) --
+trend: -0.891  momentum: 0.020  meanrev: 0.758  breakout: 0.179
+Aggregate S (240): -0.084 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.084  trend: -0.891  mom: 0.020  mr: 0.758  bo: 0.179
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.084 (regime_scale=0.70)
+  - MTF reject: confirm=-0.084 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.084, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:53:06 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 8  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9660930393.00
+-- Raw Channels (240) --
+trend_raw: -0.891  momentum_raw: 0.005  meanrev_raw: 0.770  breakout_raw: 0.170
+adx: 43.773  atr: 118011961.46  regime: LOW
+-- Post-Gate (240) --
+trend: -0.891  momentum: 0.005  meanrev: 0.770  breakout: 0.170
+Aggregate S (240): -0.086 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.086  trend: -0.891  mom: 0.005  mr: 0.770  bo: 0.170
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.086 (regime_scale=0.70)
+  - MTF reject: confirm=-0.086 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.086, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:53:37 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 9  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9675146434.00
+-- Raw Channels (240) --
+trend_raw: -0.888  momentum_raw: 0.043  meanrev_raw: 0.738  breakout_raw: 0.194
+adx: 43.634  atr: 118637960.46  regime: LOW
+-- Post-Gate (240) --
+trend: -0.888  momentum: 0.043  meanrev: 0.738  breakout: 0.194
+Aggregate S (240): -0.080 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.080  trend: -0.888  mom: 0.043  mr: 0.738  bo: 0.194
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.080 (regime_scale=0.70)
+  - MTF reject: confirm=-0.080 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.080, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:54:09 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 10  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9646894959.00
+-- Raw Channels (240) --
+trend_raw: -0.891  momentum_raw: -0.035  meanrev_raw: 0.798  breakout_raw: 0.146
+adx: 43.634  atr: 118637960.46  regime: LOW
+-- Post-Gate (240) --
+trend: -0.891  momentum: -0.035  meanrev: 0.798  breakout: 0.146
+Aggregate S (240): -0.092 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.092  trend: -0.891  mom: -0.035  mr: 0.798  bo: 0.146
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.092 (regime_scale=0.70)
+  - MTF reject: confirm=-0.092 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.092, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:57:49 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 17  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9646895319.00
+-- Raw Channels (240) --
+trend_raw: -0.891  momentum_raw: -0.035  meanrev_raw: 0.798  breakout_raw: 0.146
+adx: 43.634  atr: 118637960.46  regime: LOW
+-- Post-Gate (240) --
+trend: -0.891  momentum: -0.035  meanrev: 0.798  breakout: 0.146
+Aggregate S (240): -0.092 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.092  trend: -0.891  mom: -0.035  mr: 0.798  bo: 0.146
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.092 (regime_scale=0.70)
+  - MTF reject: confirm=-0.092 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.092, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 09:59:33 | WARNING | smart_trader | Wallex request failed (attempt 1), retrying in 0.5s: HTTPSConnectionPool(host='api.wallex.ir', port=443): Read timed out. (read timeout=10)
+2025-11-22 09:59:34 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 20  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9646895379.00
+-- Raw Channels (240) --
+trend_raw: -0.891  momentum_raw: -0.035  meanrev_raw: 0.798  breakout_raw: 0.146
+adx: 43.634  atr: 118637960.46  regime: LOW
+-- Post-Gate (240) --
+trend: -0.891  momentum: -0.035  meanrev: 0.798  breakout: 0.146
+Aggregate S (240): -0.092 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.080  trend: -0.888  mom: 0.043  mr: 0.738  bo: 0.194
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.092 (regime_scale=0.70)
+  - MTF reject: confirm=-0.080 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.092, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 10:00:06 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 21  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9646895608.00
+-- Raw Channels (240) --
+trend_raw: -0.891  momentum_raw: -0.035  meanrev_raw: 0.798  breakout_raw: 0.146
+adx: 43.634  atr: 118637960.46  regime: LOW
+-- Post-Gate (240) --
+trend: -0.891  momentum: -0.035  meanrev: 0.798  breakout: 0.146
+Aggregate S (240): -0.092 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.092  trend: -0.891  mom: -0.035  mr: 0.798  bo: 0.146
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.092 (regime_scale=0.70)
+  - MTF reject: confirm=-0.092 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.092, thresholds=(0.180, -0.180)
+====================================
+2025-11-22 10:00:38 | INFO | smart_trader | 
+====================================
+
+========== SMART ANALYSIS ==========
+Iter: 22  Time: 2025-11-22T06:00:00+00:00 UTC
+Price: 9675146415.00
+-- Raw Channels (240) --
+trend_raw: -0.888  momentum_raw: 0.043  meanrev_raw: 0.738  breakout_raw: 0.194
+adx: 43.634  atr: 118637960.46  regime: LOW
+-- Post-Gate (240) --
+trend: -0.888  momentum: 0.043  meanrev: 0.738  breakout: 0.194
+Aggregate S (240): -0.080 | Thresh: BUY>=0.18 SELL<=0.18
+-- Post-Gate (60) --
+S(60): -0.080  trend: -0.888  mom: 0.043  mr: 0.738  bo: 0.194
+Decision: HOLD
+
+
+
+Reasons:
+  - Low vr=0.85
+  - Aggregate=-0.080 (regime_scale=0.70)
+  - MTF reject: confirm=-0.080 vs threshold 0.18, same_sign=True
+  - HOLD: s=-0.080, thresholds=(0.180, -0.180)
+====================================

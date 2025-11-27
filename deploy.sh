@@ -20,8 +20,12 @@ fi
 echo -e "${YELLOW}⬇ Pulling latest code...${NC}"
 git pull origin main
 
-echo -e "${YELLOW}📦 Updating dependencies...${NC}"
+echo -e "${YELLOW}📁 Sync static files...${NC}"
+mkdir -p static
+mkdir -p /root/smart-trader/static
+cp -r static/* /root/smart-trader/static/ || true
 
+echo -e "${YELLOW}📦 Updating dependencies...${NC}"
 if [ -d ".venv" ]; then
     source .venv/bin/activate
 elif [ -d "venv" ]; then
@@ -39,7 +43,7 @@ echo -e "${YELLOW}🧹 Clearing Python cache...${NC}"
 find . -type d -name "__pycache__" -exec rm -rf {} +
 
 echo -e "${YELLOW}🚀 Restarting services...${NC}"
-systemctl restart smarttrader-api
-systemctl restart smarttrader-bot
+systemctl restart smarttrader-api.service
+systemctl restart smarttrader-bot.service
 
 echo -e "${GREEN}🎉 Deployment successful!${NC}"

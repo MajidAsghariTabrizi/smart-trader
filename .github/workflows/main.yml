@@ -1,4 +1,4 @@
-name: SmartTrader Auto Deploy
+name: SmartTrader Deploy
 
 on:
   push:
@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Deploy to Server
@@ -19,21 +19,21 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            echo "🔄 Pulling last version"
             cd /root/smart-trader
+            
+            echo "🔄 Pull latest code"
             git fetch origin main
             git reset --hard origin/main
-
-            echo "📁 Sync static UI"
-            mkdir -p /root/smart-trader/static
+            
+            echo "📁 Sync static files"
             rm -rf /root/smart-trader/static/*
             cp -r static/* /root/smart-trader/static/
-
-            echo "🟦 Restart backend"
+            
+            echo "🚀 Restart backend"
             systemctl restart smarttrader-api.service
             systemctl restart smarttrader-bot.service
-
-            echo "🟩 Reload nginx"
+            
+            echo "♻ Reload nginx"
             nginx -t && systemctl reload nginx
-
-            echo "✅ Deployment complete!"
+            
+            echo "✅ Done"
