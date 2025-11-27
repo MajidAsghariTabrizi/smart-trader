@@ -2,23 +2,37 @@ name: Deploy SmartTrader
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
 
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v0.1.6
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: root
-          key: ${{ secrets.VPS_PRIVATE_KEY }}
-          script: |
-            cd /root/smart-trader
-            git pull origin main
-            bash deploy.sh
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Deploy to VPS
+      uses: appleboy/ssh-action@v0.1.6
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: root
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        script: |
+          cd /root/smart-trader
+
+          echo "🔄 Pull latest code..."
+          git fetch origin main
+          git reset --hard origin/main
+
+          echo "📁 Sync static files"
+          rm -rf /root/smart-trader/static/*
+          cp -r static/* /root/smart-trader/static/
+
+          echo "🚀 Restart backend services"
+          systemctl restart smarttrader-api.service
+          systemctl restart smarttrader-bot.service
+
+          echo "🔄 Reload nginx"
+          systemctl reload nginx
