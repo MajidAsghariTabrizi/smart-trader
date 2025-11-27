@@ -21,9 +21,11 @@ echo -e "${YELLOW}⬇ Pulling latest code...${NC}"
 git pull origin main
 
 echo -e "${YELLOW}📁 Sync static files...${NC}"
-mkdir -p static
-mkdir -p /root/smart-trader/static
-cp -r static/* /root/smart-trader/static/ || true
+# پاک‌سازی فولدر هدف
+rm -rf /root/smart-trader/static/*
+
+# کپی صحیح فایل‌ها بدون ایجاد فولدر تودرتو
+cp -r static/* /root/smart-trader/static/
 
 echo -e "${YELLOW}📦 Updating dependencies...${NC}"
 if [ -d ".venv" ]; then
@@ -45,5 +47,6 @@ find . -type d -name "__pycache__" -exec rm -rf {} +
 echo -e "${YELLOW}🚀 Restarting services...${NC}"
 systemctl restart smarttrader-api.service
 systemctl restart smarttrader-bot.service
+systemctl reload nginx
 
 echo -e "${GREEN}🎉 Deployment successful!${NC}"
