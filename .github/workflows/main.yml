@@ -12,15 +12,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run deploy script on server via SSH
+      # -------------------------------
+      # SSH to server and deploy
+      # -------------------------------
+      - name: Deploy to Server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
+            echo "🔄 Pulling last version..."
             cd /root/smart-trader
             git fetch origin main
             git reset --hard origin/main
-            chmod +x deploy.sh
-            bash deploy.sh
+
+            echo "📁 Updating static UI..."
+            rm -rf /root/smart-trader/static/*
+            cp -r static/* /root/smart-trader/static/
+
+            echo "🚀 Restarting backend services..."
+            systemctl restart smarttrader-api
+            systemctl restart smarttrader-bot
+
+            echo "🔁 Reloading nginx..."
+            nginx -t && systemctl reload nginx
+
+            echo "✅ Deployment finished successfully!"
