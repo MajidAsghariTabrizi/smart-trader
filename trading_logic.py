@@ -62,7 +62,12 @@ class Position:
     qty: float
     entry_price: float
     stop_price: Optional[float] = None
-    trade_id: Optional[str] = None  # 👈 جدید
+    trade_id: Optional[str] = None  # شناسه ترید برای لاگ
+
+    # مدیریت پوزیشن (فقط در حافظه، توی DB ذخیره نمی‌شود)
+    breakeven_armed: bool = False  # آیا استاپ به BE منتقل شده؟
+    tp_hit: bool = False           # اگر TP بسته شد، True
+
 
 
 
@@ -131,10 +136,28 @@ class SignalEngine:
         if adx_val < p.min_adx_for_trend:
             dc.reasons.append(f"Trend gated (ADX<{p.min_adx_for_trend:.1f})")
 
-        # 2) Other channels pass-through (می‌تونی در صورت نیاز براشون هم gating بزاری)
+        # 2) سایر کانال‌ها (خام)
         mom = dc.momentum_raw
         mr = dc.meanrev_raw
         bo = dc.breakout_raw
+
+        # 2.5) حل تضاد Trend vs Mean-Reversion
+        # اگر جهت ترند و meanrev به‌شدت مخالف باشند → هر دو را صفر کن (ترید نکنیم).
+        conflict = False
+        mr_conf_level = 0.40  # شدت حداقلی برای اینکه بگیم "خیلی مخالف است"
+
+        if dc.trend_raw > 0.0 and dc.meanrev_raw < -mr_conf_level:
+            conflict = True
+        elif dc.trend_raw < 0.0 and dc.meanrev_raw > mr_conf_level:
+            conflict = True
+
+        if conflict:
+            dc.reasons.append(
+                f"Trend/MeanRev conflict: trend_raw={dc.trend_raw:.3f}, "
+                f"meanrev_raw={dc.meanrev_raw:.3f} → gating both to 0"
+            )
+            trend_component = 0.0
+            mr = 0.0
 
         # 3) Regime scaling
         regime_scale = p.regime_scale.get(dc.regime, 1.0)
@@ -155,10 +178,10 @@ class SignalEngine:
 
         # 5) Aggregate S
         aggregate = (
-            w_trend * dc.trend +
-            w_mom * dc.momentum +
-            w_mr * dc.meanrev +
-            w_bo * dc.breakout
+                w_trend * dc.trend +
+                w_mom * dc.momentum +
+                w_mr * dc.meanrev +
+                w_bo * dc.breakout
         )
 
         dc.aggregate_s = float(aggregate) * float(regime_scale)

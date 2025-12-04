@@ -285,64 +285,120 @@ def _log_trade_event(event_type: str, details: dict):
 
 def _maybe_close_position(current_price: float):
     """
-    Simple exit by stop. Extend later for TP or reverse signals.
+    Exit management:
+      - Hard stop (STOP_HIT)
+      - Take-profit at ~+1.5R (TP_HIT)
+      - Move stop to breakeven around +0.75R
     """
     if not account.position:
         return
+    if current_price is None:
+        return
 
     pos = account.position
+    entry = float(pos.entry_price)
+    qty = float(pos.qty)
+    stop = pos.stop_price
+
+    if qty <= 0.0 or entry <= 0.0:
+        return
+
+    def _close(reason: str):
+        nonlocal pos, entry, qty
+
+        if pos.side == "LONG":
+            pnl = (current_price - entry) * qty
+            # لانگ: فروش در قیمت فعلی
+            account.balance += qty * current_price
+        else:
+            # شورت: شبیه cash-settled
+            pnl = (entry - current_price) * qty
+            account.balance += pnl
+
+        # پاک کردن پوزیشن و آپدیت اکوئیتی
+        account.position = None
+        account.update_equity(current_price)
+
+        trade_id = getattr(pos, "trade_id", None)
+
+        _log_trade_event(
+            "CLOSE",
+            {
+                "trade_id": trade_id,
+                "side": pos.side,
+                "qty": qty,
+                "entry_price": entry,
+                "close_price": float(current_price),
+                "pnl": float(pnl),
+                "reason": reason,
+            },
+        )
+        logger.info(f"🛑 Closed {pos.side} @ {current_price:.2f} pnl={pnl:.2f} ({reason})")
+
+        if tg:
+            try:
+                tg.send(
+                    f"🛑 <b>Closed</b> {cfg.SYMBOL} {pos.side} "
+                    f"qty={qty:.6f} @ {current_price:.2f}\n"
+                    f"PnL: {pnl:.2f} ({reason})",
+                    "INFO",
+                )
+            except Exception as e:
+                logger.exception(f"Failed to send Telegram close message: {e}")
+
+        _persist_account_snapshot()
+
+    # اگر استاپ نداریم، فقط می‌توانیم از طریق سیگنال آینده خارج شویم (فعلاً نداریم)
+    if stop is not None:
+        risk_per_unit = abs(entry - float(stop))
+    else:
+        risk_per_unit = 0.0
+
+    # 1) مدیریت R-multiple (TP و BE) فقط اگر stop تعریف شده باشد
+    if risk_per_unit > 0.0:
+        direction = 1.0 if pos.side == "LONG" else -1.0
+        r_mult = ((current_price - entry) * direction) / risk_per_unit
+
+        tp_r_level = 1.5   # در حدود +1.5R کل پوزیشن را ببند
+        be_r_level = 0.75  # در حدود +0.75R استاپ را روی BE بیاور
+
+        # 1.a) Take-profit کامل
+        if r_mult >= tp_r_level:
+            logger.info(
+                f"🎯 TP hit for {pos.side} trade_id={getattr(pos, 'trade_id', None)} "
+                f"R={r_mult:.2f} (>= {tp_r_level:.2f})"
+            )
+            return _close("TP_HIT")
+
+        # 1.b) انتقال استاپ به break-even
+        if r_mult >= be_r_level and not getattr(pos, "breakeven_armed", False):
+            pos.stop_price = entry
+            pos.breakeven_armed = True
+            logger.info(
+                f"🔒 Move stop to breakeven for {pos.side} trade_id={getattr(pos, 'trade_id', None)} "
+                f"R={r_mult:.2f} (>= {be_r_level:.2f})"
+            )
+            # بعد از این، استاپ جدید BE است، بقیه منطق پایین اجرا می‌شود
+
+    # 2) Hard stop check (STOP_HIT) – بعد از مدیریت TP/BE
     if pos.stop_price is None:
         return
 
-    breached = (pos.side == "LONG" and current_price <= pos.stop_price) or (
-        pos.side == "SHORT" and current_price >= pos.stop_price
+    stop_now = float(pos.stop_price)
+    breached = (
+        (pos.side == "LONG" and current_price <= stop_now) or
+        (pos.side == "SHORT" and current_price >= stop_now)
     )
+
     if not breached:
         return
 
-    entry = float(pos.entry_price)
-    qty = float(pos.qty)
-
-    if pos.side == "LONG":
-        pnl = (current_price - entry) * qty
-        account.balance += qty * current_price
-    else:
-        # Cash-settled short simulation
-        pnl = (entry - current_price) * qty
-        account.balance += pnl
-
-    account.position = None
-    account.update_equity(current_price)
-
-    entry = float(pos.entry_price)
-    qty = float(pos.qty)
-    trade_id = getattr(pos, "trade_id", None)
-
-    ...
-
-    _log_trade_event(
-        "CLOSE",
-        {
-            "trade_id": trade_id,
-            "side": pos.side,
-            "qty": qty,
-            "entry_price": entry,
-            "close_price": float(current_price),
-            "pnl": float(pnl),
-            "reason": "STOP_HIT",
-        },
+    logger.info(
+        f"⛔ Stop breached for {pos.side} trade_id={getattr(pos, 'trade_id', None)} "
+        f"price={current_price:.2f}, stop={stop_now:.2f}"
     )
-    logger.info(f"🛑 Closed {pos.side} @ {current_price:.2f} pnl={pnl:.2f} (stop hit)")
-    if tg:
-        try:
-            tg.send(
-                f"🛑 <b>Closed</b> {cfg.SYMBOL} {pos.side} qty={qty:.6f} @ {current_price:.2f}\n"
-                f"PnL: {pnl:.2f} (stop hit)",
-                "INFO",
-            )
-        except Exception as e:
-            logger.exception(f"Failed to send Telegram close message: {e}")
-    _persist_account_snapshot()
+    _close("STOP_HIT")
+
 
 # --------------------------------------------------------
 # Core loop
