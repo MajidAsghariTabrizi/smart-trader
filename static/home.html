@@ -31,7 +31,7 @@
                     ADX، ATR، گیت‌های تصمیم‌گیری و مدل مدیریت ریسک داخلی کار می‌کند.
                 </p>
 
-                <!-- HERO LIVE METRICS -->
+                <!-- LIVE METRICS -->
                 <div class="hero-badges-row">
 
                     <div class="hero-badge">
@@ -57,7 +57,7 @@
                 </div>
 
                 <div class="hero-cta-row">
-                    <a src="/static/index.html" class="btn-primary">مشاهده مغز تصمیم‌گیر</a>
+                    <a href="/dashboard" class="btn-primary">مشاهده مغز تصمیم‌گیر</a>
                     <a href="#metrics-section" class="btn-secondary">خلاصه عملکرد</a>
                 </div>
             </div>
@@ -96,8 +96,7 @@
                 <h3>Heatmap تصمیم‌های اخیر</h3>
                 <div id="heatmap-decisions" class="heatmap"></div>
                 <p class="card-caption">
-                    سبز = BUY • قرمز = SELL • زرد = HOLD
-                    شدت رنگ = قدرت تصمیم.
+                    سبز = BUY • قرمز = SELL • زرد = HOLD — شدت رنگ = قدرت تصمیم.
                 </p>
             </article>
 
@@ -106,22 +105,23 @@
                 <h3>Probability Engine</h3>
 
                 <div class="prob-row">
-                    <span>احتمال BUY</span>
+                    <span>BUY</span>
                     <div class="prob-bar"><div id="prob-buy" class="prob-fill"></div></div>
                     <span id="prob-buy-label">–</span>
                 </div>
 
                 <div class="prob-row">
-                    <span>احتمال SELL</span>
+                    <span>SELL</span>
                     <div class="prob-bar"><div id="prob-sell" class="prob-fill"></div></div>
                     <span id="prob-sell-label">–</span>
                 </div>
 
                 <div class="prob-row">
-                    <span>احتمال HOLD</span>
+                    <span>HOLD</span>
                     <div class="prob-bar"><div id="prob-hold" class="prob-fill"></div></div>
                     <span id="prob-hold-label">–</span>
                 </div>
+
             </article>
 
             <!-- Volatility -->
@@ -139,7 +139,7 @@
             <article class="live-card">
                 <h3>Sentiment Radar</h3>
                 <ul id="sentiment-list" class="sentiment-list"></ul>
-                <p class="card-caption">بر اساس PnL و تصمیم‌های ۳ روز اخیر.</p>
+                <p class="card-caption">بر اساس تصمیم‌ها و PnL روزانه.</p>
             </article>
 
         </div>
@@ -178,7 +178,7 @@
         </div>
     </section>
 
-    <!-- ================= AI CONTEXT (NEW in VERSION B) ================= -->
+    <!-- ================= AI CONTEXT ================= -->
     <section id="ai-context" class="ai-context">
         <h2>وضعیت لحظه‌ای ربات</h2>
 
@@ -195,7 +195,7 @@
         </div>
 
         <div class="ai-context-item">
-            خلاصه آخرین ۱۲ تصمیم: <strong id="ai-context-recent">–</strong>
+            خلاصه ۱۲ تصمیم اخیر: <strong id="ai-context-recent">–</strong>
         </div>
 
         <div class="ai-context-item">
@@ -210,7 +210,7 @@
 
         <div class="ai-advice-card">
             <h3 id="ai-advice-title">در حال تحلیل…</h3>
-            <p id="ai-advice-body" class="ai-advice-body">در حال بارگذاری…</p>
+            <p id="ai-advice-body" class="ai-advice-body"></p>
             <ul id="ai-advice-bullets" class="ai-advice-bullets"></ul>
         </div>
     </section>
@@ -220,4 +220,3 @@
 <script src="/static/js/home.js"></script>
 </body>
 </html>
-
