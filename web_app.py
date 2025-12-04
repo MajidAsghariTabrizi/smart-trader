@@ -213,40 +213,50 @@ async def api_decisions(
     for r in rows:
         r["timestamp"] = _normalize_ts(r.get("timestamp"))
 
+    # برای هماهنگی با home.js: آرایه به صورت قدیم → جدید
+    rows = list(reversed(rows))
+
     return JSONResponse(rows)
 
 # ----------------------------------------------------------------------
-# BTC last price
+# BTC last price + history (for sparkline)
 # ----------------------------------------------------------------------
 
 @app.get("/api/btc_price")
 async def api_btc_price() -> JSONResponse:
     """
-    آخرین قیمت BTC/IRT از trading_logs.
-    برای باکس "قیمت لحظه‌ای" در home.js.
+    آخرین قیمت BTC/IRT از trading_logs + history کوتاه.
+    برای باکس "قیمت لحظه‌ای" و اسپارکلاین در home.js.
     """
+    # 60 رکورد آخر برای history
     rows = query_db(
         f"""
         SELECT price, timestamp
         FROM {TABLE_NAME}
         WHERE price IS NOT NULL
         ORDER BY timestamp DESC
-        LIMIT 1
+        LIMIT 60
         """
     )
+
     if not rows:
-        return JSONResponse({"price": None, "price_tmn": None, "timestamp": None})
+        return JSONResponse(
+            {"price": None, "price_tmn": None, "timestamp": None, "history": []}
+        )
 
-    row = rows[0]
-    row["timestamp"] = _normalize_ts(row.get("timestamp"))
+    # نرمال‌سازی و برعکس کردن برای قدیم → جدید
+    for r in rows:
+        r["timestamp"] = _normalize_ts(r.get("timestamp"))
 
-    # برای سازگاری با home.js فیلد price_tmn هم برمی‌گردانیم
-    # (فرض می‌کنیم price به تومان است)
+    history = list(reversed(rows))
+    last = history[-1]
+
     return JSONResponse(
         {
-            "price": row["price"],
-            "price_tmn": row["price"],
-            "timestamp": row["timestamp"],
+            "price": last["price"],
+            "price_tmn": last["price"],  # فرض: price به تومان است
+            "timestamp": last["timestamp"],
+            "history": history,
         }
     )
 
@@ -356,7 +366,11 @@ async def api_perf_summary() -> JSONResponse:
 
             approx_pnl = 0.0
             if acct_rows:
-                start_equity = acct_rows[0]["equity"] or acct_rows[0]["balance"] or 0.0
+                start_equity = (
+                    acct_rows[0]["equity"]
+                    or acct_rows[0]["balance"]
+                    or 0.0
+                )
                 last_equity = (
                     acct_rows[-1]["equity"]
                     or acct_rows[-1]["balance"]
@@ -397,7 +411,7 @@ async def api_perf_daily(
     """
     PnL روزانه از روی trade_events (فقط CLOSE ها).
     برای نمودار/لیست PnL روزانه در داشبورد.
-    فرانت انتظار دارد: day, pnl, n_trades
+    فرانت انتظار دارد: day, day_pnl, n_trades
     """
     rows = query_db(
         f"""
@@ -414,5 +428,9 @@ async def api_perf_daily(
         {"limit": limit},
     )
 
-    rows = list(reversed(rows))  # از قدیم به جدید
+    # از قدیم به جدید + اضافه کردن day_pnl برای راحتی فرانت
+    rows = list(reversed(rows))
+    for r in rows:
+        r["day_pnl"] = r.get("pnl", 0.0)
+
     return JSONResponse(rows)
