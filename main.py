@@ -88,7 +88,7 @@ def utc_ts_to_iso(ts: int) -> str:
 
 
 def now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 def new_trade_id() -> str:
     return uuid.uuid4().hex

@@ -30,26 +30,31 @@ BASE_DIR = Path(__file__).resolve().parent
 
 app = FastAPI(title="SmartTrader API", version="1.0")
 
+# ----------------------------------------------------------------------
 # CORS برای فرانت (لوکال و دامنه اصلی)
+# ----------------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*",],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --------------------------- Static & Pages -----------------------------
+# ----------------------------------------------------------------------
+# Static & Pages
+# ----------------------------------------------------------------------
 
-# /static →برای css/js/تصاویر
 static_dir = BASE_DIR / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
 
 def _read_html(path: Path) -> str:
     if path.exists():
         return path.read_text(encoding="utf-8")
     return "<h1>SmartTrader</h1><p>Dashboard is not built yet.</p>"
+
 
 @app.get("/", response_class=HTMLResponse)
 async def home_page() -> HTMLResponse:
@@ -57,13 +62,17 @@ async def home_page() -> HTMLResponse:
     html = _read_html(BASE_DIR / "home.html")
     return HTMLResponse(html)
 
+
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard_page() -> HTMLResponse:
     """صفحه‌ی داشبورد اصلی (index.html)"""
     html = _read_html(BASE_DIR / "index.html")
     return HTMLResponse(html)
 
-# --------------------------- Helper: DB ---------------------------------
+# ----------------------------------------------------------------------
+# Helper: DB
+# ----------------------------------------------------------------------
+
 
 def query_db(sql: str, params: Dict[str, Any] | None = None) -> List[Dict[str, Any]]:
     """اجرای یک کوئری read-only و برگرداندن لیست dict."""
@@ -75,7 +84,28 @@ def query_db(sql: str, params: Dict[str, Any] | None = None) -> List[Dict[str, A
     finally:
         conn.close()
 
-# --------------------------- Health -------------------------------------
+
+def _normalize_ts(ts: Any) -> Any:
+    """
+    نرمال‌کردن timestamp به فرم ISO کوتاه: YYYY-MM-DDTHH:MM:SSZ
+    اگر string نباشد همان را برمی‌گردانیم.
+    """
+    if not isinstance(ts, str):
+        return ts
+    base = ts
+    # جدا کردن offset
+    if "+" in base:
+        base = base.split("+", 1)[0]
+    if "." in base:
+        base = base.split(".", 1)[0]
+    if base.endswith("Z"):
+        return base
+    return base + "Z"
+
+
+# ----------------------------------------------------------------------
+# Health
+# ----------------------------------------------------------------------
 
 @app.get("/api/health")
 async def health() -> JSONResponse:
@@ -102,11 +132,13 @@ async def health() -> JSONResponse:
 
     return JSONResponse(result)
 
-# --------------------------- Prices (chart) -----------------------------
+# ----------------------------------------------------------------------
+# Prices (chart)
+# ----------------------------------------------------------------------
 
 @app.get("/api/prices")
 async def api_prices(
-    limit: int = Query(300, ge=10, le=5000)
+    limit: int = Query(300, ge=10, le=5000),
 ) -> JSONResponse:
     """
     آخرین n کندل / قیمت برای نمودار قیمت.
@@ -128,15 +160,22 @@ async def api_prices(
         """,
         {"limit": limit},
     )
+
+    # نرمال کردن timestampها
+    for r in rows:
+        r["timestamp"] = _normalize_ts(r.get("timestamp"))
+
     # برای نمودار، به ترتیب زمانی (قدیمی → جدید)
     rows = list(reversed(rows))
     return JSONResponse(rows)
 
-# --------------------------- Decisions (signals list + markers) ---------
+# ----------------------------------------------------------------------
+# Decisions (signals list + markers)
+# ----------------------------------------------------------------------
 
 @app.get("/api/decisions")
 async def api_decisions(
-    limit: int = Query(80, ge=1, le=1000)
+    limit: int = Query(80, ge=1, le=1000),
 ) -> JSONResponse:
     """
     آخرین تصمیم‌های معاملاتی از trading_logs.
@@ -170,15 +209,21 @@ async def api_decisions(
         """,
         {"limit": limit},
     )
+
+    for r in rows:
+        r["timestamp"] = _normalize_ts(r.get("timestamp"))
+
     return JSONResponse(rows)
 
-# --------------------------- BTC last price -----------------------------
+# ----------------------------------------------------------------------
+# BTC last price
+# ----------------------------------------------------------------------
 
 @app.get("/api/btc_price")
 async def api_btc_price() -> JSONResponse:
     """
     آخرین قیمت BTC/IRT از trading_logs.
-    برای باکس "قیمت لحظه‌ای".
+    برای باکس "قیمت لحظه‌ای" در home.js.
     """
     rows = query_db(
         f"""
@@ -190,14 +235,28 @@ async def api_btc_price() -> JSONResponse:
         """
     )
     if not rows:
-        return JSONResponse({"price": None, "timestamp": None})
-    return JSONResponse(rows[0])
+        return JSONResponse({"price": None, "price_tmn": None, "timestamp": None})
 
-# --------------------------- Trades (recent closed trades) --------------
+    row = rows[0]
+    row["timestamp"] = _normalize_ts(row.get("timestamp"))
+
+    # برای سازگاری با home.js فیلد price_tmn هم برمی‌گردانیم
+    # (فرض می‌کنیم price به تومان است)
+    return JSONResponse(
+        {
+            "price": row["price"],
+            "price_tmn": row["price"],
+            "timestamp": row["timestamp"],
+        }
+    )
+
+# ----------------------------------------------------------------------
+# Trades (recent closed trades)
+# ----------------------------------------------------------------------
 
 @app.get("/api/trades/recent")
 async def api_trades_recent(
-    limit: int = Query(50, ge=1, le=1000)
+    limit: int = Query(50, ge=1, le=1000),
 ) -> JSONResponse:
     """
     آخرین تریدهای بسته‌شده از trade_events.
@@ -225,9 +284,15 @@ async def api_trades_recent(
         """,
         {"limit": limit},
     )
+
+    for r in rows:
+        r["timestamp"] = _normalize_ts(r.get("timestamp"))
+
     return JSONResponse(rows)
 
-# --------------------------- Perf: Summary ------------------------------
+# ----------------------------------------------------------------------
+# Perf: Summary
+# ----------------------------------------------------------------------
 
 @app.get("/api/perf/summary")
 async def api_perf_summary() -> JSONResponse:
@@ -292,7 +357,11 @@ async def api_perf_summary() -> JSONResponse:
             approx_pnl = 0.0
             if acct_rows:
                 start_equity = acct_rows[0]["equity"] or acct_rows[0]["balance"] or 0.0
-                last_equity = acct_rows[-1]["equity"] or acct_rows[-1]["balance"] or start_equity
+                last_equity = (
+                    acct_rows[-1]["equity"]
+                    or acct_rows[-1]["balance"]
+                    or start_equity
+                )
                 approx_pnl = float(last_equity - start_equity)
 
             total_trades = int(open_trades)
@@ -317,22 +386,25 @@ async def api_perf_summary() -> JSONResponse:
     finally:
         conn.close()
 
-# --------------------------- Perf: Daily PnL ----------------------------
+# ----------------------------------------------------------------------
+# Perf: Daily PnL
+# ----------------------------------------------------------------------
 
 @app.get("/api/perf/daily")
 async def api_perf_daily(
-    limit: int = Query(30, ge=1, le=365)
+    limit: int = Query(30, ge=1, le=365),
 ) -> JSONResponse:
     """
     PnL روزانه از روی trade_events (فقط CLOSE ها).
-    برای نمودار میله‌ای PnL روزانه.
+    برای نمودار/لیست PnL روزانه در داشبورد.
+    فرانت انتظار دارد: day, pnl, n_trades
     """
     rows = query_db(
         f"""
         SELECT
             substr(timestamp, 1, 10) AS day,
-            SUM(pnl) AS day_pnl,
-            COUNT(*) AS trades
+            SUM(pnl) AS pnl,
+            COUNT(*) AS n_trades
         FROM {TRADE_EVENTS_TABLE}
         WHERE event_type = 'CLOSE'
         GROUP BY day
@@ -341,5 +413,6 @@ async def api_perf_daily(
         """,
         {"limit": limit},
     )
+
     rows = list(reversed(rows))  # از قدیم به جدید
     return JSONResponse(rows)
