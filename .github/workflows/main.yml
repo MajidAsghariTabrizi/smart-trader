@@ -1,4 +1,4 @@
-name: SmartTrader Deploy
+name: SmartTrader CI/CD
 
 on:
   push:
@@ -10,16 +10,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+    # ------------------------------
+    # Checkout repository
+    # ------------------------------
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Deploy to Server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            chmod +x /root/smart-trader/deploy.sh
-            /root/smart-trader/deploy.sh
-#test main
+    # ------------------------------
+    # Deploy using your EXACT secrets
+    # ------------------------------
+    - name: Deploy to SmartTrader Server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_KEY }}
+        port: 22
+
+        script: |
+          echo "🚀 Starting SmartTrader Deployment..."
+
+          cd /root/smart-trader
+
+          if [ ! -f deploy.sh ]; then
+            echo "❌ ERROR: deploy.sh not found!"
+            exit 1
+          fi
+
+          chmod +x deploy.sh
+
+          echo "➡ Running deploy script..."
+          ./deploy.sh
+
+          echo "➡ Checking API health..."
+          curl -s http://127.0.0.1:8000/api/health || true
+
+          echo "✅ Deployment finished successfully."
+
+    - name: Deployment Completed
+      run: echo "🎉 SmartTrader CI/CD pipeline completed successfully!"

@@ -1,15 +1,31 @@
+# -*- coding: utf-8 -*-
+"""
+SmartTrader FastAPI Backend – ULTRA Compatible
+
+- کاملاً سازگار با معماری فعلی:
+  - DB: /root/smart-trader/trading_data.db
+  - جداول: trading_logs (TABLE_NAME), trade_events (TRADE_EVENTS_TABLE)
+- بدون تغییر در شکل خروجی endpointهای /api/...
+- اضافه شدن /api/health
+- اطمینان از ensure_schema() روی startup
+"""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 import sqlite3
 from typing import List, Dict, Any, Tuple
 from pathlib import Path
 from datetime import datetime
+import logging
+
 import pytz
 
 from database_setup import (
     get_db_path,
+    get_db_connection,
+    ensure_schema,
     TABLE_NAME,
     TRADE_EVENTS_TABLE,
 )
@@ -17,6 +33,8 @@ from database_setup import (
 # -----------------------------------------------------------
 #   APP INIT
 # -----------------------------------------------------------
+
+logger = logging.getLogger("smarttrader.api")
 
 app = FastAPI(title="SmartTrader Dashboard")
 
@@ -36,17 +54,36 @@ DB_PATH = get_db_path()
 # -----------------------------------------------------------
 
 def db_connect() -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn, conn.cursor()
+    """
+    یک اتصال جدید به DB با row_factory = Row برمی‌گرداند.
+    از get_db_connection استفاده می‌کنیم تا مسیر DB کاملاً ثابت باشد.
+    """
+    conn = get_db_connection()
+    if conn is None:
+        raise RuntimeError("Cannot open DB connection")
+
+    cur = conn.cursor()
+    return conn, cur
 
 
 def query_db(query: str, params: Tuple = ()) -> List[Dict[str, Any]]:
-    conn, cur = db_connect()
+    """
+    اجرای کوئری read-only و برگرداندن list[dict]
+    در صورت خطا، لاگ می‌نویسد و [] برمی‌گرداند تا API 500 ندهد.
+    """
+    try:
+        conn, cur = db_connect()
+    except Exception as exc:
+        logger.error(f"DB connect failed: {exc}")
+        return []
+
     try:
         cur.execute(query, params)
         rows = cur.fetchall()
         return [dict(r) for r in rows]
+    except Exception as exc:
+        logger.error(f"DB query failed: {exc} | SQL: {query} | params={params}")
+        return []
     finally:
         conn.close()
 
@@ -58,7 +95,7 @@ def query_db(query: str, params: Tuple = ()) -> List[Dict[str, Any]]:
 def ts_to_unix_ms(ts_value):
     """
     ورودی می‌تواند:
-      - رشته ISO
+      - رشته ISO (مثلاً 2025-12-04T13:50:41.982741+00:00)
       - ثانیه‌ی یونیکس (float/int)
     خروجی: میلی‌ثانیه‌ی یونیکس (int) در تایم‌زون تهران
     """
@@ -72,6 +109,7 @@ def ts_to_unix_ms(ts_value):
             dt = dt.astimezone(pytz.timezone("Asia/Tehran"))
             return int(dt.timestamp() * 1000)
         except Exception:
+            # اگر parse نشد، ادامه می‌دهیم
             pass
 
     # اگر مقدار عددی (ثانیه‌ی یونیکس) باشد
@@ -82,13 +120,60 @@ def ts_to_unix_ms(ts_value):
 
 
 # -----------------------------------------------------------
+#   APP STARTUP (DB SCHEMA ENSURE)
+# -----------------------------------------------------------
+
+@app.on_event("startup")
+async def on_startup():
+    """
+    روی استارتاپ:
+      - اطمینان از اینکه db path همان چیزی است که می‌خواهیم
+      - اجرای ensure_schema برای ساخت/مهاجرت جداول اصلی
+    """
+    logger.info(f"[startup] Using DB at: {DB_PATH}")
+    ok = ensure_schema()
+    if not ok:
+        logger.error("[startup] ensure_schema() failed – API همچنان بالا می‌آید، اما DB ممکن است ناقص باشد.")
+    else:
+        logger.info("[startup] DB schema ensured.")
+
+
+# -----------------------------------------------------------
+#   HEALTH ENDPOINT
+# -----------------------------------------------------------
+
+@app.get("/api/health")
+def health():
+    """
+    Endpoint سلامت سیستم – مطابق کانتکس:
+      {"status": "ok"}
+    اگر DB مشکل داشته باشد، status = "degraded"
+    """
+    status = "ok"
+    details: Dict[str, Any] = {}
+
+    try:
+        conn, cur = db_connect()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = [r[0] for r in cur.fetchall()]
+        conn.close()
+        details["tables"] = tables
+    except Exception as exc:
+        logger.error(f"/api/health db check failed: {exc}")
+        status = "degraded"
+
+    return {"status": status, "db_path": str(DB_PATH), **details}
+
+
+# -----------------------------------------------------------
 #   PRICES
 # -----------------------------------------------------------
 
 @app.get("/api/prices")
 def get_prices(limit: int = 500):
     """
-    آخرین قیمت‌ها (برای چارت اصلی)
+    آخرین قیمت‌ها (برای چارت اصلی).
+    از جدول trading_logs (TABLE_NAME) می‌خوانیم.
     """
     rows = query_db(
         f"""
@@ -120,7 +205,7 @@ def get_decisions(limit: int = 200):
 
     نکته مهم:
     در دیتابیس ستون aggregate_s داریم ولی aggregate نداریم،
-    پس فقط aggregate_s (و confirm_s) را برمی‌گردانیم تا ارور 500 نگیریم.
+    پس فقط aggregate_s (و confirm_s) را برمی‌گردانیم.
     """
     rows = query_db(
         f"""
@@ -159,7 +244,7 @@ def btc_price():
     قیمت لحظه‌ای بیت‌کوین به تومان برای لندینگ (home.js).
 
     فعلاً از آخرین رکورد جدول trading_logs استفاده می‌کنیم.
-    اگر بعداً چند سیمبل داشتی، اینجا می‌تونی فیلتر symbol اضافه کنی.
+    اگر بعداً چند سیمبل داشتی، اینجا می‌توانی فیلتر symbol اضافه کنی.
     """
     rows = query_db(
         f"""
@@ -182,11 +267,21 @@ def btc_price():
 
 
 # -----------------------------------------------------------
-#   PERFORMANCE SUMMARY
+#   PERFORMANCE SUMMARY (REALIZED)
 # -----------------------------------------------------------
 
 @app.get("/api/perf/summary")
 def perf_summary():
+    """
+    خلاصهٔ عملکرد بر اساس تریدهای بسته‌شده (event_type='CLOSE') از جدول trade_events.
+
+    اگر هنوز CLOSE ثبت نشده باشد:
+      → total_trades = 0
+      → wins = 0
+      → losses = 0
+      → winrate = 0
+      → total_pnl = 0
+    """
     rows = query_db(
         f"""
         SELECT
@@ -204,8 +299,8 @@ def perf_summary():
             "total_trades": 0,
             "wins": 0,
             "losses": 0,
-            "winrate": 0,
-            "total_pnl": 0,
+            "winrate": 0.0,
+            "total_pnl": 0.0,
         }
 
     r = rows[0]
@@ -214,7 +309,7 @@ def perf_summary():
     losses = int(r.get("losses") or 0)
     pnl = float(r.get("total_pnl") or 0.0)
 
-    winrate = (wins / total * 100) if total else 0.0
+    winrate = (wins / total * 100.0) if total else 0.0
 
     return {
         "total_trades": total,
@@ -231,6 +326,9 @@ def perf_summary():
 
 @app.get("/api/perf/daily")
 def perf_daily(limit: int = 30):
+    """
+    PnL روزانه بر اساس event_type='CLOSE' در trade_events.
+    """
     rows = query_db(
         f"""
         SELECT
@@ -248,6 +346,7 @@ def perf_daily(limit: int = 30):
         (limit,),
     )
 
+    # از قدیم به جدید
     rows.reverse()
     return rows
 
@@ -258,6 +357,9 @@ def perf_daily(limit: int = 30):
 
 @app.get("/api/trades/recent")
 def trades_recent(limit: int = 50):
+    """
+    لیست تریدهای بسته‌شده برای نمایش در داشبورد.
+    """
     rows = query_db(
         f"""
         SELECT
@@ -298,7 +400,7 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 @app.get("/", response_class=HTMLResponse)
 def home():
     """
-    لندینگ بیزنسی جدید (home.html)
+    لندینگ بیزنسی (home.html)
     """
     home_file = static_dir / "home.html"
     if not home_file.exists():

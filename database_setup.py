@@ -3,18 +3,43 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 import json
-import datetime as dt
 
 db_logger = logging.getLogger(__name__)
 
-DB_NAME = "trading_data.db"
+# =====================================================================
+# مسیر دیتابیس (ثابت و مطمئن)
+# =====================================================================
+
+DB_PATH = Path("/root/smart-trader/trading_data.db")
+
+
+def get_db_path() -> Path:
+    """
+    مسیر قطعی دیتابیس که هم bot هم API باید ازش استفاده کنند.
+    """
+    return DB_PATH
+
+
+def get_db_connection() -> Optional[sqlite3.Connection]:
+    """
+    اتصال امن به SQLite با row_factory = Row
+    """
+    try:
+        conn = sqlite3.connect(get_db_path(), check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        return conn
+    except Exception as e:
+        db_logger.error(f"DB connection error: {e}")
+        return None
+
 
 # =====================================================================
 # جدول اصلی لاگ تحلیل
 # =====================================================================
+
 TABLE_NAME = "trading_logs"
 
-REQUIRED_COLUMNS = {
+REQUIRED_COLUMNS: Dict[str, str] = {
     "id": "INTEGER PRIMARY KEY AUTOINCREMENT",
     "timestamp": "TEXT NOT NULL",
 
@@ -60,35 +85,37 @@ REQUIRED_COLUMNS = {
     "meanrev_gated": "INTEGER",
     "breakout_gated": "INTEGER",
 
-    "fingerprint": "TEXT"
+    "fingerprint": "TEXT",
 }
 
 # =====================================================================
 # جدول ترید (OPEN/CLOSE)
 # =====================================================================
+
 TRADE_EVENTS_TABLE = "trade_events"
 
-TRADE_EVENTS_COLS = {
+TRADE_EVENTS_COLS: Dict[str, str] = {
     "id": "INTEGER PRIMARY KEY AUTOINCREMENT",
     "trade_id": "TEXT",
     "timestamp": "TEXT NOT NULL",
     "symbol": "TEXT NOT NULL",
-    "event_type": "TEXT NOT NULL",
+    "event_type": "TEXT NOT NULL",  # OPEN / CLOSE / BE_BREAK / TP / SL ...
     "side": "TEXT",
     "qty": "REAL",
     "entry_price": "REAL",
     "close_price": "REAL",
     "stop_price": "REAL",
     "pnl": "REAL",
-    "reason": "TEXT"
+    "reason": "TEXT",
 }
 
 # =====================================================================
 # جدول وضعیت حساب
 # =====================================================================
+
 ACCOUNT_STATE_TABLE = "account_state"
 
-ACCOUNT_STATE_COLS = {
+ACCOUNT_STATE_COLS: Dict[str, str] = {
     "id": "INTEGER PRIMARY KEY AUTOINCREMENT",
     "timestamp": "TEXT NOT NULL",
     "symbol": "TEXT NOT NULL",
@@ -97,38 +124,24 @@ ACCOUNT_STATE_COLS = {
     "position_side": "TEXT",
     "position_qty": "REAL",
     "position_entry": "REAL",
-    "position_stop": "REAL"
+    "position_stop": "REAL",
 }
 
 # =====================================================================
-# Helpers
+# Helpers داخلی
 # =====================================================================
-
-def get_db_path() -> Path:
-    return Path(__file__).parent / DB_NAME
-
-
-def get_db_connection() -> Optional[sqlite3.Connection]:
-    try:
-        conn = sqlite3.connect(get_db_path(), check_same_thread=False)
-        conn.row_factory = sqlite3.Row
-        return conn
-    except Exception as e:
-        db_logger.error(f"DB connection error: {e}")
-        return None
-
 
 def _existing_columns(conn: sqlite3.Connection, table: str) -> List[str]:
     rows = conn.execute(f"PRAGMA table_info({table});").fetchall()
     return [r["name"] for r in rows]
 
 
-def _create_table(conn: sqlite3.Connection, table: str, cols: Dict[str, str]):
+def _create_table(conn: sqlite3.Connection, table: str, cols: Dict[str, str]) -> None:
     cols_sql = ", ".join([f"{k} {v}" for k, v in cols.items()])
     conn.execute(f"CREATE TABLE IF NOT EXISTS {table} ({cols_sql});")
 
 
-def _migrate_table(conn: sqlite3.Connection, table: str, cols: Dict[str, str]):
+def _migrate_table(conn: sqlite3.Connection, table: str, cols: Dict[str, str]) -> None:
     existing = _existing_columns(conn, table)
     for col, ctype in cols.items():
         if col not in existing:
@@ -141,17 +154,27 @@ def _migrate_table(conn: sqlite3.Connection, table: str, cols: Dict[str, str]):
 # =====================================================================
 
 def ensure_schema() -> bool:
+    """
+    ساخت/آپدیت ۳ جدول اصلی:
+      - trading_logs
+      - trade_events
+      - account_state
+    بدون حذف هیچ دیتایی (فقط ADD COLUMN در صورت لزوم)
+    """
     conn = get_db_connection()
     if not conn:
         return False
 
     try:
+        # trading_logs
         _create_table(conn, TABLE_NAME, REQUIRED_COLUMNS)
         _migrate_table(conn, TABLE_NAME, REQUIRED_COLUMNS)
 
+        # trade_events
         _create_table(conn, TRADE_EVENTS_TABLE, TRADE_EVENTS_COLS)
         _migrate_table(conn, TRADE_EVENTS_TABLE, TRADE_EVENTS_COLS)
 
+        # account_state
         _create_table(conn, ACCOUNT_STATE_TABLE, ACCOUNT_STATE_COLS)
         _migrate_table(conn, ACCOUNT_STATE_TABLE, ACCOUNT_STATE_COLS)
 
@@ -171,6 +194,9 @@ def ensure_schema() -> bool:
 # =====================================================================
 
 def insert_trade_event(event: Dict[str, Any]) -> bool:
+    """
+    درج یک رکورد در trade_events (OPEN / CLOSE / ...)
+    """
     conn = get_db_connection()
     if not conn:
         return False
@@ -197,6 +223,9 @@ def insert_trade_event(event: Dict[str, Any]) -> bool:
 
 
 def upsert_account_state(state: Dict[str, Any]) -> bool:
+    """
+    فعلاً به صورت append عمل می‌کند؛ آخرین رکورد وضعیت فعلی حساب است.
+    """
     conn = get_db_connection()
     if not conn:
         return False
@@ -204,9 +233,9 @@ def upsert_account_state(state: Dict[str, Any]) -> bool:
     try:
         cols = [c for c in ACCOUNT_STATE_COLS if c != "id"]
         sql = f"""
-            INSERT INTO {ACCOUNT_STATE_TABLE} 
-            ({", ".join(cols)}) 
-            VALUES ({", ".join(":"+c for c in cols)});
+            INSERT INTO {ACCOUNT_STATE_TABLE}
+            ({", ".join(cols)})
+            VALUES ({", ".join(":"+c for c in cols)})
         """
         conn.execute(sql, {c: state.get(c) for c in cols})
         conn.commit()
@@ -221,6 +250,9 @@ def upsert_account_state(state: Dict[str, Any]) -> bool:
 
 
 def insert_trading_log(row: Dict[str, Any]) -> bool:
+    """
+    درج یک سطر از لاگ تحلیل (DecisionContext → Row)
+    """
     conn = get_db_connection()
     if not conn:
         return False
@@ -262,11 +294,15 @@ def dc_to_row(
     tp_price=None,
     fingerprint=None,
     regime_reasons=None,
-):
-    def reason_has(txt):
+) -> Dict[str, Any]:
+    """
+    تبدیل DecisionContext اصلی و confirm به یک dict مناسب برای insert_trading_log
+    """
+
+    def reason_has(txt: str) -> int:
         try:
-            return 1 if any(txt in r for r in dc_primary.reasons) else 0
-        except:
+            return 1 if any(txt in r for r in getattr(dc_primary, "reasons", []) or []) else 0
+        except Exception:
             return 0
 
     return {

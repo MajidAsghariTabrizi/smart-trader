@@ -1,18 +1,29 @@
-# python caches
+# Python
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
 
-# virtual env
-.venv/
+# Virtual Env
 venv/
-
-# logs
-logs/
-
-# environment files
 .env
 
-# system files
+# SQLite Database (نباید در ریپو برود)
+trading_data.db
+*.db
+*.sqlite
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
 .DS_Store
 Thumbs.db
+
+# Build artifacts
+dist/
+build/
