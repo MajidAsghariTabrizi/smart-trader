@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-Smart Trader V0.10 - Main Execution Module (Refactored)
+Smart Trader V0.10 - Main Execution Module (Refactored, Close-Logic C)
 ================================================================================
 - Debounced live logs
 - Soft regime scaling
@@ -14,6 +14,10 @@ Smart Trader V0.10 - Main Execution Module (Refactored)
 - Trade lifecycle persistence (OPEN/CLOSE) and account snapshot
 - Timestamp based on real-time now_iso() (نه time کندل)
 - DB log de-duplication via fingerprint (کم کردن لاگ‌های تکراری HOLD)
+- Close Logic C:
+    * TP/SL بر اساس R-multiple
+    * Fallback stop درصدی اگر stop از استراتژی نیاید
+    * بستن پوزیشن در صورت سیگنال معکوس (REVERSE_SIGNAL)
 ================================================================================
 """
 
@@ -88,10 +92,14 @@ def utc_ts_to_iso(ts: int) -> str:
 
 
 def now_iso() -> str:
+    # ISO بدون microsecond و با Z – سازگار با JS و UI
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
 
 def new_trade_id() -> str:
     return uuid.uuid4().hex
+
+
 def compute_regime(trend_val: float, adx_val: float, vol_ratio: float) -> Tuple[str, list]:
     """
     Regime based on smoothed volatility ratio and trend strength.
@@ -158,6 +166,7 @@ def _format_position_state(price: float) -> Optional[str]:
         f"side: {pos.side}  qty: {qty:.6f}  entry: {entry:.2f}  stop: {stop}\n"
         f"notional: {notional:.2f}  uPnL: {upnl:.2f}  status: {status}"
     )
+
 
 # --------------------------------------------------------
 # Init
@@ -274,13 +283,83 @@ def _persist_account_snapshot():
 
 def _log_trade_event(event_type: str, details: dict):
     try:
-        event = {"timestamp": now_iso(), "symbol": cfg.SYMBOL, "event_type": event_type, **details}
+        event = {
+            "timestamp": now_iso(),
+            "symbol": cfg.SYMBOL,
+            "event_type": event_type,
+            **details,
+        }
         if hasattr(database_setup, "insert_trade_event"):
             database_setup.insert_trade_event(event)
         else:
             logger.info(f"TRADE EVENT [{event_type}]: {json.dumps(event, ensure_ascii=False)}")
     except Exception as e:
         logger.exception(f"Failed to insert trade event: {e}")
+
+
+def _close_position(current_price: float, reason: str):
+    """
+    Close current position with given reason.
+    - محاسبه‌ی PnL
+    - آپدیت balance و equity
+    - ثبت رویداد CLOSE
+    - snapshot از account_state
+    """
+    if not account.position:
+        return
+    if current_price is None:
+        return
+
+    pos = account.position
+    entry = float(pos.entry_price)
+    qty = float(pos.qty)
+    side = pos.side
+    stop_price = float(pos.stop_price) if pos.stop_price is not None else None
+
+    if qty <= 0.0 or entry <= 0.0:
+        return
+
+    if side == "LONG":
+        pnl = (current_price - entry) * qty
+        # لانگ: فروش دارایی
+        account.balance += qty * current_price
+    else:
+        # شورت: شبیه cash-settled
+        pnl = (entry - current_price) * qty
+        account.balance += pnl
+
+    account.position = None
+    account.update_equity(current_price)
+
+    trade_id = getattr(pos, "trade_id", None)
+
+    _log_trade_event(
+        "CLOSE",
+        {
+            "trade_id": trade_id,
+            "side": side,
+            "qty": qty,
+            "entry_price": entry,
+            "close_price": float(current_price),
+            "stop_price": stop_price,
+            "pnl": float(pnl),
+            "reason": reason,
+        },
+    )
+    logger.info(f"🛑 Closed {side} @ {current_price:.2f} pnl={pnl:.2f} ({reason})")
+
+    if tg:
+        try:
+            tg.send(
+                f"🛑 <b>Closed</b> {cfg.SYMBOL} {side} "
+                f"qty={qty:.6f} @ {current_price:.2f}\n"
+                f"PnL: {pnl:.2f} ({reason})",
+                "INFO",
+            )
+        except Exception as e:
+            logger.exception(f"Failed to send Telegram close message: {e}")
+
+    _persist_account_snapshot()
 
 
 def _maybe_close_position(current_price: float):
@@ -303,52 +382,7 @@ def _maybe_close_position(current_price: float):
     if qty <= 0.0 or entry <= 0.0:
         return
 
-    def _close(reason: str):
-        nonlocal pos, entry, qty
-
-        if pos.side == "LONG":
-            pnl = (current_price - entry) * qty
-            # لانگ: فروش در قیمت فعلی
-            account.balance += qty * current_price
-        else:
-            # شورت: شبیه cash-settled
-            pnl = (entry - current_price) * qty
-            account.balance += pnl
-
-        # پاک کردن پوزیشن و آپدیت اکوئیتی
-        account.position = None
-        account.update_equity(current_price)
-
-        trade_id = getattr(pos, "trade_id", None)
-
-        _log_trade_event(
-            "CLOSE",
-            {
-                "trade_id": trade_id,
-                "side": pos.side,
-                "qty": qty,
-                "entry_price": entry,
-                "close_price": float(current_price),
-                "pnl": float(pnl),
-                "reason": reason,
-            },
-        )
-        logger.info(f"🛑 Closed {pos.side} @ {current_price:.2f} pnl={pnl:.2f} ({reason})")
-
-        if tg:
-            try:
-                tg.send(
-                    f"🛑 <b>Closed</b> {cfg.SYMBOL} {pos.side} "
-                    f"qty={qty:.6f} @ {current_price:.2f}\n"
-                    f"PnL: {pnl:.2f} ({reason})",
-                    "INFO",
-                )
-            except Exception as e:
-                logger.exception(f"Failed to send Telegram close message: {e}")
-
-        _persist_account_snapshot()
-
-    # اگر استاپ نداریم، فقط می‌توانیم از طریق سیگنال آینده خارج شویم (فعلاً نداریم)
+    # اگر استاپ نداریم، ریسک واحد صفر است و فقط سیگنال معکوس ما را خارج می‌کند
     if stop is not None:
         risk_per_unit = abs(entry - float(stop))
     else:
@@ -368,14 +402,16 @@ def _maybe_close_position(current_price: float):
                 f"🎯 TP hit for {pos.side} trade_id={getattr(pos, 'trade_id', None)} "
                 f"R={r_mult:.2f} (>= {tp_r_level:.2f})"
             )
-            return _close("TP_HIT")
+            _close_position(current_price, "TP_HIT")
+            return
 
         # 1.b) انتقال استاپ به break-even
         if r_mult >= be_r_level and not getattr(pos, "breakeven_armed", False):
             pos.stop_price = entry
             pos.breakeven_armed = True
             logger.info(
-                f"🔒 Move stop to breakeven for {pos.side} trade_id={getattr(pos, 'trade_id', None)} "
+                f"🔒 Move stop to breakeven for {pos.side} "
+                f"trade_id={getattr(pos, 'trade_id', None)} "
                 f"R={r_mult:.2f} (>= {be_r_level:.2f})"
             )
             # بعد از این، استاپ جدید BE است، بقیه منطق پایین اجرا می‌شود
@@ -386,8 +422,8 @@ def _maybe_close_position(current_price: float):
 
     stop_now = float(pos.stop_price)
     breached = (
-        (pos.side == "LONG" and current_price <= stop_now) or
-        (pos.side == "SHORT" and current_price >= stop_now)
+        (pos.side == "LONG" and current_price <= stop_now)
+        or (pos.side == "SHORT" and current_price >= stop_now)
     )
 
     if not breached:
@@ -397,7 +433,7 @@ def _maybe_close_position(current_price: float):
         f"⛔ Stop breached for {pos.side} trade_id={getattr(pos, 'trade_id', None)} "
         f"price={current_price:.2f}, stop={stop_now:.2f}"
     )
-    _close("STOP_HIT")
+    _close_position(current_price, "STOP_HIT")
 
 
 # --------------------------------------------------------
@@ -622,8 +658,18 @@ Reasons:
 
     # ---------------- Risk / Execution layer ---------------- #
 
-    # 1) First handle exits (stop)
+    # 1) First handle exits (stop / TP)
     _maybe_close_position(dc240.price)
+
+    # 1.b) Close on reverse signal (Option C)
+    if account.position and action in ("BUY", "SELL"):
+        desired_side = "LONG" if action == "BUY" else "SHORT"
+        if account.position.side != desired_side:
+            logger.info(
+                f"🔄 Reverse signal: closing {account.position.side} "
+                f"due to {action} signal at price={dc240.price:.2f}"
+            )
+            _close_position(dc240.price, "REVERSE_SIGNAL")
 
     # 2) Entry policy / allow_intracandle
     execute_now = True
@@ -631,7 +677,7 @@ Reasons:
         execute_now = False
         dc240.reasons.append("Intracandle disabled: execution deferred until close")
 
-    # Only one open position at a time
+    # Only one open position at a time (بعد از closeهای بالا)
     if account.position:
         return
 
@@ -655,6 +701,17 @@ Reasons:
         elif isinstance(trade, Position):
             stop_price = trade.stop_price
 
+        side = "LONG" if action == "BUY" else "SHORT"
+
+        # Fallback stop اگر استراتژی استاپ نداد (Option C)
+        if stop_price is None:
+            default_stop_pct = getattr(cfg, "DEFAULT_STOP_PCT", 0.01)  # 1% به طور پیش‌فرض
+            if side == "LONG":
+                stop_price = dc240.price * (1.0 - default_stop_pct)
+            else:
+                stop_price = dc240.price * (1.0 + default_stop_pct)
+
+        # محاسبه سایز بر اساس ریسک اگر stop داریم
         if stop_price:
             qty = position_size_by_risk(
                 account.equity,
@@ -673,14 +730,13 @@ Reasons:
         notional = qty * dc240.price
         if notional < min_trade_value:
             need_qty = min_trade_value / dc240.price
-            if action == "BUY" and (need_qty * dc240.price) > account.balance:
+            if side == "LONG" and (need_qty * dc240.price) > account.balance:
                 logger.info("Skipping trade: cannot scale to reach MIN_TRADE_VALUE due to balance")
                 return
             qty = need_qty
             notional = qty * dc240.price
 
-        side = "LONG" if action == "BUY" else "SHORT"
-        trade_id = new_trade_id()  # 👈 شناسه این ترید
+        trade_id = new_trade_id()
 
         account.position = Position(
             side=side,
