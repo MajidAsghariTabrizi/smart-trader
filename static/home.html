@@ -172,6 +172,57 @@
           </a>
         </div>
       </section>
+      <!-- 🔮 سکشن توصیه هوشمند امروز (AI Free Advisor) -->
+      <section id="ai-section" class="ai-section">
+        <h2>توصیه هوشمند امروز ربات</h2>
+        <p class="ai-intro">
+          این بخش یک «دستیار روزانه» است که بر اساس عملکرد واقعی ربات،
+          آخرین سیگنال‌ها و سود/زیان روزهای اخیر، یک جمع‌بندی قابل‌فهم
+          برای امروز می‌دهد.
+        </p>
+
+        <div class="ai-layout">
+          <!-- کارت اصلی توصیه -->
+          <div class="metric-card ai-main-card">
+            <div class="ai-badge">AI Free Advisor</div>
+            <h3 id="ai-advice-title">در حال تحلیل داده‌ها...</h3>
+            <p id="ai-advice-body" class="ai-advice-body">
+              چند ثانیه صبر کنید تا توصیه امروز بر اساس دیتای واقعی محاسبه شود.
+            </p>
+
+            <ul id="ai-advice-bullets" class="ai-bullets">
+              <!-- با JS پر می‌شود -->
+            </ul>
+          </div>
+
+          <!-- کارت وضعیت امروز -->
+          <div class="metric-card ai-side-card">
+            <h3>وضعیت کلی امروز</h3>
+            <div class="ai-side-row">
+              <span class="ai-side-label">رژیم بازار:</span>
+              <span id="ai-context-regime" class="ai-side-value">نامشخص</span>
+            </div>
+            <div class="ai-side-row">
+              <span class="ai-side-label">وین‌ریت فعلی:</span>
+              <span id="ai-context-winrate" class="ai-side-value">–٪</span>
+            </div>
+            <div class="ai-side-row">
+              <span class="ai-side-label">PnL کل:</span>
+              <span id="ai-context-totalpnl" class="ai-side-value">–</span>
+            </div>
+            <div class="ai-side-row">
+              <span class="ai-side-label">روند چند روز اخیر:</span>
+              <span id="ai-context-recent" class="ai-side-value">در حال محاسبه...</span>
+            </div>
+            <div class="ai-side-row">
+              <span class="ai-side-label">آخرین تصمیم ربات:</span>
+              <span id="ai-context-lastdecision" class="ai-side-value">–</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
     </div>
 
     <script src="/static/js/home.js"></script>
