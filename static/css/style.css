@@ -1282,3 +1282,425 @@ body.theme-dark-pro .card {
 .ai-side-value {
   font-weight: 600;
 }
+/* =========================================================
+   🧠 SmartTrader Home – Quantum Live Landing
+   ========================================================= */
+
+.home-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px 16px 80px;
+}
+
+.home-hero {
+  position: relative;
+  margin-bottom: 40px;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.1fr);
+  gap: 32px;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.hero-left h1 {
+  font-size: 26px;
+  line-height: 1.7;
+  margin: 12px 0 12px;
+}
+
+.hero-subtitle {
+  font-size: 13px;
+  line-height: 2;
+  color: var(--text-muted);
+  max-width: 460px;
+}
+
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(96, 165, 250, 0.5);
+  background: radial-gradient(circle at left, rgba(56, 189, 248, 0.35), rgba(15, 23, 42, 0.9));
+  font-size: 11px;
+  color: #dbeafe;
+}
+
+.hero-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--accent-green);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.8);
+}
+
+.hero-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+  margin-bottom: 18px;
+}
+
+.hero-badge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  font-size: 11px;
+}
+
+.hero-badge span {
+  opacity: 0.8;
+  margin-left: 4px;
+}
+
+.hero-badge strong {
+  font-weight: 600;
+}
+
+/* CTA row */
+.hero-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.18s ease-out;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, #4f46e5, #0ea5e9);
+  color: #f9fafb;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 1);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #e5e7eb;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+}
+
+.btn-secondary:hover {
+  background: rgba(15, 23, 42, 0.8);
+}
+
+/* Right side – neural chart */
+
+.hero-right {
+  position: relative;
+}
+
+.neural-card {
+  position: relative;
+  padding: 18px 16px 14px;
+  border-radius: 22px;
+  background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.15), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.neural-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+      90deg,
+      rgba(55, 65, 81, 0.3) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      180deg,
+      rgba(55, 65, 81, 0.3) 1px,
+      transparent 1px
+    );
+  background-size: 32px 32px;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.algo-ring {
+  position: relative;
+  border-radius: 22px;
+  border: 1px solid rgba(96, 165, 250, 0.5);
+  padding: 10px;
+  box-shadow: 0 0 38px rgba(37, 99, 235, 0.55);
+  backdrop-filter: blur(14px);
+}
+
+#hero-sparkline {
+  width: 100%;
+  display: block;
+  border-radius: 18px;
+}
+
+.hero-legend {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  margin-top: 10px;
+}
+
+.hero-legend span {
+  opacity: 0.9;
+}
+
+/* =========================================================
+   📊 Live Intelligence Matrix
+   ========================================================= */
+
+.live-intel {
+  margin-top: 40px;
+}
+
+.live-intel h2 {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.section-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.live-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .live-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.live-card {
+  background: var(--bg-card-soft);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-soft);
+  padding: 14px 14px 12px;
+  box-shadow: var(--shadow-card);
+  font-size: 12px;
+}
+
+.live-card h3 {
+  font-size: 13px;
+  margin: 0 0 8px;
+}
+
+/* Heatmap */
+
+.heatmap {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.heat-box {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.35);
+  transition: transform 0.12s ease-out, box-shadow 0.12s ease-out;
+}
+
+.heat-box:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 0 12px rgba(248, 250, 252, 0.65);
+}
+
+.heat-buy {
+  background: rgba(34, 197, 94, 0.8);
+}
+
+.heat-sell {
+  background: rgba(239, 68, 68, 0.9);
+}
+
+.heat-hold {
+  background: rgba(234, 179, 8, 0.85);
+}
+
+.card-caption {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Probability bars */
+
+.prob-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.prob-bar {
+  position: relative;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+  overflow: hidden;
+}
+
+.prob-fill {
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  border-radius: inherit;
+  transition: width 0.4s ease-out;
+}
+
+#prob-buy {
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+#prob-sell {
+  background: linear-gradient(90deg, #ef4444, #fb7185);
+}
+#prob-hold {
+  background: linear-gradient(90deg, #eab308, #f97316);
+}
+
+.prob-label {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Volatility band */
+
+.vol-band {
+  margin-top: 4px;
+}
+
+.vol-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
+  overflow: hidden;
+}
+
+.vol-pointer {
+  position: absolute;
+  top: -4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid #0b1120;
+  background: #f9fafb;
+  box-shadow: 0 0 14px rgba(249, 250, 251, 0.75);
+  transform: translateX(-50%);
+}
+
+.vol-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Sentiment radar list */
+
+.sentiment-list {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+}
+
+.sent-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.sent-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.7);
+}
+
+.sent-text {
+  font-size: 12px;
+}
+
+.sent-positive {
+  background: rgba(34, 197, 94, 0.9) !important;
+}
+.sent-negative {
+  background: rgba(239, 68, 68, 0.9) !important;
+}
+.sent-neutral {
+  background: rgba(129, 140, 248, 0.9) !important;
+}
+
+/* Metrics section (خلاصه عملکرد کوچک) */
+
+.metrics-section {
+  margin-top: 40px;
+}
+
+.metrics-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .metrics-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.metric-card {
+  background: var(--bg-card-soft);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-soft);
+  padding: 10px 12px;
+  box-shadow: var(--shadow-card);
+  font-size: 12px;
+}
+
+.metric-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}

@@ -269,5 +269,192 @@ async function loadHome() {
     console.error("Home render error:", e);
   }
 }
+/* ---------------------------------------------------------
+   🔥 بخش ۲: دیتای لایو برای Heatmap / Probability / Volatility / Radar
+--------------------------------------------------------- */
+
+function renderHeatmap(decisions) {
+  const container = document.getElementById("heatmap-decisions");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  decisions.slice(-60).forEach((d) => {
+    const cell = document.createElement("div");
+    cell.className = "heat-cell";
+
+    let dec = (d.decision || "").toUpperCase();
+    if (dec === "BUY") cell.style.background = "rgba(0,255,120,0.55)";
+    else if (dec === "SELL") cell.style.background = "rgba(255,60,60,0.55)";
+    else cell.style.background = "rgba(255,210,0,0.55)";
+
+    container.appendChild(cell);
+  });
+}
+
+/* -------- Probability Engine (Rule-based) -------- */
+
+function computeProbabilities(lastDecision, winrate) {
+  const wr = Number(winrate || 0);
+
+  let buy = 33, sell = 33, hold = 34;
+
+  const d = (lastDecision || "").toUpperCase();
+
+  if (d === "BUY") buy += 15;
+  if (d === "SELL") sell += 15;
+  if (d === "HOLD") hold += 20;
+
+  buy += (wr - 50) * 0.4;
+  sell += (50 - wr) * 0.4;
+
+  // normalize
+  const total = buy + sell + hold;
+  return {
+    buy: Math.max(0, (buy / total) * 100),
+    sell: Math.max(0, (sell / total) * 100),
+    hold: Math.max(0, (hold / total) * 100),
+  };
+}
+
+function renderProbabilities(prob) {
+  const pb = document.getElementById("prob-buy");
+  const ps = document.getElementById("prob-sell");
+  const ph = document.getElementById("prob-hold");
+
+  const lblB = document.getElementById("prob-buy-label");
+  const lblS = document.getElementById("prob-sell-label");
+  const lblH = document.getElementById("prob-hold-label");
+
+  if (pb) pb.style.width = prob.buy + "%";
+  if (ps) ps.style.width = prob.sell + "%";
+  if (ph) ph.style.width = prob.hold + "%";
+
+  if (lblB) lblB.textContent = prob.buy.toFixed(1) + "%";
+  if (lblS) lblS.textContent = prob.sell.toFixed(1) + "%";
+  if (lblH) lblH.textContent = prob.hold.toFixed(1) + "%";
+}
+
+/* ---------------- Volatility Band ---------------- */
+
+function renderVolatility(last) {
+  const adx = Number(last?.adx || 0);
+  const atr = Number(last?.atr || 0);
+  const ptr = document.getElementById("vol-pointer");
+  const lbl = document.getElementById("volatility-label");
+
+  if (!ptr || !lbl) return;
+
+  // محاسبه نوسان 0 تا 100
+  let vol = Math.min(100, Math.max(0, adx * 1.4 + atr * 0.6));
+
+  ptr.style.left = vol + "%";
+
+  if (vol < 30) lbl.textContent = "بازار آرام و کم‌نوسان است.";
+  else if (vol < 60) lbl.textContent = "بازار در محدوده‌ی نوسان متوسط قرار دارد.";
+  else lbl.textContent = "بازار بسیار پرنوسان است؛ احتیاط کنید.";
+}
+
+/* ---------------- Sentiment Radar ---------------- */
+
+function renderSentiment(daily) {
+  const ul = document.getElementById("sentiment-list");
+  if (!ul) return;
+
+  ul.innerHTML = "";
+
+  const pnl = daily.map((x) => Number(x.day_pnl || x.pnl || 0));
+
+  const avg = pnl.reduce((a, b) => a + b, 0) / pnl.length;
+
+  const greenDays = pnl.filter((x) => x > 0).length;
+  const redDays = pnl.filter((x) => x < 0).length;
+
+  const items = [];
+
+  if (avg > 0) items.push("میانگین سود روزانه مثبت است.");
+  else items.push("میانگین سود روزانه منفی است.");
+
+  if (greenDays > redDays)
+    items.push("روزهای مثبت بیشتر از روزهای منفی بوده است.");
+  else items.push("فشار فروش در روزهای اخیر بیشتر بوده است.");
+
+  if (Math.abs(avg) < 0.1)
+    items.push("بازار در روزهای اخیر تقریباً خنثی بوده است.");
+
+  items.forEach((t) => {
+    const li = document.createElement("li");
+    li.textContent = t;
+    ul.appendChild(li);
+  });
+}
+
+/* ---------------- Hero Sparkline ---------------- */
+
+function renderSparkline(prices) {
+  const canvas = document.getElementById("hero-sparkline");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width, h = canvas.height;
+
+  ctx.clearRect(0, 0, w, h);
+
+  if (!prices || prices.length < 2) return;
+
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+
+  ctx.beginPath();
+  ctx.strokeStyle = "#5da8ff";
+  ctx.lineWidth = 2;
+
+  prices.forEach((p, i) => {
+    const x = (i / (prices.length - 1)) * w;
+    const y = h - ((p - min) / (max - min)) * h;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+
+  ctx.stroke();
+}
+
+/* ---------------------------------------------------------
+   🔥 Loop اصلی آپدیت‌ها
+--------------------------------------------------------- */
+
+async function loadLiveModules() {
+  const [decisions, perf, daily, btc] = await Promise.all([
+    getJSON("/api/decisions?limit=80"),
+    getJSON("/api/perf/summary"),
+    getJSON("/api/perf/daily?limit=12"),
+    getJSON("/api/btc_price"),
+  ]);
+
+  const decisionsArr = Array.isArray(decisions) ? decisions : [];
+  const dailyArr = Array.isArray(daily) ? daily : [];
+
+  const last = decisionsArr.length ? decisionsArr.at(-1) : null;
+
+  /* Heatmap */
+  renderHeatmap(decisionsArr);
+
+  /* Probability */
+  const probs = computeProbabilities(last?.decision, perf?.winrate);
+  renderProbabilities(probs);
+
+  /* Volatility */
+  renderVolatility(last);
+
+  /* Sentiment Radar */
+  renderSentiment(dailyArr);
+
+  /* Sparkline */
+  if (btc?.history) renderSparkline(btc.history.map((x) => x.price));
+}
+
+/* Loop هر 8 ثانیه */
+setInterval(loadLiveModules, 8000);
+
 
 document.addEventListener("DOMContentLoaded", loadHome);

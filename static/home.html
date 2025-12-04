@@ -4,225 +4,202 @@
     <meta charset="UTF-8" />
     <title>SmartTrader – ربات معاملاتی هوش مصنوعی</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-
     <link rel="stylesheet" href="/static/css/style.css" />
   </head>
   <body class="theme-dark-pro">
     <div class="home-shell">
-      <!-- HERO بیزنسی با شبکه نودها -->
+      <!-- ================= HERO ================= -->
       <header class="home-hero">
-        <!-- لایه الگوریتمیک -->
-        <div class="algo-canvas">
-          <div class="algo-blob blob-1"></div>
-          <div class="algo-blob blob-2"></div>
-          <div class="algo-ring ring-1"></div>
-          <div class="algo-grid"></div>
+        <div class="hero-grid">
+          <!-- متن بیزنسی -->
+          <div class="hero-left">
+            <div class="hero-pill">
+              <span class="hero-pill-dot"></span>
+              <span>SmartTrader • ربات معاملاتی خودکار</span>
+            </div>
 
-          <!-- نودهای تصمیم -->
-          <div class="algo-node node-buy">سیگنال BUY تایید شده</div>
-          <div class="algo-node node-sell">سیگنال SELL همراه با ریسک</div>
-          <div class="algo-node node-hold">وضعیت HOLD / بدون ورود</div>
+            <h1>
+              رباتی که بازار کریپتو را به&nbsp;صورت الگوریتمیک و
+              ۲۴&nbsp;ساعته رصد و معامله می‌کند.
+            </h1>
 
-          <!-- خطوط داده بین نودها -->
-          <div class="algo-link link-1"></div>
-          <div class="algo-link link-2"></div>
-          <div class="algo-link link-3"></div>
-        </div>
+            <p class="hero-subtitle">
+              SmartTrader روی داده‌های لایو صرافی، اندیکاتورهای چند‌تایم‌فریمی،
+              ADX، ATR و یک موتور مدیریت ریسک کار می‌کند تا تصمیم‌های
+              خرید، فروش یا HOLD را با حداقل خطای انسانی بگیرد.
+            </p>
 
-        <!-- متن بیزنسی -->
-        <div class="home-hero-content">
-          <div class="badge">⚡ SmartTrader – ربات معاملاتی خودکار</div>
-          <h1 class="home-title">
-            رباتی که بازار کریپتو را
-            <span>به‌صورت الگوریتمیک و ۲۴ ساعته</span>
-            رصد و معامله می‌کند.
-          </h1>
-          <p class="home-subtitle">
-            SmartTrader روی داده‌های لایو صرافی، اندیکاتورهای پیشرفته و منطق
-            مدیریت ریسک کار می‌کند تا تصمیم‌های خرید، فروش یا HOLD را با حداقل
-            خطای انسانی بگیرد.
-          </p>
+            <div class="hero-badges-row">
+              <div class="hero-badge">
+                <span>وضعیت فعلی ربات:</span>
+                <strong id="hero-last-decision">در حال اتصال…</strong>
+              </div>
+              <div class="hero-badge">
+                <span>رژیم بازار:</span>
+                <strong id="hero-regime">–</strong>
+              </div>
+              <div class="hero-badge">
+                <span>قدرت روند (ADX):</span>
+                <strong id="hero-adx">–</strong>
+              </div>
+              <div class="hero-badge">
+                <span>وین‌ریت کل:</span>
+                <strong id="hero-winrate">–</strong>
+              </div>
+            </div>
 
-          <div class="home-cta-row">
-            <a href="#logic-section" class="btn-primary">چطور کار می‌کند؟</a>
-            <a href="#metrics-section" class="btn-secondary">
-              مشاهده عملکرد ربات
-            </a>
+            <div class="hero-cta-row">
+              <a href="#live-intel" class="btn-primary">مشاهده مغز تصمیم‌گیر ربات</a>
+              <a href="#metrics-section" class="btn-secondary">
+                خلاصه عملکرد واقعی تا این لحظه
+              </a>
+            </div>
           </div>
 
-          <div class="home-meta">
-            <span>⏱ بدون محدودیت زمانی، ۲۴/۷ آنلاین</span>
-            <span>🧠 Multi Timeframe + ADX + ATR + Risk Engine</span>
+          <!-- سمت راست: نمودار اسپارکلاین و وضعیت زنده -->
+          <div class="hero-right">
+            <div class="neural-card">
+              <div class="algo-ring">
+                <canvas id="hero-sparkline" width="380" height="190">
+                  Browser شما از Canvas پشتیبانی نمی‌کند.
+                </canvas>
+              </div>
+              <div class="hero-legend">
+                <span
+                  >قیمت لحظه‌ای BTC/IRT:
+                  <strong id="hero-btc-price">در حال اتصال…</strong></span
+                >
+                <span>داده‌ها هر چند ثانیه از دیتابیس لایو به‌روزرسانی می‌شوند.</span>
+              </div>
+            </div>
           </div>
         </div>
       </header>
 
-      <!-- سکشن لاجیک ربات -->
-      <section id="logic-section" class="logic-section">
-        <h2>اسمارت‌تریدر چطور تصمیم می‌گیرد؟</h2>
-        <p class="logic-intro">
-          هسته‌ی SmartTrader ترکیبی از پردازش داده، اندیکاتورها و موتور
-          تصمیم‌گیری است. این‌ها چهار لایه‌ی اصلی منطق ربات هستند:
+      <!-- ============== LIVE INTELLIGENCE MATRIX ============== -->
+      <section id="live-intel" class="live-intel">
+        <h2>ماتریس زنده‌ی تصمیم‌های SmartTrader</h2>
+        <p class="section-subtitle">
+          این بخش هر چند ثانیه، تصمیم‌های واقعی ربات را از دیتابیس می‌خواند و
+          آن‌ها را به‌صورت Heatmap، اسپارکلاین قیمت، احتمال‌های BUY / SELL / HOLD،
+          نوار نوسان (Volatility Band) و رادار احساس (Sentiment Radar) نمایش می‌دهد.
         </p>
 
-        <div class="logic-grid">
-          <div class="logic-card">
-            <div class="logic-step">۱</div>
-            <h3>جمع‌آوری داده‌ی لایو</h3>
-            <p>
-              قیمت، حجم و کندل‌های چند تایم‌فریم (مثلاً ۲۴۰ و ۶۰ دقیقه) از
-              صرافی دریافت شده و تمیزسازی می‌شوند تا داده‌ی خام قابل اعتماد
-              ساخته شود.
+        <div class="live-grid">
+          <!-- Heatmap -->
+          <article class="live-card">
+            <h3>Heatmap تصمیم‌های معاملاتی اخیر</h3>
+            <div id="heatmap-decisions" class="heatmap"></div>
+            <p class="card-caption">
+              هر مربع یک تصمیم معاملاتی است؛ سبز = BUY ، قرمز = SELL ، زرد = HOLD.
+              شفافیت مربع‌ها قدرت سیگنال را نشان می‌دهد.
             </p>
-          </div>
+          </article>
 
-          <div class="logic-card">
-            <div class="logic-step">۲</div>
-            <h3>محاسبه اندیکاتورها و کانال‌ها</h3>
-            <p>
-              EMA، RSI، ADX، ATR و کانال‌های Donchian روی کندل‌ها محاسبه می‌شوند
-              تا وضعیت روند، مومنتوم، Mean Reversion و Breakout سنجیده شود.
-            </p>
-          </div>
+          <!-- Probability Engine -->
+          <article class="live-card">
+            <h3>Probability Engine – احتمال‌های امروز</h3>
 
-          <div class="logic-card">
-            <div class="logic-step">۳</div>
-            <h3>موتور سیگنال و Multi Timeframe</h3>
-            <p>
-              موتور سیگنال (SignalEngine) این کانال‌ها را وزن‌دهی می‌کند، با ADX
-              گیت می‌کند و بین تایم‌فریم اصلی و تایم‌فریم تأییدی به‌دنبال
-              هم‌جهتی (MTF agreement) می‌گردد.
-            </p>
-          </div>
+            <div class="prob-row">
+              <span>احتمال BUY</span>
+              <div class="prob-bar">
+                <div id="prob-buy" class="prob-fill"></div>
+              </div>
+              <span id="prob-buy-label" class="prob-label">–</span>
+            </div>
 
-          <div class="logic-card">
-            <div class="logic-step">۴</div>
-            <h3>مدیریت ریسک و اجرای ترید</h3>
-            <p>
-              اگر سیگنال از آستانه‌ی خرید/فروش عبور کند، حجم معامله بر اساس
-              درصد ریسک هر ترید محاسبه می‌شود، حد ضرر با ATR تنظیم می‌شود و
-              ترید در دیتابیس ثبت می‌گردد.
+            <div class="prob-row">
+              <span>احتمال SELL</span>
+              <div class="prob-bar">
+                <div id="prob-sell" class="prob-fill"></div>
+              </div>
+              <span id="prob-sell-label" class="prob-label">–</span>
+            </div>
+
+            <div class="prob-row">
+              <span>احتمال HOLD / بدون ورود</span>
+              <div class="prob-bar">
+                <div id="prob-hold" class="prob-fill"></div>
+              </div>
+              <span id="prob-hold-label" class="prob-label">–</span>
+            </div>
+
+            <p class="card-caption">
+              این مقادیر از ترکیب وین‌ریت واقعی ربات، قدرت سیگنال آخر
+              و جهت بازار محاسبه می‌شود (مدل rule-based اختصاصی SmartTrader).
             </p>
-          </div>
+          </article>
+
+          <!-- Volatility Band -->
+          <article class="live-card">
+            <h3>Volatility Band – نوار نوسان بازار</h3>
+            <div class="vol-band">
+              <div class="vol-track">
+                <div id="vol-pointer" class="vol-pointer"></div>
+              </div>
+              <div class="vol-labels">
+                <span>آرام</span>
+                <span>متوسط</span>
+                <span>پرنوسان</span>
+              </div>
+            </div>
+            <p class="card-caption" id="volatility-label">
+              در حال محاسبه بر اساس ADX و ATR…
+            </p>
+          </article>
+
+          <!-- Sentiment Radar -->
+          <article class="live-card">
+            <h3>Sentiment Radar – مود کلی ربات</h3>
+            <ul id="sentiment-list" class="sentiment-list"></ul>
+            <p class="card-caption">
+              بر اساس PnL روزهای اخیر، تعداد روزهای سبز و قرمز و وین‌ریت کل.
+            </p>
+          </article>
         </div>
       </section>
 
-      <!-- سکشن متریک‌ها و خلاصه عملکرد -->
+      <!-- ============== خلاصه عملکرد (Metrics) ============== -->
       <section id="metrics-section" class="metrics-section">
         <h2>خلاصه عملکرد ربات تا این لحظه</h2>
-        <p class="metrics-intro">
-          این بخش یک عکس فوری از رفتار واقعی ربات روی حساب زنده را نشان می‌دهد.
-          داده‌ها مستقیماً از دیتابیس SmartTrader خوانده شده‌اند.
+        <p class="section-subtitle">
+          این اعداد مستقیماً از جدول‌های دیتابیس (trade_events و account_state)
+          خوانده می‌شوند و وضعیت واقعی حساب را نشان می‌دهند.
         </p>
 
-        <div class="metrics-grid">
+        <div class="metrics-cards">
           <div class="metric-card">
-            <div class="metric-label">ضریب ریسک هر ترید</div>
-            <div class="metric-value" id="metric-risk">–</div>
-            <div class="metric-caption">
-              درصد حداکثر سرمایه که در هر معامله در معرض ریسک قرار می‌گیرد.
-            </div>
+            <div class="metric-label">تعداد معاملات ثبت‌شده</div>
+            <div id="metric-total-trades" class="metric-value">–</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-label">تعداد معاملات موفق (Win)</div>
+            <div id="metric-total-wins" class="metric-value">–</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-label">تعداد معاملات ناموفق (Loss)</div>
+            <div id="metric-total-losses" class="metric-value">–</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-label">PnL تحقق‌یافته تا این لحظه</div>
+            <div id="metric-total-pnl-card" class="metric-value">–</div>
           </div>
 
           <div class="metric-card">
             <div class="metric-label">نرخ خطا (Error Rate)</div>
-            <div class="metric-value" id="metric-error-rate">–</div>
-            <div class="metric-caption">
-              درصد معاملاتی که منفی بسته شده‌اند نسبت به کل معاملات
-              بسته‌شده.
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-label">تعداد پیش‌بینی‌های موفق</div>
-            <div class="metric-value" id="metric-correct-trades">–</div>
-            <div class="metric-caption">
-              تعداد تریدهایی که با سود بسته شده‌اند (برد).
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-label">سود/زیان تحقق‌یافته تا الان</div>
-            <div class="metric-value" id="metric-total-pnl">–</div>
-            <div class="metric-caption">
-              مجموع PnL همه‌ی معاملات بسته‌شده (روی دیتای واقعی).
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-label">قیمت لحظه‌ای بیت‌کوین به تومان</div>
-            <div class="metric-value" id="metric-btc-price">–</div>
-            <div class="metric-caption">
-              قیمت BTC/IRT از صرافی (قابل اتصال به Bitpin/Wallex).
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-label">آخرین تصمیم ربات</div>
-            <div class="metric-value" id="metric-last-decision">–</div>
-            <div class="metric-caption" id="metric-last-decision-caption">
-              تصمیم اخیر ربات (BUY / SELL / HOLD) روی آخرین کندل.
-            </div>
+            <div id="metric-error-rate" class="metric-value">–</div>
           </div>
         </div>
 
-        <div class="metrics-footer">
+        <div class="metrics-footer" style="margin-top: 16px">
           <a href="/index.html" class="btn-primary">
             مشاهده داشبورد کامل و نمودارهای زنده
           </a>
         </div>
       </section>
-      <!-- 🔮 سکشن توصیه هوشمند امروز (AI Free Advisor) -->
-      <section id="ai-section" class="ai-section">
-        <h2>توصیه هوشمند امروز ربات</h2>
-        <p class="ai-intro">
-          این بخش یک «دستیار روزانه» است که بر اساس عملکرد واقعی ربات،
-          آخرین سیگنال‌ها و سود/زیان روزهای اخیر، یک جمع‌بندی قابل‌فهم
-          برای امروز می‌دهد.
-        </p>
-
-        <div class="ai-layout">
-          <!-- کارت اصلی توصیه -->
-          <div class="metric-card ai-main-card">
-            <div class="ai-badge">AI Free Advisor</div>
-            <h3 id="ai-advice-title">در حال تحلیل داده‌ها...</h3>
-            <p id="ai-advice-body" class="ai-advice-body">
-              چند ثانیه صبر کنید تا توصیه امروز بر اساس دیتای واقعی محاسبه شود.
-            </p>
-
-            <ul id="ai-advice-bullets" class="ai-bullets">
-              <!-- با JS پر می‌شود -->
-            </ul>
-          </div>
-
-          <!-- کارت وضعیت امروز -->
-          <div class="metric-card ai-side-card">
-            <h3>وضعیت کلی امروز</h3>
-            <div class="ai-side-row">
-              <span class="ai-side-label">رژیم بازار:</span>
-              <span id="ai-context-regime" class="ai-side-value">نامشخص</span>
-            </div>
-            <div class="ai-side-row">
-              <span class="ai-side-label">وین‌ریت فعلی:</span>
-              <span id="ai-context-winrate" class="ai-side-value">–٪</span>
-            </div>
-            <div class="ai-side-row">
-              <span class="ai-side-label">PnL کل:</span>
-              <span id="ai-context-totalpnl" class="ai-side-value">–</span>
-            </div>
-            <div class="ai-side-row">
-              <span class="ai-side-label">روند چند روز اخیر:</span>
-              <span id="ai-context-recent" class="ai-side-value">در حال محاسبه...</span>
-            </div>
-            <div class="ai-side-row">
-              <span class="ai-side-label">آخرین تصمیم ربات:</span>
-              <span id="ai-context-lastdecision" class="ai-side-value">–</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-
     </div>
 
     <script src="/static/js/home.js"></script>
