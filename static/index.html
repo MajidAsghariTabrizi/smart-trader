@@ -1,171 +1,189 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <title>SmartTrader Dashboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8" />
+    <title>SmartTrader – داشبورد زنده</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Styles -->
-    <link rel="stylesheet" href="/static/css/style.css">
-
-    <!-- ChartJS -->
+    <link rel="stylesheet" href="/static/css/style.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body class="theme-dark-pro">
+<div class="st-page">
 
-<div class="container">
+    <!-- ================= HERO ================= -->
+    <header class="st-hero">
 
-    <!-- =================== THEME TOGGLE =================== -->
-    <div class="theme-toggle">
-        <button id="themeToggle">
-            <span class="icon">🌗</span>
-            تغییر تم
-        </button>
-    </div>
+        <div class="st-hero-left">
+            <canvas id="hero-sparkline"></canvas>
 
-    <!-- =================== HERO =================== -->
-    <div class="hero">
-        <div class="badge">
-            <span class="live-dot"></span>
-            <span>SmartTrader Live</span>
+            <div class="st-hero-ticker">
+                قیمت لحظه‌ای BTC/IRT:
+                <span id="hero-btc-price">--</span>
+            </div>
         </div>
 
-        <div class="title">
-            داشبورد اصلی <span>SmartTrader</span>
-        </div>
+        <div class="st-hero-right">
+            <div class="st-pill st-pill-primary">SmartTrader • موتور تصمیم‌گیری</div>
 
-        <div class="subtitle">
-            رصد لحظه‌ای تصمیم‌ها، وضعیت بازار، نمودار قیمت، PnL و جزئیات تریدها.
-        </div>
+            <h1>
+                رباتی که بازار کریپتو را به‌صورت
+                <span class="st-highlight">الگوریتمیک و ۲۴ ساعته</span>
+                رصد و معامله می‌کند.
+            </h1>
 
-        <div class="live-strip">
-            <span class="live-dot"></span>
-            <span>داده‌ها هر چند ثانیه آپدیت می‌شوند</span>
-        </div>
-    </div>
+            <p class="st-hero-subtitle">
+                تحلیل چندتایم‌فریمی، ADX, ATR, ریسک‌سنجی داخلی و موتور سیگنال‌دهی پیشرفته.
+            </p>
 
-    <!-- =================== LAYOUT =================== -->
-    <div class="layout">
-
-        <!-- ============= LEFT SIDE (Chart + Summary) ============= -->
-        <div class="left">
-
-            <!-- ===== Price Chart ===== -->
-            <div class="card">
-                <h2>نمودار لحظه‌ای BTC/IRT</h2>
-
-                <div class="chart-wrapper">
-                    <canvas id="priceChart"></canvas>
-                    <div class="chart-orbit"></div>
+            <div class="st-hero-badges">
+                <div class="st-badge">
+                    <span>آخرین تصمیم</span>
+                    <span id="hero-last-decision">--</span>
                 </div>
-
-                <!-- AI Summary -->
-                <div class="summary">
-                    <div class="summary-title">تحلیل هوشمند</div>
-                    <div id="summaryText">
-                        در حال بارگذاری تحلیل…
-                    </div>
-
-                    <div class="signal-strength-box">
-                        <div class="signal-strength-bar">
-                            <div id="signalStrengthFill"></div>
-                        </div>
-                    </div>
-
-                    <!-- Regime -->
-                    <div class="regime-box">
-                        <span class="regime-title">رژیم بازار:</span>
-                        <span id="regimePill" class="regime-pill regime-neutral">NEUTRAL</span>
-                    </div>
-
-                    <!-- ADX -->
-                    <div class="adx-box">
-                        <span class="adx-title">قدرت روند (ADX):</span>
-                        <span id="adxPill" class="adx-pill adx-medium">20</span>
-                    </div>
-
+                <div class="st-badge">
+                    <span>حالت بازار</span>
+                    <span id="hero-regime">--</span>
+                </div>
+                <div class="st-badge">
+                    <span>قدرت روند (ADX)</span>
+                    <span id="hero-adx">--</span>
+                </div>
+                <div class="st-badge">
+                    <span>Winrate</span>
+                    <span id="hero-winrate">--</span>
                 </div>
             </div>
 
-            <!-- ===== Daily PnL ===== -->
-            <div class="card stats-card">
-                <h2>PNL روزانه</h2>
-                <div id="pnlDailyList" class="pnl-list"></div>
+            <div class="st-hero-actions">
+                <a href="/dashboard" class="st-btn st-btn-primary">ورود به داشبورد</a>
             </div>
-
-            <!-- ===== Recent Trades ===== -->
-            <div class="card stats-card">
-                <h2>آخرین معاملات</h2>
-                <div id="tradesList" class="trade-list"></div>
-            </div>
-
         </div>
+    </header>
 
-        <!-- ============= RIGHT SIDE (Stats + Decisions) ============= -->
-        <div class="right">
+    <!-- ================= MAIN ================= -->
+    <main class="st-main">
 
-            <!-- ===== Stats Pill Bar ===== -->
-            <div class="card">
-                <h2>وضعیت کلی ربات</h2>
+        <!-- ========== ENERGY CHART + PANEL ========== -->
+        <section class="st-row st-row-responsive">
+            <div class="st-card st-card-large">
+                <div class="st-card-header">
+                    <h2>Energy Spectrum</h2>
+                    <p>توزیع انرژی تصمیم‌ها (Aggregate S)</p>
+                </div>
+                <canvas id="priceChart"></canvas>
+            </div>
 
-                <div class="stats-bar">
-                    <div class="stat-pill">
-                        <span class="stat-label">تعداد معاملات:</span>
-                        <span id="sum-trades" class="stat-value">–</span>
+            <aside class="st-card st-side-panel">
+
+                <!-- Probability Engine -->
+                <div class="st-panel-block">
+                    <h3>Probability Engine</h3>
+                    <div class="prob-row">
+                        <span>BUY</span>
+                        <div class="prob-bar"><div id="prob-buy"></div></div>
+                        <span id="prob-buy-label">--</span>
                     </div>
-
-                    <div class="stat-pill">
-                        <span class="stat-label">برد:</span>
-                        <span id="sum-wins" class="stat-value">–</span>
+                    <div class="prob-row">
+                        <span>SELL</span>
+                        <div class="prob-bar"><div id="prob-sell"></div></div>
+                        <span id="prob-sell-label">--</span>
                     </div>
-
-                    <div class="stat-pill">
-                        <span class="stat-label">باخت:</span>
-                        <span id="sum-losses" class="stat-value">–</span>
+                    <div class="prob-row">
+                        <span>HOLD</span>
+                        <div class="prob-bar"><div id="prob-hold"></div></div>
+                        <span id="prob-hold-label">--</span>
                     </div>
+                </div>
 
-                    <div class="stat-pill">
-                        <span class="stat-label">وین‌ریت:</span>
-                        <span id="sum-winrate" class="stat-value">–</span>
+                <!-- Volatility -->
+                <div class="st-panel-block">
+                    <h3>Volatility Band</h3>
+                    <div class="vol-wrapper">
+                        <div id="vol-pointer"></div>
                     </div>
+                    <div id="volatility-label" class="vol-text">--</div>
+                </div>
 
-                    <div class="stat-pill">
-                        <span class="stat-label">PnL کل:</span>
-                        <span id="sum-pnl" class="stat-value">–</span>
-                    </div>
+                <!-- Sentiment -->
+                <div class="st-panel-block">
+                    <h3>Sentiment Radar</h3>
+                    <ul id="sentiment-list"></ul>
+                </div>
+
+            </aside>
+        </section>
+
+        <!-- ========== DECISIONS HEATMAP ========== -->
+        <section class="st-row">
+            <div class="st-card">
+                <div class="st-card-header">
+                    <h2>Heatmap تصمیم‌ها</h2>
+                </div>
+                <div id="heatmap-decisions" class="heatmap-box"></div>
+            </div>
+        </section>
+
+        <!-- ========== METRICS ========== -->
+        <section class="st-row st-row-responsive">
+            <div class="st-card">
+                <div class="st-card-header">
+                    <h2>خلاصه عملکرد</h2>
+                </div>
+
+                <div class="st-metrics-grid">
+                    <div><label>PnL:</label><span id="metric-total-pnl">--</span></div>
+                    <div><label>Win:</label><span id="metric-total-wins">--</span></div>
+                    <div><label>Loss:</label><span id="metric-total-losses">--</span></div>
+                    <div><label>تعداد معاملات:</label><span id="metric-total-trades">--</span></div>
+                    <div><label>Error Rate:</label><span id="metric-error-rate">--</span></div>
                 </div>
             </div>
 
-            <!-- ===== Decisions List ===== -->
-            <div class="card">
-                <div class="decisions-header">
-                    <h2>لیست تصمیم‌ها</h2>
-                    <select id="decisionFilter">
-                        <option value="all">همه</option>
-                        <option value="buy">فقط BUY</option>
-                        <option value="sell">فقط SELL</option>
-                        <option value="hold">فقط HOLD</option>
-                    </select>
+            <!-- AI ADVICE -->
+            <div class="st-card">
+                <div class="st-card-header">
+                    <h2>توصیه هوشمند</h2>
                 </div>
+                <div class="ai-box">
+                    <h3 id="ai-advice-title">--</h3>
+                    <p id="ai-advice-body">--</p>
+                    <ul id="ai-advice-bullets"></ul>
+                </div>
+            </div>
+        </section>
 
-                <div id="decisions" class="decisions-list"></div>
+        <!-- ========== DECISION FEED ========== -->
+        <section class="st-row">
+            <div class="st-card">
+                <div class="st-card-header">
+                    <h2>جریان زنده تصمیم‌ها</h2>
+                </div>
+                <div id="decision-list" class="decision-feed"></div>
+            </div>
+        </section>
+
+        <!-- ========== DAILY PNL & TRADES ========== -->
+        <section class="st-row st-row-responsive">
+            <div class="st-card">
+                <div class="st-card-header"><h2>PnL روزانه</h2></div>
+                <div id="pnl-daily"></div>
             </div>
 
-        </div>
-    </div>
+            <div class="st-card">
+                <div class="st-card-header"><h2>معاملات اخیر</h2></div>
+                <div id="recent-trades"></div>
+            </div>
+        </section>
 
+    </main>
+
+    <footer class="st-footer">
+        <span>SmartTrader © 2025</span>
+    </footer>
 </div>
 
-<!-- Scripts -->
-<script src="/static/js/app.js"></script>
-
-<script>
-/* Theme Toggle */
-document.getElementById("themeToggle").onclick = () => {
-    document.body.classList.toggle("theme-light");
-};
-</script>
-
+<script src="/static/js/home.js"></script>
 </body>
 </html>
