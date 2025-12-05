@@ -10,19 +10,17 @@
 <body class="st-body">
 <div id="app" class="st-page">
 <header class="st-hero">
-<canvas id="quantumFlux" width="1200" height="420"></canvas>
 
-    <!-- LEFT: Sparkline + Live BTC -->
-    <div class="st-hero-left">
-        <canvas id="hero-sparkline" class="st-algo-canvas" width="600" height="260"></canvas>
+    <!-- 🌌 QuantumFlux Background -->
+    <canvas id="quantumFlux" width="1400" height="420"></canvas>
 
-        <div class="st-hero-ticker">
-            <span>قیمت لحظه‌ای بیت‌کوین:</span>
-            <span id="hero-btc-price" class="st-ticker-value">--</span>
-        </div>
+    <!-- 💎 Floating Live Price Badge -->
+    <div class="floating-price">
+        <span class="fp-label">قیمت لحظه‌ای بیت‌کوین</span>
+<span id="hero-btc-price" class="fp-value">--</span>
     </div>
 
-    <!-- RIGHT: Branding + Info -->
+    <!-- RIGHT — Branding + Stats -->
     <div class="st-hero-right">
 
         <div class="st-pill st-pill-primary">
@@ -55,7 +53,6 @@
                 <span id="hero-winrate" class="st-badge-value">--</span>
             </div>
         </div>
-
     </div>
 
 </header>

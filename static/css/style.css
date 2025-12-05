@@ -533,3 +533,57 @@ body {
     z-index: 0;
     pointer-events: none;
 }
+/* Floating BTC Panel */
+.floating-price {
+    position: absolute;
+    top: 30px;
+    left: 40px;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    padding: 10px 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.25);
+    color: #e8f9ff;
+    z-index: 15;
+    display: flex;
+    flex-direction: column;
+}
+
+.floating-price .fp-label {
+    font-size: 12px;
+    opacity: 0.75;
+}
+
+.floating-price .fp-value {
+    font-size: 18px;
+    margin-top: 2px;
+    font-weight: 600;
+    color: #6cf3ff;
+}
+.fx-glow {
+    animation: glowPulse 2.4s infinite ease-in-out;
+}
+
+@keyframes glowPulse {
+    0% { opacity: 0.8; }
+    50% { opacity: 1; }
+    100% { opacity: 0.8; }
+}
+.st-vol-track {
+    height: 10px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 999px;
+    margin-top: 8px;
+    position: relative;
+}
+
+#vol-pointer {
+    position: absolute;
+    top: -4px;
+    width: 12px;
+    height: 18px;
+    background: #fff;
+    border-radius: 4px;
+    transition: left 0.3s ease;
+}

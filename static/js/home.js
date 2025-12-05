@@ -210,6 +210,8 @@ function renderHero(last, perf, btc) {
   set("hero-adx", last?.adx != null ? last.adx.toFixed(1) : "–");
   set("hero-winrate", perf?.winrate != null ? perf.winrate + "٪" : "–");
   set("hero-btc-price", fmtNum(btc?.price_tmn ?? btc?.price));
+  const floatBox = document.getElementById("floating-btc");
+if (floatBox) floatBox.classList.add("fx-glow");
 }
 
 function renderMetrics(perf) {
@@ -529,16 +531,17 @@ async function updateDashboard() {
 }
 
 async function loadFluxData() {
-    let res = await getJSON("/api/decisions?limit=80");
-    if (!res || !res.decisions) return [];
+    let res = await api("/api/decisions?limit=80");   // FIXED: getJSON → api
+    if (!Array.isArray(res)) return [];
 
-    return res.decisions.map(d => ({
+    return res.map(d => ({
         t: d.timestamp,
-        energy: d.confirm_s,
+        energy: d.confirm_s ?? 0,
         type: d.final_decision,
         vol: Math.abs(d.confirm_adx || 0)
     }));
 }
+
 
 function drawQuantumFlux(data) {
     const canvas = document.getElementById("quantumFlux");
@@ -601,9 +604,9 @@ function drawQuantumFlux(data) {
 
 (async function initFlux(){
     let data = await loadFluxData();
+    if (data.length === 0) return;
     drawQuantumFlux(data);
 })();
-
 async function renderBubbleSpectrum() {
     const container = document.getElementById("bubble-spectrum");
     if (!container) return;
