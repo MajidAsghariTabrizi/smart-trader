@@ -1,6 +1,6 @@
 /* =====================================================================
    SmartTrader – Unified Dashboard JS
-   (Sync with /api/... endpoints on backend)
+   Fully Synced with HTML + API Endpoints
    ===================================================================== */
 
 /* --------------------------- Helpers -------------------------------- */
@@ -151,8 +151,6 @@ function renderVol(last) {
   if (!ptr || !lbl) return;
 
   const adx = Number(last?.adx || 0);
-  const atr = Number(last?.atr || 0);
-  // scale ساده؛ اگر خواستی می‌تونی تغییر بدهی
   let volScore = Math.min(100, Math.max(0, adx * 1.4));
 
   ptr.style.left = volScore + "%";
@@ -180,18 +178,16 @@ function renderSentiment(daily) {
     return;
   }
 
-  const avg = pnlList.reduce((acc, v) => acc + v, 0) / (pnlList.length || 1);
+  const avg = pnlList.reduce((a, v) => a + v, 0) / pnlList.length;
   const greens = pnlList.filter((x) => x > 0).length;
   const reds = pnlList.filter((x) => x < 0).length;
 
   const items = [];
-  items.push(
-    avg > 0 ? "میانگین سود روزانه مثبت است." : "میانگین سود روزانه منفی است."
-  );
+  items.push(avg > 0 ? "میانگین سود روزانه مثبت است." : "میانگین ضرر است.");
   items.push(
     greens >= reds
-      ? "روزهای مثبت بیشتر یا برابر با روزهای منفی بوده است."
-      : "فشار منفی در روزهای اخیر بیشتر بوده است."
+      ? "روزهای مثبت بیشتر بوده است."
+      : "فشار منفی اخیر بیشتر بوده است."
   );
 
   items.forEach((t) => {
@@ -226,7 +222,6 @@ function renderMetrics(perf) {
   set("metric-total-wins", fmtNum(perf.wins));
   set("metric-total-losses", fmtNum(perf.losses));
   set("metric-total-pnl", fmtNum(perf.total_pnl));
-  // اگر تو HTML درصد خطا داری
   set("metric-error-rate", fmtPct(100 - (perf.winrate || 0)));
 }
 
@@ -241,35 +236,29 @@ function renderDecisionList() {
   container.innerHTML = "";
 
   if (!globalDecisions.length) {
-    const empty = document.createElement("div");
-    empty.className = "decision-empty";
-    empty.textContent = "هنوز تصمیمی ثبت نشده است.";
-    container.appendChild(empty);
+    container.innerHTML = `<div class="decision-empty">هنوز تصمیمی ثبت نشده است.</div>`;
     return;
   }
 
-  const list = globalDecisions.slice().reverse();
-
-  list.forEach((d) => {
-    const item = document.createElement("div");
-    item.className = "decision-row";
-
-    item.innerHTML = `
-      <div class="decision-row-main">
-        <span class="decision-pill decision-${(d.decision || "hold").toLowerCase()}">
-          ${faDecision(d.decision)}
-        </span>
-        <span class="decision-price">
-          قیمت: ${fmtNum(d.price)} تومان
-        </span>
-      </div>
-      <div class="decision-row-meta">
-        <span>${formatFaDate(d.timestamp)}</span>
-        <span>رژیم: ${(d.regime || "NEUTRAL").toUpperCase()}</span>
-      </div>
-    `;
-    container.appendChild(item);
-  });
+  globalDecisions
+    .slice()
+    .reverse()
+    .forEach((d) => {
+      container.innerHTML += `
+        <div class="decision-row">
+          <div class="decision-row-main">
+            <span class="decision-pill decision-${(d.decision || "hold").toLowerCase()}">
+              ${faDecision(d.decision)}
+            </span>
+            <span class="decision-price">قیمت: ${fmtNum(d.price)}</span>
+          </div>
+          <div class="decision-row-meta">
+            <span>${formatFaDate(d.timestamp)}</span>
+            <span>رژیم: ${(d.regime || "NEUTRAL").toUpperCase()}</span>
+          </div>
+        </div>
+      `;
+    });
 }
 
 /* --------------------------- Daily PnL & Trades --------------------- */
@@ -279,64 +268,54 @@ function renderDailyPnl(daily) {
   if (!el) return;
 
   if (!daily || !daily.length) {
-    el.textContent =
-      "هنوز ترید بسته‌شده‌ای برای محاسبه سود و زیان روزانه وجود ندارد.";
+    el.textContent = "هنوز ترید بسته‌شده‌ای وجود ندارد.";
     return;
   }
 
   el.innerHTML = "";
   daily.forEach((d) => {
     const pnl = Number(d.pnl ?? d.day_pnl ?? 0);
-    const signClass = pnl > 0 ? "pnl-pos" : pnl < 0 ? "pnl-neg" : "pnl-flat";
+    const sign =
+      pnl > 0 ? "pnl-pos" : pnl < 0 ? "pnl-neg" : "pnl-flat";
 
-    const row = document.createElement("div");
-    row.className = "pnl-row";
-
-    row.innerHTML = `
-      <span class="pnl-date">${d.day}</span>
-      <span class="pnl-val ${signClass}">
-        ${pnl.toLocaleString("fa-IR")}
-      </span>
-      <span class="pnl-trades">${d.n_trades || d.trades || 0} ترید</span>
+    el.innerHTML += `
+      <div class="pnl-row">
+        <span class="pnl-date">${d.day}</span>
+        <span class="pnl-val ${sign}">${pnl.toLocaleString("fa-IR")}</span>
+        <span class="pnl-trades">${d.n_trades || 0} ترید</span>
+      </div>
     `;
-    el.appendChild(row);
   });
 }
 
-function renderRecentTrades(trades) {
+function renderRecentTrades(list) {
   const el = document.getElementById("recent-trades");
   if (!el) return;
 
-  if (!trades || !trades.length) {
-    el.textContent = "هنوز ترید بسته‌شده‌ای ثبت نشده است.";
+  if (!list || !list.length) {
+    el.textContent = "ترید بسته‌شده‌ای وجود ندارد.";
     return;
   }
 
   el.innerHTML = "";
-  trades.forEach((t) => {
+  list.forEach((t) => {
     const pnl = Number(t.pnl || 0);
-    const pnlClass = pnl > 0 ? "pnl-pos" : pnl < 0 ? "pnl-neg" : "pnl-flat";
-    const sideFa =
-      (t.side || "").toUpperCase() === "LONG" ? "خرید (LONG)" : "فروش (SHORT)";
+    const sign = pnl > 0 ? "pnl-pos" : pnl < 0 ? "pnl-neg" : "pnl-flat";
 
-    const row = document.createElement("div");
-    row.className = "trade-row";
-
-    row.innerHTML = `
-      <div class="trade-header">
-        <span class="trade-side">${sideFa}</span>
-        <span class="trade-time">${formatFaDate(t.timestamp)}</span>
-      </div>
-      <div class="trade-body">
-        <span>ورود: ${fmtNum(t.entry_price)}</span>
-        <span>خروج: ${fmtNum(t.close_price)}</span>
-        <span>حجم: ${fmtNum(t.qty)}</span>
-        <span class="trade-pnl ${pnlClass}">
-          PnL: ${pnl.toLocaleString("fa-IR")}
-        </span>
+    el.innerHTML += `
+      <div class="trade-row">
+        <div class="trade-header">
+          <span>${(t.side || "").toUpperCase()}</span>
+          <span>${formatFaDate(t.timestamp)}</span>
+        </div>
+        <div class="trade-body">
+          <span>ورود: ${fmtNum(t.entry_price)}</span>
+          <span>خروج: ${fmtNum(t.close_price)}</span>
+          <span>حجم: ${fmtNum(t.qty)}</span>
+          <span class="trade-pnl ${sign}">PnL: ${fmtNum(pnl)}</span>
+        </div>
       </div>
     `;
-    el.appendChild(row);
   });
 }
 
@@ -346,15 +325,15 @@ let priceChartInstance = null;
 
 function buildPriceDecisionChart(prices, decisions) {
   const canvas = document.getElementById("priceChart");
-  if (!canvas || !prices || !prices.length) return;
+  if (!canvas) return;
+
+  if (!prices || !prices.length) return;
 
   const labels = prices.map((p) => p.timestamp);
   const data = prices.map((p) => p.price);
 
   const indexByTs = {};
-  labels.forEach((t, i) => {
-    indexByTs[t] = i;
-  });
+  labels.forEach((t, i) => (indexByTs[t] = i));
 
   const buyPoints = [];
   const sellPoints = [];
@@ -362,17 +341,14 @@ function buildPriceDecisionChart(prices, decisions) {
   decisions.forEach((d) => {
     const i = indexByTs[d.timestamp];
     if (i == null) return;
-
     const point = { x: labels[i], y: data[i] };
-    const dec = (d.decision || "").toUpperCase();
-    if (dec === "BUY") buyPoints.push(point);
-    if (dec === "SELL") sellPoints.push(point);
+    if (d.decision === "BUY") buyPoints.push(point);
+    if (d.decision === "SELL") sellPoints.push(point);
   });
 
   const ctx = canvas.getContext("2d");
-  if (priceChartInstance) {
-    priceChartInstance.destroy();
-  }
+
+  if (priceChartInstance) priceChartInstance.destroy();
 
   priceChartInstance = new Chart(ctx, {
     type: "line",
@@ -385,26 +361,26 @@ function buildPriceDecisionChart(prices, decisions) {
           borderColor: "#60a5fa",
           backgroundColor: "rgba(37,99,235,0.18)",
           borderWidth: 2,
+          pointRadius: 0,
           tension: 0.35,
           fill: true,
-          pointRadius: 0,
         },
         {
           type: "scatter",
-          label: "خرید",
+          label: "BUY",
           data: buyPoints,
           pointBackgroundColor: "#16a34a",
           pointBorderColor: "#ffffff",
-          pointRadius: 5,
+          pointRadius: 6,
           pointStyle: "triangle",
         },
         {
           type: "scatter",
-          label: "فروش",
+          label: "SELL",
           data: sellPoints,
           pointBackgroundColor: "#dc2626",
           pointBorderColor: "#ffffff",
-          pointRadius: 5,
+          pointRadius: 6,
           pointStyle: "triangle",
         },
       ],
@@ -418,9 +394,7 @@ function buildPriceDecisionChart(prices, decisions) {
           callbacks: {
             title: (items) => formatFaDate(items[0].label),
             label: (ctx) =>
-              "قیمت: " +
-              Number(ctx.parsed.y).toLocaleString("fa-IR") +
-              " تومان",
+              "قیمت: " + Number(ctx.parsed.y).toLocaleString("fa-IR"),
           },
         },
       },
@@ -428,9 +402,7 @@ function buildPriceDecisionChart(prices, decisions) {
         x: { ticks: { display: false } },
         y: {
           ticks: {
-            callback: function (value) {
-              return Number(value).toLocaleString("fa-IR");
-            },
+            callback: (v) => Number(v).toLocaleString("fa-IR"),
           },
         },
       },
@@ -438,59 +410,43 @@ function buildPriceDecisionChart(prices, decisions) {
   });
 }
 
-/* --------------------------- AI Context & Advice -------------------- */
+/* --------------------------- AI Context / Advice -------------------- */
 
 function buildAiAdvice(perf, decisions, daily) {
   const total = perf?.total_trades || 0;
   const winrate = perf?.winrate || 0;
   const totalPnl = perf?.total_pnl || 0;
-  const last = decisions?.[decisions.length - 1] || null;
+  const last = decisions?.[decisions.length - 1];
 
   if (!last || total < 3) {
     return {
-      title: "هنوز داده کافی وجود ندارد",
-      description:
-        "برای ارائه توصیه عملی، باید چند معامله و تصمیم واقعی ثبت شده باشد.",
-      bullets: ["فعلاً بهترین کار مشاهده رفتار ربات و جمع‌آوری داده است."],
+      title: "داده کافی نیست",
+      description: "برای توصیه عملی‌تر، باید چند ترید واقعی انجام شده باشد.",
+      bullets: ["فعلاً فقط رفتار ربات را مشاهده کن."],
     };
   }
-
-  const dec = (last.decision || "").toUpperCase();
-  const regime = (last.regime || "NEUTRAL").toUpperCase();
 
   let title = "تحلیل امروز";
   let description = "";
   const bullets = [];
 
-  if (dec === "BUY") {
-    title = "سوگیری امروز روی خرید است";
-    description =
-      "سیگنال غالب فعلی BUY است. اگر قصد ورود داری، فقط در جهت خرید فکر کن و مدیریت ریسک را رعایت کن.";
-    bullets.push("ورود فقط در جهت BUY و همراه با روند.");
-  } else if (dec === "SELL") {
-    title = "سوگیری امروز روی فروش است";
-    description =
-      "سیگنال غالب SELL است. بازار می‌تواند در فاز اصلاح یا نزول باشد.";
-    bullets.push("اگر ترید می‌کنی، ستاپ‌های SELL را جدی‌تر بگیر.");
+  if (last.decision === "BUY") {
+    title = "سوگیری خرید";
+    description = "سیگنال فعلی BUY است؛ فقط ستاپ‌های خرید را بررسی کن.";
+    bullets.push("ورود فقط در جهت BUY.");
+  } else if (last.decision === "SELL") {
+    title = "سوگیری فروش";
+    description = "سیگنال SELL فعال است؛ بازار احتمالاً در اصلاح/نزول است.";
+    bullets.push("ستاپ‌های SELL مناسب‌تر هستند.");
   } else {
-    title = "امروز بیشتر حالت HOLD است";
-    description =
-      "سیگنال واضحی برای ورود قوی وجود ندارد؛ حفظ سرمایه مهم‌تر از ورود اجباری است.";
-    bullets.push("به‌جای اصرار روی معامله، روی تحلیل گذشته تمرکز کن.");
+    title = "عدم قطعیت (HOLD)";
+    description = "سیگنال قطعی وجود ندارد؛ مدیریت سرمایه مهم‌تر است.";
+    bullets.push("از ورودهای اجباری خودداری کن.");
   }
 
-  if (totalPnl < 0) {
-    bullets.push("PNL اخیر منفی است؛ حجم ترید را کاهش بده و سخت‌گیرتر استاپ بگذار.");
-  }
-  if (winrate > 55) {
-    bullets.push("وین‌ریت کلی خوب است؛ ستاپ‌های هم‌جهت با ربات ارزش توجه دارند.");
-  }
-
-  if (regime === "HIGH") {
-    bullets.push("بازار پرنوسان است؛ مراقب جهش‌های سریع قیمت باش.");
-  } else if (regime === "LOW") {
-    bullets.push("بازار کم‌نوسان است؛ صبر و فیلتر کردن ستاپ‌ها مهم‌تر است.");
-  }
+  if (totalPnl < 0) bullets.push("PNL اخیر منفی است؛ حجم معاملات را کم کن.");
+  if (winrate > 55)
+    bullets.push("وین‌ریت خوب است؛ ستاپ‌های هم‌جهت با ربات ارزشمندترند.");
 
   return { title, description, bullets };
 }
@@ -502,6 +458,7 @@ function renderAiAdviceUi(advice) {
 
   if (t) t.textContent = advice.title;
   if (b) b.textContent = advice.description;
+
   if (ul) {
     ul.innerHTML = "";
     advice.bullets.forEach((x) => {
@@ -531,6 +488,7 @@ async function updateDashboard() {
       winrate: 0,
       total_pnl: 0,
     };
+
     const decisionsSafe = Array.isArray(decisions) ? decisions : [];
     const dailySafe = Array.isArray(daily) ? daily : [];
     const pricesSafe = Array.isArray(prices) ? prices : [];
@@ -538,32 +496,31 @@ async function updateDashboard() {
 
     globalDecisions = decisionsSafe;
 
-    // Hero & top metrics
+    /* HERO */
     renderHero(last, perfSafe, btc || {});
     renderMetrics(perfSafe);
-
-    // Modules
     renderHeatmap(decisionsSafe);
     renderVol(last);
     renderSentiment(dailySafe);
-    if (btc && Array.isArray(btc.history)) {
-      renderSparkline(btc.history);
-    }
 
-    // Probability engine (از last decision + winrate)
+    if (btc && Array.isArray(btc.history))
+      renderSparkline(btc.history);
+
+    /* Probability */
     const prob = computeProb(last?.decision, perfSafe.winrate);
     renderProb(prob);
 
-    // Main price chart
+    /* Price / Decision chart */
     buildPriceDecisionChart(pricesSafe, decisionsSafe);
 
-    // Lists
+    /* Lists */
     renderDecisionList();
     renderDailyPnl(dailySafe);
+
     const recent = await api("/api/trades/recent?limit=30");
     renderRecentTrades(Array.isArray(recent) ? recent : []);
 
-    // AI Advisor
+    /* AI Advisor */
     const advice = buildAiAdvice(perfSafe, decisionsSafe, dailySafe);
     renderAiAdviceUi(advice);
   } catch (e) {
@@ -573,29 +530,7 @@ async function updateDashboard() {
 
 /* --------------------------- THEME (Optional) ----------------------- */
 
-const themeBtn = document.getElementById("toggleThemeBtn");
-
-function setTheme(mode) {
-  document.body.classList.remove("theme-light", "theme-dark-pro");
-  document.body.classList.add(mode);
-  localStorage.setItem("theme", mode);
-
-  const icon = document.querySelector(".theme-toggle-icon");
-  if (icon) icon.textContent = mode === "theme-light" ? "🌞" : "🌙";
-}
-
-if (themeBtn) {
-  themeBtn.addEventListener("click", () => {
-    const current = localStorage.getItem("theme") || "theme-dark-pro";
-    const next =
-      current === "theme-dark-pro" ? "theme-light" : "theme-dark-pro";
-    setTheme(next);
-  });
-}
-
 document.addEventListener("DOMContentLoaded", () => {
-  setTheme(localStorage.getItem("theme") || "theme-dark-pro");
   updateDashboard();
-  // رفرش هر ۱۰ ثانیه
   setInterval(updateDashboard, 10000);
 });
