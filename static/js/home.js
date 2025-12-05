@@ -528,6 +528,61 @@ async function updateDashboard() {
   }
 }
 
+async function renderBubbleSpectrum() {
+    const container = document.getElementById("bubble-spectrum");
+    container.innerHTML = "";
+
+    const data = await getJSON("/api/decisions?limit=150");
+    if (!data) return;
+
+    const W = container.clientWidth;
+    const H = container.clientHeight;
+
+    /* === Draw Gridlines === */
+    const gridCount = 6;
+    for (let i = 1; i < gridCount; i++) {
+        const line = document.createElement("div");
+        line.className = "spectrum-grid";
+        line.style.left = (i / gridCount) * W + "px";
+        container.appendChild(line);
+    }
+
+    /* === Bubble spectrum === */
+    data.forEach((d, i) => {
+        let bubble = document.createElement("div");
+        bubble.classList.add("bubble");
+
+        let type = d.decision?.toUpperCase();
+        if (type === "BUY") bubble.classList.add("bubble-buy");
+        else if (type === "SELL") bubble.classList.add("bubble-sell");
+        else bubble.classList.add("bubble-hold");
+
+        /* SIZE by intensity → absolute aggregate_s */
+        let intensity = Math.abs(d.aggregate_s || 0.15);
+        let size = 10 + intensity * 35; // dynamic bubble size
+        bubble.style.width = size + "px";
+        bubble.style.height = size + "px";
+
+        /* X position: index mapping */
+        const x = (i / data.length) * (W - size);
+
+        /* Y position: energy axis (aggregate_s range -1 to 1) */
+        const normalizedY = 0.5 - (d.aggregate_s || 0) / 2;
+        let y = normalizedY * (H - size);
+
+        /* Add jitter to avoid perfect grid */
+        y += (Math.random() * 20 - 10);
+        bubble.style.left = x + "px";
+        bubble.style.top = y + "px";
+
+        container.appendChild(bubble);
+    });
+}
+
+renderBubbleSpectrum();
+setInterval(renderBubbleSpectrum, 60000);
+
+
 /* --------------------------- THEME (Optional) ----------------------- */
 
 document.addEventListener("DOMContentLoaded", () => {
