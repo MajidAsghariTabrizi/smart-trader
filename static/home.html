@@ -11,50 +11,63 @@
 <div id="app" class="st-page">
 
     <!-- HERO -->
-    <header class="st-hero">
+   <header class="st-hero">
 
-        <div class="st-hero-left">
-            <canvas id="hero-sparkline" class="st-algo-canvas" width="600" height="260"></canvas>
+    <!-- 🔵 Quantum Rings Background -->
+    <div class="quantum-bg">
+        <svg class="quantum-rings" viewBox="0 0 800 800">
+            <circle cx="400" cy="400" r="180" class="ring" />
+            <circle cx="400" cy="400" r="260" class="ring" />
+            <circle cx="400" cy="400" r="340" class="ring" />
+            <circle cx="400" cy="400" r="420" class="ring" />
+        </svg>
+    </div>
 
-            <div class="st-hero-ticker">
-                <span>قیمت لحظه‌ای بیت‌کوین:</span>
-                <span id="hero-btc-price" class="st-ticker-value">--</span>
+    <div class="st-hero-left">
+        <canvas id="hero-sparkline" class="st-algo-canvas" width="600" height="260"></canvas>
+
+        <div class="st-hero-ticker">
+            <span>قیمت لحظه‌ای بیت‌کوین:</span>
+            <span id="hero-btc-price" class="st-ticker-value">--</span>
+        </div>
+    </div>
+
+    <div class="st-hero-right">
+
+        <div class="st-pill st-pill-primary">
+            SmartTrader • ربات معاملاتی خودکار
+        </div>
+
+        <h1 class="st-hero-title">
+            تحلیل و معامله‌گری هوشمند مبتنی بر داده و اندیکاتورها
+        </h1>
+
+        <p class="st-hero-subtitle">
+            ترکیب MTF Indicators، ADX، ATR و مدل ریسک داخلی SmartTrader
+        </p>
+
+        <div class="st-hero-badges">
+            <div class="st-badge">
+                <span class="st-badge-label">آخرین تصمیم</span>
+                <span id="hero-last-decision" class="st-badge-value">--</span>
+            </div>
+            <div class="st-badge">
+                <span class="st-badge-label">حالت بازار</span>
+                <span id="hero-regime" class="st-badge-value">--</span>
+            </div>
+            <div class="st-badge">
+                <span class="st-badge-label">قدرت روند (ADX)</span>
+                <span id="hero-adx" class="st-badge-value">--</span>
+            </div>
+            <div class="st-badge">
+                <span class="st-badge-label">Winrate</span>
+                <span id="hero-winrate" class="st-badge-value">--</span>
             </div>
         </div>
 
-        <div class="st-hero-right">
-            <div class="st-pill st-pill-primary">SmartTrader • ربات معاملاتی خودکار</div>
+    </div>
 
-            <h1 class="st-hero-title">
-                تحلیل و معامله‌گری هوشمند مبتنی بر داده و اندیکاتورها
-            </h1>
-
-            <p class="st-hero-subtitle">
-                ترکیب MTF Indicators، ADX، ATR و مدل ریسک داخلی SmartTrader
-            </p>
-
-            <div class="st-hero-badges">
-                <div class="st-badge">
-                    <span class="st-badge-label">آخرین تصمیم</span>
-                    <span id="hero-last-decision" class="st-badge-value">--</span>
-                </div>
-                <div class="st-badge">
-                    <span class="st-badge-label">حالت بازار</span>
-                    <span id="hero-regime" class="st-badge-value">--</span>
-                </div>
-                <div class="st-badge">
-                    <span class="st-badge-label">قدرت روند (ADX)</span>
-                    <span id="hero-adx" class="st-badge-value">--</span>
-                </div>
-                <div class="st-badge">
-                    <span class="st-badge-label">Winrate</span>
-                    <span id="hero-winrate" class="st-badge-value">--</span>
-                </div>
-            </div>
-
-        </div>
-
-    </header>
+</header>
 
 
 

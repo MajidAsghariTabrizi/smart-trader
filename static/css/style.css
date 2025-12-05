@@ -478,3 +478,47 @@ body {
     background: #ffe28a;
     box-shadow: 0 0 10px #ffe28a88;
 }
+/* ------------------ Quantum Rings Background ------------------ */
+
+.quantum-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 320px;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0.32;
+    z-index: 0;
+}
+
+.st-hero {
+    position: relative;
+    z-index: 2; /* محتوا بالاتر از حلقه‌ها */
+}
+
+.quantum-rings {
+    width: 140%;
+    height: 140%;
+    transform: translate(-20%, -20%);
+}
+
+.ring {
+    fill: none;
+    stroke: #4fc3ff33;
+    stroke-width: 2px;
+    stroke-linecap: round;
+    animation: spin 14s linear infinite, pulse 6s ease-in-out infinite;
+    filter: drop-shadow(0 0 10px #4fc3ff55);
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); transform-origin: 400px 400px; }
+    to   { transform: rotate(360deg); transform-origin: 400px 400px; }
+}
+
+@keyframes pulse {
+    0%   { stroke-opacity: 0.10; }
+    50%  { stroke-opacity: 0.40; }
+    100% { stroke-opacity: 0.10; }
+}
