@@ -1,25 +1,23 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>SmartTrader – ربات معاملاتی خودکار</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- استایل اصلی -->
-    <link rel="stylesheet" href="/static/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/static/css/style.css" />
 </head>
+
 <body class="st-body">
 <div id="app" class="st-page">
 
-    <!-- ====== HERO / NEURAL CANVAS ====== -->
+    <!-- HERO -->
     <header class="st-hero">
-        <div class="st-hero-left">
-            <!-- بوم گراف الگوریتم -->
-            <canvas id="algoCanvas" class="st-algo-canvas"></canvas>
 
-            <!-- لایه رویی برای قیمت لحظه‌ای -->
+        <div class="st-hero-left">
+            <canvas id="hero-sparkline" class="st-algo-canvas" width="600" height="260"></canvas>
+
             <div class="st-hero-ticker">
-                <span>قیمت لحظه‌ای بیت‌کوین / ریال:</span>
+                <span>قیمت لحظه‌ای بیت‌کوین:</span>
                 <span id="hero-btc-price" class="st-ticker-value">--</span>
             </div>
         </div>
@@ -28,14 +26,11 @@
             <div class="st-pill st-pill-primary">SmartTrader • ربات معاملاتی خودکار</div>
 
             <h1 class="st-hero-title">
-                رباتی که بازار کریپتو را به‌صورت
-                <span class="st-highlight">الگوریتمیک و ۲۴ ساعته</span>
-                رصد و معامله می‌کند.
+                تحلیل و معامله‌گری هوشمند مبتنی بر داده و اندیکاتورها
             </h1>
 
             <p class="st-hero-subtitle">
-                SmartTrader روی داده‌های لحظه‌ای، اندیکاتورهای چند‌تایم‌فریمی، ADX، ATR و
-                مدل مدیریت ریسک داخلی کار می‌کند و سیگنال‌های خرید، فروش و نگه‌داری را تولید می‌کند.
+                ترکیب MTF Indicators، ADX، ATR و مدل ریسک داخلی SmartTrader
             </p>
 
             <div class="st-hero-badges">
@@ -52,200 +47,202 @@
                     <span id="hero-adx" class="st-badge-value">--</span>
                 </div>
                 <div class="st-badge">
-                    <span class="st-badge-label">وضعیت کلی</span>
-                    <span id="hero-overall" class="st-badge-value">در حال تحلیل…</span>
+                    <span class="st-badge-label">Winrate</span>
+                    <span id="hero-winrate" class="st-badge-value">--</span>
                 </div>
             </div>
 
-            <div class="st-hero-actions">
-                <button id="btn-open-dashboard" class="st-btn st-btn-primary">
-                    مشاهده پنل تصمیم‌گیری
-                </button>
-                <button id="btn-open-docs" class="st-btn st-btn-ghost">
-                    مشاهده متن مستندات
-                </button>
-            </div>
         </div>
+
     </header>
 
-    <!-- ====== MAIN CONTENT ====== -->
+
+
+    <!-- MAIN -->
     <main class="st-main">
 
-        <!-- ====== ROW 1: ENERGY CHART + SIDE PANEL ====== -->
+        <!-- ROW 1: Heatmap + Side Panel -->
         <section class="st-row st-row-responsive">
 
-            <!-- Energy Spectrum / Matrix -->
+            <!-- Heatmap -->
             <div class="st-card st-card-large">
                 <div class="st-card-header">
-                    <h2>نمودار انرژی تصمیم‌ها (Energy Spectrum)</h2>
-                    <p class="st-card-caption">
-                        پراکندگی امتیاز تجمیعی سیگنال‌ها (Aggregate S) در بازه‌ی زمانی اخیر.
-                    </p>
+                    <h2>Heatmap تصمیم‌ها</h2>
+                    <p class="st-card-caption">آخرین ۶۴ تصمیم الگوریتم</p>
                 </div>
-                <div id="energyChart" class="st-energy-chart"></div>
+                <div id="heatmap-decisions" class="st-heatmap"></div>
             </div>
 
-            <!-- Side Panel: Real-time Metrics -->
+            <!-- Side Panel -->
             <aside class="st-card st-side-panel">
-                <div class="st-card-header">
-                    <h2>تحلیل لحظه‌ای SmartTrader</h2>
-                    <p class="st-card-caption">
-                        خلاصه‌ی وضعیت بازار بر اساس آخرین داده‌ها و تصمیمات.
-                    </p>
-                </div>
 
                 <!-- Probability Engine -->
                 <div class="st-panel-block">
                     <div class="st-panel-title">Probability Engine</div>
-                    <div class="st-panel-subtitle">
-                        احتمال سیگنال‌های ورود/خروج بر اساس موتور تصمیم‌گیری.
+                    <div class="st-panel-subtitle">احتمال BUY / SELL / HOLD</div>
+
+                    <div class="st-prob-bars">
+
+                        <div class="st-prob-row">
+                            <span class="st-prob-label">BUY</span>
+                            <div class="st-prob-bar-bg">
+                                <div id="prob-buy" class="st-prob-bar"></div>
+                            </div>
+                            <span id="prob-buy-label" class="st-prob-value">--</span>
+                        </div>
+
+                        <div class="st-prob-row">
+                            <span class="st-prob-label">SELL</span>
+                            <div class="st-prob-bar-bg">
+                                <div id="prob-sell" class="st-prob-bar"></div>
+                            </div>
+                            <span id="prob-sell-label" class="st-prob-value">--</span>
+                        </div>
+
+                        <div class="st-prob-row">
+                            <span class="st-prob-label">HOLD</span>
+                            <div class="st-prob-bar-bg">
+                                <div id="prob-hold" class="st-prob-bar"></div>
+                            </div>
+                            <span id="prob-hold-label" class="st-prob-value">--</span>
+                        </div>
+
                     </div>
-                    <ul class="st-prob-list">
-                        <li>
-                            <span>BUY</span>
-                            <span id="prob-buy">--</span>
-                        </li>
-                        <li>
-                            <span>SELL</span>
-                            <span id="prob-sell">--</span>
-                        </li>
-                        <li>
-                            <span>HOLD</span>
-                            <span id="prob-hold">--</span>
-                        </li>
+                </div>
+
+                <!-- Volatility -->
+                <div class="st-panel-block">
+                    <div class="st-panel-title">Volatility Band</div>
+                    <div class="st-panel-subtitle">نوسان لحظه‌ای بازار</div>
+
+                    <div class="st-vol-track">
+                        <div id="vol-pointer" class="st-vol-pointer"></div>
+                    </div>
+
+                    <div id="volatility-label" class="st-vol-text">در حال محاسبه…</div>
+                </div>
+
+                <!-- Sentiment -->
+                <div class="st-panel-block">
+                    <div class="st-panel-title">Sentiment Radar</div>
+                    <div class="st-panel-subtitle">تحلیل مود بازار</div>
+                    <ul id="sentiment-list" class="st-sentiment-list">
+                        <li>در حال بارگذاری…</li>
                     </ul>
                 </div>
 
-                <!-- Volatility Band -->
-                <div class="st-panel-block">
-                    <div class="st-panel-title">Volatility Band</div>
-                    <div class="st-panel-subtitle">
-                        باند نوسان قیمت و ریسک لحظه‌ای بازار.
-                    </div>
-                    <div class="st-vol-bar">
-                        <div id="vol-bar-fill" class="st-vol-bar-fill"></div>
-                        <span id="vol-label" class="st-vol-label">--</span>
-                    </div>
-                    <div id="vol-description" class="st-vol-text">
-                        در حال محاسبه‌ی نوسان بازار...
-                    </div>
-                </div>
-
-                <!-- Sentiment Radar -->
-                <div class="st-panel-block">
-                    <div class="st-panel-title">Sentiment Radar</div>
-                    <div class="st-panel-subtitle">
-                        تحلیل مود بازار بر اساس تصمیم‌ها و PnL روزانه.
-                    </div>
-                    <div id="sentiment-text" class="st-sentiment-text">
-                        داده‌ی کافی برای تحلیل مود بازار وجود ندارد.
-                    </div>
-                </div>
-
-                <!-- AI Summary -->
-                <div class="st-panel-block">
-                    <div class="st-panel-title">خلاصه‌ی هوشمند</div>
-                    <div id="ai-summary" class="st-ai-summary">
-                        موتور هوش مصنوعی در حال جمع‌بندی وضعیت کلی بازار است…
-                    </div>
-                </div>
             </aside>
+
         </section>
 
-        <!-- ====== ROW 2: LIVE DECISION MATRIX ====== -->
+
+
+        <!-- ROW 2: Price Chart -->
         <section class="st-row">
             <div class="st-card">
                 <div class="st-card-header">
-                    <h2>ماتریس زنده‌ی تصمیم‌های SmartTrader</h2>
-                    <p class="st-card-caption">
-                        Heatmap تصمیم‌ها، احتمال ورود/خروج و نوسان بازار در تایم‌فریم‌های مختلف.
-                    </p>
+                    <h2>نمودار قیمت + سیگنال‌ها</h2>
+                    <p class="st-card-caption">نمایش BUY / SELL</p>
                 </div>
-                <div id="decision-matrix" class="st-decision-matrix">
-                    <!-- این بخش با JS پر می‌شود -->
+
+                <div class="st-chart-wrapper" style="height: 420px;">
+                    <canvas id="priceChart"></canvas>
                 </div>
             </div>
         </section>
 
-        <!-- ====== ROW 3: PERFORMANCE SUMMARY ====== -->
+
+
+        <!-- ROW 3: Metrics + AI Advice -->
         <section class="st-row st-row-responsive st-row-metrics">
+
+            <!-- Metrics -->
             <div class="st-card">
-                <div class="st-card-header">
-                    <h2>خلاصه عملکرد</h2>
-                    <p class="st-card-caption">
-                        نتایج اجرای ربات بر اساس معاملات ثبت‌شده.
-                    </p>
-                </div>
+                <div class="st-card-header"><h2>خلاصه عملکرد</h2></div>
+
                 <div class="st-metrics-grid">
-                    <div class="st-metric">
-                        <div class="st-metric-label">PnL (TMN)</div>
-                        <div id="metric-pnl" class="st-metric-value">--</div>
-                    </div>
-                    <div class="st-metric">
-                        <div class="st-metric-label">Loss</div>
-                        <div id="metric-loss" class="st-metric-value">--</div>
-                    </div>
-                    <div class="st-metric">
-                        <div class="st-metric-label">Win</div>
-                        <div id="metric-win" class="st-metric-value">--</div>
-                    </div>
+
                     <div class="st-metric">
                         <div class="st-metric-label">تعداد معاملات</div>
-                        <div id="metric-trades" class="st-metric-value">--</div>
+                        <div id="metric-total-trades" class="st-metric-value">--</div>
                     </div>
+
                     <div class="st-metric">
-                        <div class="st-metric-label">Winrate</div>
-                        <div id="metric-winrate" class="st-metric-value">--</div>
+                        <div class="st-metric-label">برد</div>
+                        <div id="metric-total-wins" class="st-metric-value">--</div>
                     </div>
+
+                    <div class="st-metric">
+                        <div class="st-metric-label">باخت</div>
+                        <div id="metric-total-losses" class="st-metric-value">--</div>
+                    </div>
+
+                    <div class="st-metric">
+                        <div class="st-metric-label">PnL کل</div>
+                        <div id="metric-total-pnl" class="st-metric-value">--</div>
+                    </div>
+
                     <div class="st-metric">
                         <div class="st-metric-label">Error Rate</div>
                         <div id="metric-error-rate" class="st-metric-value">--</div>
                     </div>
+
                 </div>
             </div>
 
+            <!-- AI Advice -->
             <div class="st-card">
-                <div class="st-card-header">
-                    <h2>توصیه‌ی هوشمند AI</h2>
-                    <p class="st-card-caption">
-                        توصیه‌ی متنی بر اساس وضعیت فعلی بازار، ریسک و تاریخچه‌ی تصمیم‌ها.
-                    </p>
-                </div>
+                <div class="st-card-header"><h2>توصیه هوشمند AI</h2></div>
                 <div id="ai-advice" class="st-ai-advice">
-                    <h3 id="ai-advice-title">در حال تولید توصیه…</h3>
-                    <ul id="ai-advice-list">
-                        <li>منتظر دریافت تحلیل‌های بیشتر از موتور تصمیم‌گیری.</li>
+                    <h3 id="ai-advice-title">در حال تحلیل…</h3>
+                    <p id="ai-advice-body">منتظر تحلیل...</p>
+                    <ul id="ai-advice-bullets">
+                        <li>در حال بارگذاری…</li>
                     </ul>
                 </div>
             </div>
+
         </section>
 
-        <!-- ====== ROW 4: DECISION FEED ====== -->
+
+
+        <!-- ROW 4: Live Decision List -->
         <section class="st-row">
             <div class="st-card">
-                <div class="st-card-header">
-                    <h2>جریان زنده‌ی تصمیم‌ها</h2>
-                    <p class="st-card-caption">
-                        لیست سیگنال‌های اخیر (BUY / SELL / HOLD) همراه با امتیاز، تایم‌فریم و دلایل.
-                    </p>
-                </div>
-                <div id="decision-feed" class="st-decision-feed">
-                    <!-- با JS پر می‌شود -->
-                </div>
+                <div class="st-card-header"><h2>جریان زندهٔ تصمیم‌ها</h2></div>
+                <div id="decision-list" class="st-decision-list"></div>
             </div>
+        </section>
+
+
+
+        <!-- ROW 5: PnL + Recent Trades -->
+        <section class="st-row st-row-responsive">
+
+            <div class="st-card">
+                <div class="st-card-header"><h2>PnL روزانه</h2></div>
+                <div id="pnl-daily" class="st-pnl-list"></div>
+            </div>
+
+            <div class="st-card">
+                <div class="st-card-header"><h2>معاملات اخیر</h2></div>
+                <div id="recent-trades" class="st-trades-list"></div>
+            </div>
+
         </section>
 
     </main>
 
-    <!-- ====== FOOTER ====== -->
+    <!-- Footer -->
     <footer class="st-footer">
-        <span>SmartTrader © <span id="footer-year">2025</span></span>
-        <span>Quantiviq • Experimental Algorithmic Research</span>
+        <span>SmartTrader © 2025</span>
+        <span>Quantiviq • Algorithmic Research</span>
     </footer>
 
 </div>
 
-<!-- اسکریپت اصلی (بعداً منطق را در home.js/app.js می‌نویسیم) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="/static/js/home.js"></script>
+
 </body>
 </html>
