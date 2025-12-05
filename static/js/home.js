@@ -1,8 +1,9 @@
 /* =====================================================================
-   SmartTrader – Home Page Logic (FULLY SYNCED WITH web_app.py)
+   SmartTrader – Unified Dashboard JS
+   (Sync with /api/... endpoints on backend)
    ===================================================================== */
 
-// --------------------------- Helpers ----------------------------------
+/* --------------------------- Helpers -------------------------------- */
 
 async function api(path) {
   try {
@@ -17,6 +18,7 @@ async function api(path) {
 
 const fmtNum = (n) =>
   n === null || n === undefined ? "–" : Number(n).toLocaleString("fa-IR");
+
 const fmtPct = (n) =>
   n === null || n === undefined ? "–" : Number(n).toFixed(1) + "٪";
 
@@ -29,7 +31,19 @@ function faDecision(dec) {
   return "نامشخص";
 }
 
-// --------------------------- Sparkline --------------------------------
+function formatFaDate(ts) {
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return ts;
+  return d.toLocaleString("fa-IR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/* --------------------------- Sparkline (Hero) ------------------------ */
 
 function renderSparkline(history) {
   const canvas = document.getElementById("hero-sparkline");
@@ -61,7 +75,7 @@ function renderSparkline(history) {
   ctx.stroke();
 }
 
-// --------------------------- Heatmap ----------------------------------
+/* --------------------------- Heatmap -------------------------------- */
 
 function renderHeatmap(decisions) {
   const box = document.getElementById("heatmap-decisions");
@@ -76,7 +90,7 @@ function renderHeatmap(decisions) {
       cell.className = "heat-cell";
 
       const dec = (d.decision || "").toUpperCase();
-      let color = "rgba(255,210,0,0.55)"; // HOLD / default
+      let color = "rgba(255,210,0,0.55)"; // HOLD
       if (dec === "BUY") color = "rgba(0,255,120,0.55)";
       if (dec === "SELL") color = "rgba(255,60,60,0.55)";
 
@@ -85,15 +99,15 @@ function renderHeatmap(decisions) {
     });
 }
 
-// ----------------------- Probability Engine ---------------------------
+/* ----------------------- Probability Engine -------------------------- */
 
 function computeProb(lastDecision, winrate) {
   const wr = Number(winrate || 0);
   let buy = 33,
     sell = 33,
     hold = 34;
-  const d = (lastDecision || "").toUpperCase();
 
+  const d = (lastDecision || "").toUpperCase();
   if (d === "BUY") buy += 15;
   if (d === "SELL") sell += 15;
   if (d === "HOLD") hold += 20;
@@ -129,7 +143,7 @@ function renderProb(prob) {
   setLabel("prob-hold-label", prob.hold);
 }
 
-// --------------------------- Volatility -------------------------------
+/* --------------------------- Volatility Band ------------------------ */
 
 function renderVol(last) {
   const ptr = document.getElementById("vol-pointer");
@@ -138,16 +152,18 @@ function renderVol(last) {
 
   const adx = Number(last?.adx || 0);
   const atr = Number(last?.atr || 0);
-  let vol = Math.min(100, Math.max(0, adx * 1.4 + atr * 0.6));
+  // scale ساده؛ اگر خواستی می‌تونی تغییر بدهی
+  let volScore = Math.min(100, Math.max(0, adx * 1.4));
 
-  ptr.style.left = vol + "%";
+  ptr.style.left = volScore + "%";
 
-  if (vol < 30) lbl.textContent = "بازار آرام و کم‌نوسان است.";
-  else if (vol < 60) lbl.textContent = "بازار در محدوده‌ی نوسان متوسط قرار دارد.";
+  if (volScore < 30) lbl.textContent = "بازار آرام و کم‌نوسان است.";
+  else if (volScore < 60)
+    lbl.textContent = "بازار در محدوده‌ی نوسان متوسط قرار دارد.";
   else lbl.textContent = "بازار بسیار پرنوسان است؛ احتیاط کنید.";
 }
 
-// --------------------------- Sentiment --------------------------------
+/* --------------------------- Sentiment Radar ------------------------ */
 
 function renderSentiment(daily) {
   const ul = document.getElementById("sentiment-list");
@@ -164,8 +180,7 @@ function renderSentiment(daily) {
     return;
   }
 
-  const avg =
-    pnlList.reduce((acc, v) => acc + v, 0) / (pnlList.length || 1);
+  const avg = pnlList.reduce((acc, v) => acc + v, 0) / (pnlList.length || 1);
   const greens = pnlList.filter((x) => x > 0).length;
   const reds = pnlList.filter((x) => x < 0).length;
 
@@ -186,7 +201,7 @@ function renderSentiment(daily) {
   });
 }
 
-// --------------------------- Hero & Metrics ---------------------------
+/* --------------------------- Hero & Metrics ------------------------- */
 
 function renderHero(last, perf, btc) {
   const set = (id, val) => {
@@ -211,10 +226,219 @@ function renderMetrics(perf) {
   set("metric-total-wins", fmtNum(perf.wins));
   set("metric-total-losses", fmtNum(perf.losses));
   set("metric-total-pnl", fmtNum(perf.total_pnl));
+  // اگر تو HTML درصد خطا داری
   set("metric-error-rate", fmtPct(100 - (perf.winrate || 0)));
 }
 
-// --------------------------- AI Context & Advisor ---------------------
+/* --------------------------- Decisions List ------------------------- */
+
+let globalDecisions = [];
+
+function renderDecisionList() {
+  const container = document.getElementById("decision-list");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (!globalDecisions.length) {
+    const empty = document.createElement("div");
+    empty.className = "decision-empty";
+    empty.textContent = "هنوز تصمیمی ثبت نشده است.";
+    container.appendChild(empty);
+    return;
+  }
+
+  const list = globalDecisions.slice().reverse();
+
+  list.forEach((d) => {
+    const item = document.createElement("div");
+    item.className = "decision-row";
+
+    item.innerHTML = `
+      <div class="decision-row-main">
+        <span class="decision-pill decision-${(d.decision || "hold").toLowerCase()}">
+          ${faDecision(d.decision)}
+        </span>
+        <span class="decision-price">
+          قیمت: ${fmtNum(d.price)} تومان
+        </span>
+      </div>
+      <div class="decision-row-meta">
+        <span>${formatFaDate(d.timestamp)}</span>
+        <span>رژیم: ${(d.regime || "NEUTRAL").toUpperCase()}</span>
+      </div>
+    `;
+    container.appendChild(item);
+  });
+}
+
+/* --------------------------- Daily PnL & Trades --------------------- */
+
+function renderDailyPnl(daily) {
+  const el = document.getElementById("pnl-daily");
+  if (!el) return;
+
+  if (!daily || !daily.length) {
+    el.textContent =
+      "هنوز ترید بسته‌شده‌ای برای محاسبه سود و زیان روزانه وجود ندارد.";
+    return;
+  }
+
+  el.innerHTML = "";
+  daily.forEach((d) => {
+    const pnl = Number(d.pnl ?? d.day_pnl ?? 0);
+    const signClass = pnl > 0 ? "pnl-pos" : pnl < 0 ? "pnl-neg" : "pnl-flat";
+
+    const row = document.createElement("div");
+    row.className = "pnl-row";
+
+    row.innerHTML = `
+      <span class="pnl-date">${d.day}</span>
+      <span class="pnl-val ${signClass}">
+        ${pnl.toLocaleString("fa-IR")}
+      </span>
+      <span class="pnl-trades">${d.n_trades || d.trades || 0} ترید</span>
+    `;
+    el.appendChild(row);
+  });
+}
+
+function renderRecentTrades(trades) {
+  const el = document.getElementById("recent-trades");
+  if (!el) return;
+
+  if (!trades || !trades.length) {
+    el.textContent = "هنوز ترید بسته‌شده‌ای ثبت نشده است.";
+    return;
+  }
+
+  el.innerHTML = "";
+  trades.forEach((t) => {
+    const pnl = Number(t.pnl || 0);
+    const pnlClass = pnl > 0 ? "pnl-pos" : pnl < 0 ? "pnl-neg" : "pnl-flat";
+    const sideFa =
+      (t.side || "").toUpperCase() === "LONG" ? "خرید (LONG)" : "فروش (SHORT)";
+
+    const row = document.createElement("div");
+    row.className = "trade-row";
+
+    row.innerHTML = `
+      <div class="trade-header">
+        <span class="trade-side">${sideFa}</span>
+        <span class="trade-time">${formatFaDate(t.timestamp)}</span>
+      </div>
+      <div class="trade-body">
+        <span>ورود: ${fmtNum(t.entry_price)}</span>
+        <span>خروج: ${fmtNum(t.close_price)}</span>
+        <span>حجم: ${fmtNum(t.qty)}</span>
+        <span class="trade-pnl ${pnlClass}">
+          PnL: ${pnl.toLocaleString("fa-IR")}
+        </span>
+      </div>
+    `;
+    el.appendChild(row);
+  });
+}
+
+/* --------------------------- Main Price Chart ----------------------- */
+
+let priceChartInstance = null;
+
+function buildPriceDecisionChart(prices, decisions) {
+  const canvas = document.getElementById("priceChart");
+  if (!canvas || !prices || !prices.length) return;
+
+  const labels = prices.map((p) => p.timestamp);
+  const data = prices.map((p) => p.price);
+
+  const indexByTs = {};
+  labels.forEach((t, i) => {
+    indexByTs[t] = i;
+  });
+
+  const buyPoints = [];
+  const sellPoints = [];
+
+  decisions.forEach((d) => {
+    const i = indexByTs[d.timestamp];
+    if (i == null) return;
+
+    const point = { x: labels[i], y: data[i] };
+    const dec = (d.decision || "").toUpperCase();
+    if (dec === "BUY") buyPoints.push(point);
+    if (dec === "SELL") sellPoints.push(point);
+  });
+
+  const ctx = canvas.getContext("2d");
+  if (priceChartInstance) {
+    priceChartInstance.destroy();
+  }
+
+  priceChartInstance = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "قیمت",
+          data,
+          borderColor: "#60a5fa",
+          backgroundColor: "rgba(37,99,235,0.18)",
+          borderWidth: 2,
+          tension: 0.35,
+          fill: true,
+          pointRadius: 0,
+        },
+        {
+          type: "scatter",
+          label: "خرید",
+          data: buyPoints,
+          pointBackgroundColor: "#16a34a",
+          pointBorderColor: "#ffffff",
+          pointRadius: 5,
+          pointStyle: "triangle",
+        },
+        {
+          type: "scatter",
+          label: "فروش",
+          data: sellPoints,
+          pointBackgroundColor: "#dc2626",
+          pointBorderColor: "#ffffff",
+          pointRadius: 5,
+          pointStyle: "triangle",
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => formatFaDate(items[0].label),
+            label: (ctx) =>
+              "قیمت: " +
+              Number(ctx.parsed.y).toLocaleString("fa-IR") +
+              " تومان",
+          },
+        },
+      },
+      scales: {
+        x: { ticks: { display: false } },
+        y: {
+          ticks: {
+            callback: function (value) {
+              return Number(value).toLocaleString("fa-IR");
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+/* --------------------------- AI Context & Advice -------------------- */
 
 function buildAiAdvice(perf, decisions, daily) {
   const total = perf?.total_trades || 0;
@@ -288,46 +512,16 @@ function renderAiAdviceUi(advice) {
   }
 }
 
-function renderAIContext(last, perf, daily) {
-  const set = (id, v) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = v;
-  };
+/* --------------------------- UPDATE LOOP ---------------------------- */
 
-  set("ai-context-regime", last?.regime || "نامشخص");
-  set("ai-context-winrate", fmtPct(perf.winrate));
-  set("ai-context-totalpnl", fmtNum(perf.total_pnl));
-  set(
-    "ai-context-lastdecision",
-    last ? faDecision(last.decision) : "نامشخص"
-  );
-
-  const list = Array.isArray(daily) ? daily : [];
-  const sumRecent = list.reduce(
-    (acc, d) => acc + Number(d.day_pnl ?? d.pnl ?? 0),
-    0
-  );
-
-  if (!list.length) {
-    set("ai-context-recent", "هنوز داده کافی برای روزهای اخیر وجود ندارد.");
-  } else if (sumRecent > 0) {
-    set("ai-context-recent", "چند روز اخیر مجموعاً مثبت بوده‌اند.");
-  } else if (sumRecent < 0) {
-    set("ai-context-recent", "چند روز اخیر فشار منفی بیشتری داشته‌اند.");
-  } else {
-    set("ai-context-recent", "خروجی روزهای اخیر تقریباً خنثی بوده است.");
-  }
-}
-
-// --------------------------- UPDATE LOOP ------------------------------
-
-async function updateHome() {
+async function updateDashboard() {
   try {
-    const [perf, decisions, daily, btc] = await Promise.all([
+    const [perf, decisions, daily, btc, prices] = await Promise.all([
       api("/api/perf/summary"),
       api("/api/decisions?limit=80"),
-      api("/api/perf/daily?limit=12"),
+      api("/api/perf/daily?limit=30"),
       api("/api/btc_price"),
+      api("/api/prices?limit=300"),
     ]);
 
     const perfSafe = perf || {
@@ -339,9 +533,12 @@ async function updateHome() {
     };
     const decisionsSafe = Array.isArray(decisions) ? decisions : [];
     const dailySafe = Array.isArray(daily) ? daily : [];
+    const pricesSafe = Array.isArray(prices) ? prices : [];
     const last = decisionsSafe[decisionsSafe.length - 1] || null;
 
-    // Hero + Metrics
+    globalDecisions = decisionsSafe;
+
+    // Hero & top metrics
     renderHero(last, perfSafe, btc || {});
     renderMetrics(perfSafe);
 
@@ -349,20 +546,56 @@ async function updateHome() {
     renderHeatmap(decisionsSafe);
     renderVol(last);
     renderSentiment(dailySafe);
-
     if (btc && Array.isArray(btc.history)) {
       renderSparkline(btc.history);
     }
 
+    // Probability engine (از last decision + winrate)
+    const prob = computeProb(last?.decision, perfSafe.winrate);
+    renderProb(prob);
+
+    // Main price chart
+    buildPriceDecisionChart(pricesSafe, decisionsSafe);
+
+    // Lists
+    renderDecisionList();
+    renderDailyPnl(dailySafe);
+    const recent = await api("/api/trades/recent?limit=30");
+    renderRecentTrades(Array.isArray(recent) ? recent : []);
+
+    // AI Advisor
     const advice = buildAiAdvice(perfSafe, decisionsSafe, dailySafe);
     renderAiAdviceUi(advice);
-    renderAIContext(last, perfSafe, dailySafe);
   } catch (e) {
-    console.error("Home update error:", e);
+    console.error("Dashboard update error:", e);
   }
 }
 
+/* --------------------------- THEME (Optional) ----------------------- */
+
+const themeBtn = document.getElementById("toggleThemeBtn");
+
+function setTheme(mode) {
+  document.body.classList.remove("theme-light", "theme-dark-pro");
+  document.body.classList.add(mode);
+  localStorage.setItem("theme", mode);
+
+  const icon = document.querySelector(".theme-toggle-icon");
+  if (icon) icon.textContent = mode === "theme-light" ? "🌞" : "🌙";
+}
+
+if (themeBtn) {
+  themeBtn.addEventListener("click", () => {
+    const current = localStorage.getItem("theme") || "theme-dark-pro";
+    const next =
+      current === "theme-dark-pro" ? "theme-light" : "theme-dark-pro";
+    setTheme(next);
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  updateHome();
-  setInterval(updateHome, 6000);
+  setTheme(localStorage.getItem("theme") || "theme-dark-pro");
+  updateDashboard();
+  // رفرش هر ۱۰ ثانیه
+  setInterval(updateDashboard, 10000);
 });
