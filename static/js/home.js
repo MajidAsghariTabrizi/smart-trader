@@ -527,6 +527,83 @@ async function updateDashboard() {
     console.error("Dashboard update error:", e);
   }
 }
+
+async function loadFluxData() {
+    let res = await getJSON("/api/decisions?limit=80");
+    if (!res || !res.decisions) return [];
+
+    return res.decisions.map(d => ({
+        t: d.timestamp,
+        energy: d.confirm_s,
+        type: d.final_decision,
+        vol: Math.abs(d.confirm_adx || 0)
+    }));
+}
+
+function drawQuantumFlux(data) {
+    const canvas = document.getElementById("quantumFlux");
+    const ctx = canvas.getContext("2d");
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const CX = W / 2;
+    const CY = H / 2;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Extract meaningful dynamic data
+    const avgEnergy = data.reduce((a,b)=>a+b.energy,0) / data.length;
+    const avgVol = data.reduce((a,b)=>a+b.vol,0) / data.length;
+
+    // core color
+    let coreColor =
+        avgEnergy > 0.15 ? "rgba(80,255,160,0.7)" :
+        avgEnergy < -0.15 ? "rgba(255,80,80,0.7)" :
+                            "rgba(255,230,80,0.7)";
+
+    const rings = [
+        { r: 80, speed: 0.02 + avgVol*0.001, width: 2, color: coreColor },
+        { r: 140, speed: 0.015 + avgVol*0.001, width: 1.5, color: "rgba(100,180,255,0.4)" },
+        { r: 220, speed: 0.01 + avgVol*0.001, width: 1, color: "rgba(80,120,255,0.25)" }
+    ];
+
+    let t = Date.now() * 0.002;
+
+    rings.forEach(r => {
+        ctx.beginPath();
+        ctx.lineWidth = r.width;
+        ctx.strokeStyle = r.color;
+
+        let radius = r.r + Math.sin(t * r.speed) * 12;
+        ctx.arc(CX, CY, radius, 0, Math.PI * 2);
+        ctx.stroke();
+    });
+
+    // particles
+    data.slice(0,40).forEach((d,i)=>{
+        let angle = (t*0.1 + i*0.3);
+        let radius = 160 + Math.sin(t*0.02+i)*40;
+
+        ctx.beginPath();
+
+        let pc =
+            d.energy > 0.2 ? "rgba(90,255,180,0.8)" :
+            d.energy < -0.2 ? "rgba(255,90,90,0.8)" :
+                              "rgba(255,230,100,0.8)";
+
+        ctx.fillStyle = pc;
+        ctx.arc(CX + Math.cos(angle)*radius, CY + Math.sin(angle)*radius, 4, 0, Math.PI*2);
+        ctx.fill();
+    });
+
+    requestAnimationFrame(()=>drawQuantumFlux(data));
+}
+
+(async function initFlux(){
+    let data = await loadFluxData();
+    drawQuantumFlux(data);
+})();
+
 async function renderBubbleSpectrum() {
     const container = document.getElementById("bubble-spectrum");
     if (!container) return;
