@@ -58,8 +58,11 @@ def _read_html(path: Path) -> str:
 
 @app.get("/", response_class=HTMLResponse)
 async def home_page() -> HTMLResponse:
-    """صفحه‌ی لندینگ (home.html)"""
-    html = _read_html(BASE_DIR / "home.html")
+    """
+    صفحه‌ی اصلی — فایل صحیح در مسیر:
+    /root/smart-trader/static/home.html
+    """
+    html = _read_html(BASE_DIR / "static/home.html")
     return HTMLResponse(html)
 
 
