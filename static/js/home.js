@@ -527,18 +527,19 @@ async function updateDashboard() {
     console.error("Dashboard update error:", e);
   }
 }
-
 async function renderBubbleSpectrum() {
     const container = document.getElementById("bubble-spectrum");
+    if (!container) return;
+
     container.innerHTML = "";
 
-    const data = await getJSON("/api/decisions?limit=150");
+    const data = await api("/api/decisions?limit=150");
     if (!data) return;
 
     const W = container.clientWidth;
     const H = container.clientHeight;
 
-    /* === Draw Gridlines === */
+    // ---- Gridlines ----
     const gridCount = 6;
     for (let i = 1; i < gridCount; i++) {
         const line = document.createElement("div");
@@ -547,32 +548,32 @@ async function renderBubbleSpectrum() {
         container.appendChild(line);
     }
 
-    /* === Bubble spectrum === */
+    // ---- Bubbles ----
     data.forEach((d, i) => {
         let bubble = document.createElement("div");
         bubble.classList.add("bubble");
 
-        let type = d.decision?.toUpperCase();
-        if (type === "BUY") bubble.classList.add("bubble-buy");
-        else if (type === "SELL") bubble.classList.add("bubble-sell");
-        else bubble.classList.add("bubble-hold");
+        const type = d.decision?.toUpperCase();
+        bubble.classList.add(
+            type === "BUY" ? "bubble-buy" :
+            type === "SELL" ? "bubble-sell" :
+            "bubble-hold"
+        );
 
-        /* SIZE by intensity → absolute aggregate_s */
-        let intensity = Math.abs(d.aggregate_s || 0.15);
-        let size = 10 + intensity * 35; // dynamic bubble size
+        // Size by aggregate_s intensity
+        const intensity = Math.abs(d.aggregate_s ?? 0.15);
+        const size = 10 + intensity * 35;
         bubble.style.width = size + "px";
         bubble.style.height = size + "px";
 
-        /* X position: index mapping */
+        // X position
         const x = (i / data.length) * (W - size);
-
-        /* Y position: energy axis (aggregate_s range -1 to 1) */
-        const normalizedY = 0.5 - (d.aggregate_s || 0) / 2;
-        let y = normalizedY * (H - size);
-
-        /* Add jitter to avoid perfect grid */
-        y += (Math.random() * 20 - 10);
         bubble.style.left = x + "px";
+
+        // Y position (-1..1 mapped to 0..1)
+        const yNorm = 0.5 - (d.aggregate_s ?? 0) / 2;
+        let y = yNorm * (H - size);
+        y += Math.random() * 20 - 10;
         bubble.style.top = y + "px";
 
         container.appendChild(bubble);
@@ -581,6 +582,7 @@ async function renderBubbleSpectrum() {
 
 renderBubbleSpectrum();
 setInterval(renderBubbleSpectrum, 60000);
+
 
 
 /* --------------------------- THEME (Optional) ----------------------- */
