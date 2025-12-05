@@ -350,3 +350,80 @@ body {
     opacity: 0.75;
     text-align: center;
 }
+/* =========================================================
+   🔥 FIX 1 — Heatmap
+   ========================================================= */
+
+.st-heatmap {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    margin-top: 12px;
+}
+
+.st-heatmap-cell {
+    width: 100%;
+    aspect-ratio: 1/1;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.08);
+}
+
+.hm-buy  { background: rgba(34,197,94,0.9); }
+.hm-sell { background: rgba(239,68,68,0.9); }
+.hm-hold { background: rgba(234,179,8,0.9); }
+
+
+/* =========================================================
+   🔥 FIX 2 — Probability Engine
+   ========================================================= */
+
+.st-prob-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 40px;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+}
+
+.st-prob-bar-bg {
+    height: 8px;
+    width: 100%;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.15);
+    overflow: hidden;
+}
+
+.st-prob-bar {
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s;
+    border-radius: inherit;
+}
+
+#prob-buy  { background: rgba(34,197,94,0.9); }
+#prob-sell { background: rgba(239,68,68,0.9); }
+#prob-hold { background: rgba(234,179,8,0.9); }
+
+
+/* =========================================================
+   🔥 FIX 3 — Decision Feed (Live Stream)
+   ========================================================= */
+
+.st-decision-list {
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 6px 2px;
+}
+
+.st-decision-item {
+    background: rgba(255,255,255,0.05);
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.df-buy  { border-right: 4px solid var(--green); }
+.df-sell { border-right: 4px solid var(--red); }
+.df-hold { border-right: 4px solid var(--yellow); }
