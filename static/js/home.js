@@ -663,91 +663,192 @@ async function renderBubbleSpectrum() {
 renderBubbleSpectrum();
 setInterval(renderBubbleSpectrum, 60000);
 /* ==========================================================
-   LIVING MARKET ORB — SAFE VERSION
+   SMARTTRADER ORB + QUANTUM FUSION ENGINE
    ========================================================== */
 
-let orbCanvas = null;
-let orb = null;
-let t = 0;
+let orbCanvas, orb;
+let time = 0;
 
-function orbState(dec, trend, adx, power) {
+// ------------------------
+// 1) CONFIG
+// ------------------------
+const ORB_CONFIG = {
+    baseRadius: 180,
+    noiseAmp: 22,
+    particleCount: 32,
+    ringSpeed: 0.0025,
+    ringRadius: 260,
+};
+
+// ذخیره 50 تصمیم آخر برای نمایش روی اورب
+let quantumNodes = [];
+
+
+// ------------------------
+// 2) Map decisions → Orb physics
+// ------------------------
+function orbPhysics(dec, trend, adx, power) {
+    const color =
+        dec === "BUY" ? "#4fffd2" :
+        dec === "SELL" ? "#ff5b5b" :
+        "#ffe680";
+
     return {
-        color:
-            dec === "BUY" ? "#4fffd2" :
-            dec === "SELL" ? "#ff5b5b" :
-            "#ffe680",
-
-        pulse: 0.6 + Math.min(adx / 50, 1.4),
-        deform: Math.abs(power) * 1.4,
-        trendShift: trend * 40
+        color,
+        deform: Math.min(Math.abs(power) * 1.9, 2.2),
+        pulse: 0.7 + Math.min(adx / 38, 2),
+        verticalShift: trend * 35,
     };
 }
 
-function drawOrb(state) {
-    if (!orbCanvas || !orb) return;
 
+// ------------------------
+// 3) Draw Organic Core Shape
+// ------------------------
+function drawCoreShape(state) {
     const w = orbCanvas.width = window.innerWidth;
     const h = orbCanvas.height = window.innerHeight;
 
     orb.clearRect(0, 0, w, h);
 
     const cx = w / 2;
-    const cy = h / 2 + state.trendShift;
+    const cy = h / 2 + state.verticalShift;
 
-    const baseRadius = Math.min(w, h) * 0.22;
+    const baseR = ORB_CONFIG.baseRadius;
 
     orb.beginPath();
 
     for (let i = 0; i <= 360; i++) {
-        const ang = (i * Math.PI) / 180;
-        const noise = Math.sin(i * 0.1 + t * state.pulse) * state.deform * 15;
-
-        const r = baseRadius + noise;
+        const ang = i * Math.PI / 180;
+        const noise = Math.sin(i * 0.12 + time * state.pulse) * state.deform * ORB_CONFIG.noiseAmp;
+        const r = baseR + noise;
 
         const x = cx + r * Math.cos(ang);
         const y = cy + r * Math.sin(ang);
 
-        if (i === 0) orb.moveTo(x, y);
-        else orb.lineTo(x, y);
+        i === 0 ? orb.moveTo(x, y) : orb.lineTo(x, y);
     }
 
     orb.closePath();
-    orb.fillStyle = state.color + "88";
+
+    orb.fillStyle = state.color + "35";
     orb.fill();
 
     orb.strokeStyle = state.color;
-    orb.lineWidth = 3;
+    orb.lineWidth = 2.5;
     orb.stroke();
 }
 
-async function orbLoop() {
-    if (!orbCanvas || !orb) return;  // IMPORTANT
 
-    const res = await api("/api/decisions?limit=1");
-    const d = Array.isArray(res) ? res[0] : null;
+// ------------------------
+// 4) Draw quantum orbit rings
+// ------------------------
+function drawQuantumRings() {
+    orb.strokeStyle = "#ffffff22";
+    orb.lineWidth = 1;
 
-    if (d) {
-        const s = orbState(
-            d.final_decision,
-            d.trend_raw ?? 0,
-            Number(d.confirm_adx ?? d.adx ?? 0),
-            d.aggregate_s ?? 0
-        );
-        drawOrb(s);
+    const cx = orbCanvas.width / 2;
+    const cy = orbCanvas.height / 2;
+
+    for (let i = 0; i < 3; i++) {
+        const r = ORB_CONFIG.ringRadius + i * 28;
+
+        orb.beginPath();
+        for (let a = 0; a < Math.PI * 2; a += 0.02) {
+            const x = cx + Math.cos(a + time * ORB_CONFIG.ringSpeed * (i + 1)) * r;
+            const y = cy + Math.sin(a) * (r * 0.32);
+            orb.lineTo(x, y);
+        }
+        orb.stroke();
     }
-
-    t += 0.015;
-    requestAnimationFrame(orbLoop);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+
+// ------------------------
+// 5) Draw Quantum Decision Nodes
+// ------------------------
+function drawQuantumNodes() {
+    const cx = orbCanvas.width / 2;
+    const cy = orbCanvas.height / 2;
+
+    quantumNodes.forEach((n) => {
+        const pulse = Math.sin(time * 3 + n.seed) * 6;
+
+        orb.beginPath();
+        orb.arc(
+            cx + n.x,
+            cy + n.y,
+            n.size + pulse,
+            0, Math.PI * 2
+        );
+
+        orb.fillStyle = n.color;
+        orb.fill();
+    });
+}
+
+
+// ------------------------
+// 6) The Main Render Loop
+// ------------------------
+async function fusionLoop() {
+    if (!orbCanvas) return;
+
+    const latest = await api("/api/decisions?limit=1");
+    const d = latest?.[0];
+    if (!d) return requestAnimationFrame(fusionLoop);
+
+    const physics = orbPhysics(
+        d.final_decision,
+        d.trend_raw ?? 0,
+        Number(d.confirm_adx ?? d.adx ?? 0),
+        d.aggregate_s ?? 0
+    );
+
+    drawCoreShape(physics);
+    drawQuantumRings();
+    drawQuantumNodes();
+
+    time += 0.013;
+    requestAnimationFrame(fusionLoop);
+}
+
+
+// ------------------------
+// 7) Add new decision nodes
+// ------------------------
+async function loadQuantumNodes() {
+    const res = await api("/api/decisions?limit=40");
+
+    quantumNodes = res.map((d, index) => {
+        const angle = Math.random() * Math.PI * 2;
+
+        return {
+            x: Math.cos(angle) * (130 + Math.random() * 35),
+            y: Math.sin(angle) * (90 + Math.random() * 25),
+            size: 6 + Math.random() * 6,
+            seed: index,
+            color:
+                d.final_decision === "BUY" ? "#4fffd2" :
+                d.final_decision === "SELL" ? "#ff5b5b" :
+                "#ffe680",
+        };
+    });
+}
+
+
+// ------------------------
+// 8) INIT
+// ------------------------
+document.addEventListener("DOMContentLoaded", async () => {
     orbCanvas = document.getElementById("marketOrb");
     if (orbCanvas) {
         orb = orbCanvas.getContext("2d");
-        orbLoop();
+
+        await loadQuantumNodes();
+        fusionLoop();
     }
 });
-
 
 /* --------------------------- THEME (Optional) ----------------------- */
 
