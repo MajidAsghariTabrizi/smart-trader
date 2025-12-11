@@ -366,8 +366,8 @@ def _maybe_close_position(current_price: float):
     """
     Exit management:
       - Hard stop (STOP_HIT)
-      - Take-profit at ~+1.5R (TP_HIT)
-      - Move stop to breakeven around +0.75R
+      - Take-profit در حدود +1R (TP_HIT)
+      - Move stop to breakeven در حدود +0.4R
     """
     if not account.position:
         return
@@ -382,7 +382,7 @@ def _maybe_close_position(current_price: float):
     if qty <= 0.0 or entry <= 0.0:
         return
 
-    # اگر استاپ نداریم، ریسک واحد صفر است و فقط سیگنال معکوس ما را خارج می‌کند
+    # اگر استاپ نداریم، فعلاً فقط REVERSE_SIGNAL ما را می‌بندد
     if stop is not None:
         risk_per_unit = abs(entry - float(stop))
     else:
@@ -393,10 +393,11 @@ def _maybe_close_position(current_price: float):
         direction = 1.0 if pos.side == "LONG" else -1.0
         r_mult = ((current_price - entry) * direction) / risk_per_unit
 
-        tp_r_level = 1.5   # در حدود +1.5R کل پوزیشن را ببند
-        be_r_level = 0.75  # در حدود +0.75R استاپ را روی BE بیاور
+        # نسبت‌های جدید
+        tp_r_level = 1.0   # حدود +1R همه پوزیشن را ببند
+        be_r_level = 0.4   # حدود +0.4R استاپ را روی BE بیاور
 
-        # 1.a) Take-profit کامل
+        # 1.a) Take-profit کامل روی 1R
         if r_mult >= tp_r_level:
             logger.info(
                 f"🎯 TP hit for {pos.side} trade_id={getattr(pos, 'trade_id', None)} "
@@ -414,7 +415,7 @@ def _maybe_close_position(current_price: float):
                 f"trade_id={getattr(pos, 'trade_id', None)} "
                 f"R={r_mult:.2f} (>= {be_r_level:.2f})"
             )
-            # بعد از این، استاپ جدید BE است، بقیه منطق پایین اجرا می‌شود
+            # بعد از این، استاپ جدید BE است
 
     # 2) Hard stop check (STOP_HIT) – بعد از مدیریت TP/BE
     if pos.stop_price is None:
@@ -434,7 +435,6 @@ def _maybe_close_position(current_price: float):
         f"price={current_price:.2f}, stop={stop_now:.2f}"
     )
     _close_position(current_price, "STOP_HIT")
-
 
 # --------------------------------------------------------
 # Core loop
@@ -658,10 +658,7 @@ Reasons:
 
     # ---------------- Risk / Execution layer ---------------- #
 
-    # 1) First handle exits (stop / TP)
-    _maybe_close_position(dc240.price)
-
-    # 1.b) Close on reverse signal (Option C)
+    # 1) اول: در صورت سیگنال معکوس، سریع ببند
     if account.position and action in ("BUY", "SELL"):
         desired_side = "LONG" if action == "BUY" else "SHORT"
         if account.position.side != desired_side:
@@ -670,6 +667,9 @@ Reasons:
                 f"due to {action} signal at price={dc240.price:.2f}"
             )
             _close_position(dc240.price, "REVERSE_SIGNAL")
+
+    # 2) بعد: مدیریت TP/SL روی پوزیشن باقی‌مانده
+    _maybe_close_position(dc240.price)
 
     # 2) Entry policy / allow_intracandle
     execute_now = True

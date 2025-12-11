@@ -131,20 +131,25 @@ class SignalEngine:
 
         adx_val = dc.adx if math.isfinite(dc.adx) else 0.0
 
-        # 1) ADX gating on trend
-        trend_component = dc.trend_raw if adx_val >= p.min_adx_for_trend else 0.0
+        # 1) ADX-aware gating روی ترند
+        #    قبلاً اگر ADX زیر حد بود ترند رو صفر می‌کردیم؛
+        #    الان فقط ضعیفش می‌کنیم تا «زودتر» سیگنال ترندی بگیریم.
+        trend_component = dc.trend_raw
         if adx_val < p.min_adx_for_trend:
-            dc.reasons.append(f"Trend gated (ADX<{p.min_adx_for_trend:.1f})")
+            trend_component *= 0.4
+            dc.reasons.append(f"Trend downscaled (ADX<{p.min_adx_for_trend:.1f})")
+        else:
+            dc.reasons.append(f"Trend active (ADX>={p.min_adx_for_trend:.1f})")
 
-        # 2) سایر کانال‌ها (خام)
+        # 2) سایر کانال‌ها
         mom = dc.momentum_raw
         mr = dc.meanrev_raw
         bo = dc.breakout_raw
 
-        # 2.5) حل تضاد Trend vs Mean-Reversion
-        # اگر جهت ترند و meanrev به‌شدت مخالف باشند → هر دو را صفر کن (ترید نکنیم).
+        # 2.5) تضاد شدید Trend vs Mean-Reversion → کلاً HOLD
+        #     یعنی جایی که خودش می‌گوید "conflict"، اصلاً ترید نمی‌کنیم.
         conflict = False
-        mr_conf_level = 0.40  # شدت حداقلی برای اینکه بگیم "خیلی مخالف است"
+        mr_conf_level = 0.40  # شدت لازم برای اینکه بگیم برگشتی خیلی قویه
 
         if dc.trend_raw > 0.0 and dc.meanrev_raw < -mr_conf_level:
             conflict = True
@@ -154,10 +159,14 @@ class SignalEngine:
         if conflict:
             dc.reasons.append(
                 f"Trend/MeanRev conflict: trend_raw={dc.trend_raw:.3f}, "
-                f"meanrev_raw={dc.meanrev_raw:.3f} → gating both to 0"
+                f"meanrev_raw={dc.meanrev_raw:.3f} → FORCE HOLD"
             )
-            trend_component = 0.0
-            mr = 0.0
+            dc.trend = 0.0
+            dc.momentum = 0.0
+            dc.meanrev = 0.0
+            dc.breakout = 0.0
+            dc.aggregate_s = 0.0
+            return dc
 
         # 3) Regime scaling
         regime_scale = p.regime_scale.get(dc.regime, 1.0)
@@ -170,13 +179,13 @@ class SignalEngine:
         w_mr = self._safe_get_weight("meanrev")
         w_bo = self._safe_get_weight("breakout")
 
-        # Assign post-gate components
+        # 5) مقدارهای post-gate
         dc.trend = float(trend_component)
         dc.momentum = float(mom)
         dc.meanrev = float(mr)
         dc.breakout = float(bo)
 
-        # 5) Aggregate S
+        # 6) Aggregate S
         aggregate = (
                 w_trend * dc.trend +
                 w_mom * dc.momentum +
@@ -191,9 +200,9 @@ class SignalEngine:
     # ---------------- MTF Confirmation ---------------- #
 
     def _mtf_confirm_pass(
-        self,
-        dc_primary: DecisionContext,
-        dc_confirm: Optional[DecisionContext]
+            self,
+            dc_primary: DecisionContext,
+            dc_confirm: Optional[DecisionContext]
     ) -> Tuple[bool, List[str]]:
         p = self.params
         reasons: List[str] = []
@@ -202,25 +211,46 @@ class SignalEngine:
             reasons.append("MTF agreement not required")
             return True, reasons
 
+        primary_s = float(dc_primary.aggregate_s)
+        primary_abs = abs(primary_s)
+
+        # اگر تایم فریم تأیید نداریم:
+        # اگر خود پرایمری به حد کافی قوی باشد، اجازه می‌دهیم تنها تصمیم بگیرد.
         if dc_confirm is None:
-            reasons.append("MTF reject: confirm TF missing")
+            if primary_abs >= p.mtf_confirm_bar:
+                reasons.append(
+                    f"MTF missing, primary strong ({primary_abs:.3f}>={p.mtf_confirm_bar:.3f}) → PASS"
+                )
+                return True, reasons
+            reasons.append(
+                f"MTF reject: confirm TF missing & primary weak ({primary_abs:.3f}<{p.mtf_confirm_bar:.3f})"
+            )
             return False, reasons
 
+        confirm_s = float(dc_confirm.aggregate_s)
+        confirm_abs = abs(confirm_s)
+
         same_sign = (
-            (dc_primary.aggregate_s >= 0 and dc_confirm.aggregate_s >= 0) or
-            (dc_primary.aggregate_s < 0 and dc_confirm.aggregate_s < 0)
+                (primary_s >= 0 and confirm_s >= 0) or
+                (primary_s < 0 and confirm_s < 0)
         )
-        strong_enough = abs(dc_confirm.aggregate_s) >= p.mtf_confirm_bar
+
+        # نرم‌تر: یا پرایمری قوی باشد، یا کانفرم حداقل ۸۰٪ بار را رد کند
+        strong_enough = (
+                primary_abs >= p.mtf_confirm_bar or
+                confirm_abs >= p.mtf_confirm_bar * 0.8
+        )
 
         if same_sign and strong_enough:
             reasons.append(
-                f"MTF agree: confirm={dc_confirm.aggregate_s:.3f} >= {p.mtf_confirm_bar:.2f}"
+                f"MTF agree: primary={primary_s:.3f}, confirm={confirm_s:.3f}, "
+                f"bar={p.mtf_confirm_bar:.3f}"
             )
             return True, reasons
 
         reasons.append(
-            f"MTF reject: confirm={dc_confirm.aggregate_s:.3f} "
-            f"vs threshold {p.mtf_confirm_bar:.2f}, same_sign={same_sign}"
+            f"MTF reject: primary={primary_s:.3f}, confirm={confirm_s:.3f}, "
+            f"same_sign={same_sign}, strong_enough={strong_enough}"
         )
         return False, reasons
 
@@ -258,8 +288,9 @@ class SignalEngine:
         pos: Optional[Position] = None
 
         # تصمیم با حاشیه‌ی امنیت (buffer)
-        buy_th = float(p.s_buy) + float(p.decision_buffer)
-        sell_th = float(p.s_sell) + float(p.decision_buffer)
+        # تصمیم سریع‌تر: خود s_buy / s_sell آستانه‌ی اصلی هستند
+        buy_th = float(p.s_buy)
+        sell_th = float(p.s_sell)
 
         # تأیید مولتی‌تایم‌فریم
         mtf_ok, mtf_reasons = self._mtf_confirm_pass(dc_primary, dc_confirm)
