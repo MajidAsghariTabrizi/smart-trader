@@ -4,7 +4,14 @@
    - No RAM leak
    - Compatible with home.html structure
    ===================================================================== */
+/* Anti-duplicate boot */
+if (window.__HOME_JS_RUNNING__) {
+    console.warn("Home.js already running – duplicate prevented.");
+    throw new Error("Duplicate Home.js instance prevented."); 
+}
+window.__HOME_JS_RUNNING__ = true;
 
+/* بقیه فایل از اینجا ادامه پیدا می‌کند… */
 /* ------------------ GLOBAL CACHE ------------------ */
 
 const cache = {
