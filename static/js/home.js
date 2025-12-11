@@ -210,8 +210,9 @@ function renderHero(last, perf, btc) {
   set("hero-adx", last?.adx != null ? last.adx.toFixed(1) : "–");
   set("hero-winrate", perf?.winrate != null ? perf.winrate + "٪" : "–");
   set("hero-btc-price", fmtNum(btc?.price_tmn ?? btc?.price));
+
   const floatBox = document.getElementById("floating-btc");
-if (floatBox) floatBox.classList.add("fx-glow");
+  if (floatBox) floatBox.classList.add("fx-glow");
 }
 
 function renderMetrics(perf) {
@@ -321,7 +322,7 @@ function renderRecentTrades(list) {
   });
 }
 
-/* --------------------------- Main Price Chart ----------------------- */
+/* --------------------------- MAIN PRICE CHART ----------------------- */
 
 let priceChartInstance = null;
 
@@ -412,7 +413,7 @@ function buildPriceDecisionChart(prices, decisions) {
   });
 }
 
-/* --------------------------- AI Context / Advice -------------------- */
+/* --------------------------- AI CONTEXT ----------------------------- */
 
 function buildAiAdvice(perf, decisions, daily) {
   const total = perf?.total_trades || 0;
@@ -530,138 +531,6 @@ async function updateDashboard() {
   }
 }
 
-async function loadFluxData() {
-    let res = await api("/api/decisions?limit=80");   // FIXED: getJSON → api
-    if (!Array.isArray(res)) return [];
-
-    return res.map(d => ({
-        t: d.timestamp,
-        energy: d.confirm_s ?? 0,
-        type: d.final_decision,
-        vol: Math.abs(d.confirm_adx || 0)
-    }));
-}
-
-
-function drawQuantumFlux(data) {
-    const canvas = document.getElementById("quantumFlux");
-    const ctx = canvas.getContext("2d");
-
-    const W = canvas.width;
-    const H = canvas.height;
-    const CX = W / 2;
-    const CY = H / 2;
-
-    ctx.clearRect(0, 0, W, H);
-
-    // Extract meaningful dynamic data
-    const avgEnergy = data.reduce((a,b)=>a+b.energy,0) / data.length;
-    const avgVol = data.reduce((a,b)=>a+b.vol,0) / data.length;
-
-    // core color
-    let coreColor =
-        avgEnergy > 0.15 ? "rgba(80,255,160,0.7)" :
-        avgEnergy < -0.15 ? "rgba(255,80,80,0.7)" :
-                            "rgba(255,230,80,0.7)";
-
-    const rings = [
-        { r: 80, speed: 0.02 + avgVol*0.001, width: 2, color: coreColor },
-        { r: 140, speed: 0.015 + avgVol*0.001, width: 1.5, color: "rgba(100,180,255,0.4)" },
-        { r: 220, speed: 0.01 + avgVol*0.001, width: 1, color: "rgba(80,120,255,0.25)" }
-    ];
-
-    let t = Date.now() * 0.002;
-
-    rings.forEach(r => {
-        ctx.beginPath();
-        ctx.lineWidth = r.width;
-        ctx.strokeStyle = r.color;
-
-        let radius = r.r + Math.sin(t * r.speed) * 12;
-        ctx.arc(CX, CY, radius, 0, Math.PI * 2);
-        ctx.stroke();
-    });
-
-    // particles
-    data.slice(0,40).forEach((d,i)=>{
-        let angle = (t*0.1 + i*0.3);
-        let radius = 160 + Math.sin(t*0.02+i)*40;
-
-        ctx.beginPath();
-
-        let pc =
-            d.energy > 0.2 ? "rgba(90,255,180,0.8)" :
-            d.energy < -0.2 ? "rgba(255,90,90,0.8)" :
-                              "rgba(255,230,100,0.8)";
-
-        ctx.fillStyle = pc;
-        ctx.arc(CX + Math.cos(angle)*radius, CY + Math.sin(angle)*radius, 4, 0, Math.PI*2);
-        ctx.fill();
-    });
-
-    requestAnimationFrame(()=>drawQuantumFlux(data));
-}
-
-(async function initFlux(){
-    let data = await loadFluxData();
-    if (data.length === 0) return;
-    drawQuantumFlux(data);
-})();
-async function renderBubbleSpectrum() {
-    const container = document.getElementById("bubble-spectrum");
-    if (!container) return;
-
-    container.innerHTML = "";
-
-    const data = await api("/api/decisions?limit=150");
-    if (!data) return;
-
-    const W = container.clientWidth;
-    const H = container.clientHeight;
-
-    // ---- Gridlines ----
-    const gridCount = 6;
-    for (let i = 1; i < gridCount; i++) {
-        const line = document.createElement("div");
-        line.className = "spectrum-grid";
-        line.style.left = (i / gridCount) * W + "px";
-        container.appendChild(line);
-    }
-
-    // ---- Bubbles ----
-    data.forEach((d, i) => {
-        let bubble = document.createElement("div");
-        bubble.classList.add("bubble");
-
-        const type = d.decision?.toUpperCase();
-        bubble.classList.add(
-            type === "BUY" ? "bubble-buy" :
-            type === "SELL" ? "bubble-sell" :
-            "bubble-hold"
-        );
-
-        // Size by aggregate_s intensity
-        const intensity = Math.abs(d.aggregate_s ?? 0.15);
-        const size = 10 + intensity * 35;
-        bubble.style.width = size + "px";
-        bubble.style.height = size + "px";
-
-        // X position
-        const x = (i / data.length) * (W - size);
-        bubble.style.left = x + "px";
-
-        // Y position (-1..1 mapped to 0..1)
-        const yNorm = 0.5 - (d.aggregate_s ?? 0) / 2;
-        let y = yNorm * (H - size);
-        y += Math.random() * 20 - 10;
-        bubble.style.top = y + "px";
-
-        container.appendChild(bubble);
-    });
-}
-
-renderBubbleSpectrum();
-setInterval(renderBubbleSpectrum, 60000);
 /* ==========================================================
    SMARTTRADER ORB + QUANTUM FUSION ENGINE
    ========================================================== */
@@ -669,190 +538,178 @@ setInterval(renderBubbleSpectrum, 60000);
 let orbCanvas, orb;
 let time = 0;
 
-// ------------------------
-// 1) CONFIG
-// ------------------------
+/* ORB CONFIG */
 const ORB_CONFIG = {
-    baseRadius: 180,
-    noiseAmp: 22,
-    particleCount: 32,
-    ringSpeed: 0.0025,
-    ringRadius: 260,
+  baseRadius: 180,
+  noiseAmp: 22,
+  particleCount: 32,
+  ringSpeed: 0.0025,
+  ringRadius: 260,
 };
 
-// ذخیره 50 تصمیم آخر برای نمایش روی اورب
 let quantumNodes = [];
 
-
-// ------------------------
-// 2) Map decisions → Orb physics
-// ------------------------
 function orbPhysics(dec, trend, adx, power) {
-    const color =
-        dec === "BUY" ? "#4fffd2" :
-        dec === "SELL" ? "#ff5b5b" :
-        "#ffe680";
+  const color =
+    dec === "BUY" ? "#4fffd2" :
+    dec === "SELL" ? "#ff5b5b" :
+    "#ffe680";
 
-    return {
-        color,
-        deform: Math.min(Math.abs(power) * 1.9, 2.2),
-        pulse: 0.7 + Math.min(adx / 38, 2),
-        verticalShift: trend * 35,
-    };
+  return {
+    color,
+    deform: Math.min(Math.abs(power) * 1.9, 2.2),
+    pulse: 0.7 + Math.min(adx / 38, 2),
+    verticalShift: trend * 35,
+  };
 }
 
-
-// ------------------------
-// 3) Draw Organic Core Shape
-// ------------------------
 function drawCoreShape(state) {
-    const w = orbCanvas.width = window.innerWidth;
-    const h = orbCanvas.height = window.innerHeight;
+  const w = orbCanvas.width;
+  const h = orbCanvas.height;
 
-    orb.clearRect(0, 0, w, h);
+  orb.clearRect(0, 0, w, h);
 
-    const cx = w / 2;
-    const cy = h / 2 + state.verticalShift;
+  const cx = w / 2;
+  const cy = h / 2 + state.verticalShift;
 
-    const baseR = ORB_CONFIG.baseRadius;
+  const baseR = ORB_CONFIG.baseRadius;
+
+  orb.beginPath();
+
+  for (let i = 0; i <= 360; i++) {
+    const ang = i * Math.PI / 180;
+    const noise =
+      Math.sin(i * 0.12 + time * state.pulse) *
+      state.deform *
+      ORB_CONFIG.noiseAmp;
+
+    const r = baseR + noise;
+
+    const x = cx + r * Math.cos(ang);
+    const y = cy + r * Math.sin(ang);
+
+    i === 0 ? orb.moveTo(x, y) : orb.lineTo(x, y);
+  }
+
+  orb.closePath();
+
+  orb.fillStyle = state.color + "35";
+  orb.fill();
+
+  orb.strokeStyle = state.color;
+  orb.lineWidth = 2.5;
+  orb.stroke();
+}
+
+function drawQuantumRings() {
+  orb.strokeStyle = "#ffffff22";
+  orb.lineWidth = 1;
+
+  const cx = orbCanvas.width / 2;
+  const cy = orbCanvas.height / 2;
+
+  for (let i = 0; i < 3; i++) {
+    const r = ORB_CONFIG.ringRadius + i * 28;
 
     orb.beginPath();
-
-    for (let i = 0; i <= 360; i++) {
-        const ang = i * Math.PI / 180;
-        const noise = Math.sin(i * 0.12 + time * state.pulse) * state.deform * ORB_CONFIG.noiseAmp;
-        const r = baseR + noise;
-
-        const x = cx + r * Math.cos(ang);
-        const y = cy + r * Math.sin(ang);
-
-        i === 0 ? orb.moveTo(x, y) : orb.lineTo(x, y);
+    for (let a = 0; a < Math.PI * 2; a += 0.02) {
+      const x = cx + Math.cos(a + time * ORB_CONFIG.ringSpeed * (i + 1)) * r;
+      const y = cy + Math.sin(a) * (r * 0.32);
+      orb.lineTo(x, y);
     }
-
-    orb.closePath();
-
-    orb.fillStyle = state.color + "35";
-    orb.fill();
-
-    orb.strokeStyle = state.color;
-    orb.lineWidth = 2.5;
     orb.stroke();
+  }
 }
 
-
-// ------------------------
-// 4) Draw quantum orbit rings
-// ------------------------
-function drawQuantumRings() {
-    orb.strokeStyle = "#ffffff22";
-    orb.lineWidth = 1;
-
-    const cx = orbCanvas.width / 2;
-    const cy = orbCanvas.height / 2;
-
-    for (let i = 0; i < 3; i++) {
-        const r = ORB_CONFIG.ringRadius + i * 28;
-
-        orb.beginPath();
-        for (let a = 0; a < Math.PI * 2; a += 0.02) {
-            const x = cx + Math.cos(a + time * ORB_CONFIG.ringSpeed * (i + 1)) * r;
-            const y = cy + Math.sin(a) * (r * 0.32);
-            orb.lineTo(x, y);
-        }
-        orb.stroke();
-    }
-}
-
-
-// ------------------------
-// 5) Draw Quantum Decision Nodes
-// ------------------------
 function drawQuantumNodes() {
-    const cx = orbCanvas.width / 2;
-    const cy = orbCanvas.height / 2;
+  const cx = orbCanvas.width / 2;
+  const cy = orbCanvas.height / 2;
 
-    quantumNodes.forEach((n) => {
-        const pulse = Math.sin(time * 3 + n.seed) * 6;
+  quantumNodes.forEach((n) => {
+    const pulse = Math.sin(time * 3 + n.seed) * 6;
 
-        orb.beginPath();
-        orb.arc(
-            cx + n.x,
-            cy + n.y,
-            n.size + pulse,
-            0, Math.PI * 2
-        );
+    orb.beginPath();
+    orb.arc(cx + n.x, cy + n.y, n.size + pulse, 0, Math.PI * 2);
 
-        orb.fillStyle = n.color;
-        orb.fill();
-    });
+    orb.fillStyle = n.color;
+    orb.fill();
+  });
 }
 
-
-// ------------------------
-// 6) The Main Render Loop
-// ------------------------
 async function fusionLoop() {
-    if (!orbCanvas) return;
+  if (!orbCanvas) return;
 
-    const latest = await api("/api/decisions?limit=1");
-    const d = latest?.[0];
-    if (!d) return requestAnimationFrame(fusionLoop);
+  const latest = await api("/api/decisions?limit=1");
+  const d = latest?.[0];
 
-    const physics = orbPhysics(
-        d.final_decision,
-        d.trend_raw ?? 0,
-        Number(d.confirm_adx ?? d.adx ?? 0),
-        d.aggregate_s ?? 0
-    );
-
-    drawCoreShape(physics);
-    drawQuantumRings();
-    drawQuantumNodes();
-
-    time += 0.013;
+  if (!d) {
     requestAnimationFrame(fusionLoop);
+    return;
+  }
+
+  const decision = d.final_decision || d.decision || "HOLD";
+
+  const physics = orbPhysics(
+    decision,
+    Number(d.trend_raw ?? 0),
+    Number(d.confirm_adx ?? d.adx ?? 0),
+    Number(d.aggregate_s ?? 0)
+  );
+
+  drawCoreShape(physics);
+  drawQuantumRings();
+  drawQuantumNodes();
+
+  time += 0.013;
+  requestAnimationFrame(fusionLoop);
 }
 
-
-// ------------------------
-// 7) Add new decision nodes
-// ------------------------
 async function loadQuantumNodes() {
-    const res = await api("/api/decisions?limit=40");
+  const res = await api("/api/decisions?limit=40");
 
-    quantumNodes = res.map((d, index) => {
-        const angle = Math.random() * Math.PI * 2;
+  if (!Array.isArray(res)) return;
 
-        return {
-            x: Math.cos(angle) * (130 + Math.random() * 35),
-            y: Math.sin(angle) * (90 + Math.random() * 25),
-            size: 6 + Math.random() * 6,
-            seed: index,
-            color:
-                d.final_decision === "BUY" ? "#4fffd2" :
-                d.final_decision === "SELL" ? "#ff5b5b" :
-                "#ffe680",
-        };
-    });
+  quantumNodes = res.map((d, index) => {
+    const angle = Math.random() * Math.PI * 2;
+
+    return {
+      x: Math.cos(angle) * (130 + Math.random() * 35),
+      y: Math.sin(angle) * (90 + Math.random() * 25),
+      size: 6 + Math.random() * 6,
+      seed: index,
+      color:
+        d.final_decision === "BUY"
+          ? "#4fffd2"
+          : d.final_decision === "SELL"
+          ? "#ff5b5b"
+          : "#ffe680",
+    };
+  });
 }
 
+/* --------------------------- INIT ---------------------------------- */
 
-// ------------------------
-// 8) INIT
-// ------------------------
 document.addEventListener("DOMContentLoaded", async () => {
-    orbCanvas = document.getElementById("marketOrb");
-    if (orbCanvas) {
-        orb = orbCanvas.getContext("2d");
+  /* INIT ORB */
+  orbCanvas = document.getElementById("marketOrb");
 
-        await loadQuantumNodes();
-        fusionLoop();
-    }
-});
+  if (orbCanvas) {
+    orbCanvas.width = window.innerWidth;
+    orbCanvas.height = window.innerHeight;
 
-/* --------------------------- THEME (Optional) ----------------------- */
+    orb = orbCanvas.getContext("2d");
 
-document.addEventListener("DOMContentLoaded", () => {
+    await loadQuantumNodes();
+    fusionLoop();
+
+    window.addEventListener("resize", () => {
+      orbCanvas.width = window.innerWidth;
+      orbCanvas.height = window.innerHeight;
+    });
+  }
+
+  /* INIT DASHBOARD */
   updateDashboard();
   setInterval(updateDashboard, 10000);
+  setInterval(loadQuantumNodes, 10000);
 });
