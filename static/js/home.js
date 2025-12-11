@@ -652,7 +652,13 @@ function drawQuantumNodes() {
    ========================================================== */
 
 function renderOrbFrame() {
-    if (!orbCanvas || !lastDecisionData) {
+    if (!orbCanvas) {
+        requestAnimationFrame(renderOrbFrame);
+        return;
+    }
+
+    if (!lastDecisionData) {
+        time += 0.01;
         requestAnimationFrame(renderOrbFrame);
         return;
     }
@@ -675,31 +681,52 @@ function renderOrbFrame() {
 }
 
 /* ==========================================================
-   Init
+   INIT HANDLERS — NO ASYNC IN DOMContentLoaded
    ========================================================== */
 
-document.addEventListener("DOMContentLoaded", async () => {
-    orbCanvas = document.getElementById("marketOrb");
-
-    if (orbCanvas) {
-        const resizeOrb = () => {
-            orbCanvas.width = window.innerWidth;
-            orbCanvas.height = window.innerHeight;
-        };
-        resizeOrb();
-        window.addEventListener("resize", resizeOrb);
-
-        orb = orbCanvas.getContext("2d");
-
-        await updateOrbData();   // load 1st frame data
-        await loadQuantumNodes();
-
-        renderOrbFrame();         // Starts animation loop
-        setInterval(updateOrbData, 10000);   // API refresh every 10 sec
-        setInterval(loadQuantumNodes, 10000);
-    }
-
-    updateDashboard();
-    setInterval(updateDashboard, 10000);
+document.addEventListener("DOMContentLoaded", () => {
+    initOrb();        // ORB independent + async-safe
+    initDashboard();  // Dashboard independent
 });
 
+
+/* ==========================================================
+   ORB INIT
+   ========================================================== */
+
+async function initOrb() {
+    orbCanvas = document.getElementById("marketOrb");
+    if (!orbCanvas) return;
+
+    const resize = () => {
+        orbCanvas.width = window.innerWidth;
+        orbCanvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    orb = orbCanvas.getContext("2d");
+
+    // Load initial data in parallel
+    await Promise.all([
+        updateOrbData(),
+        loadQuantumNodes()
+    ]);
+
+    // Start animation
+    requestAnimationFrame(renderOrbFrame);
+
+    // Scheduled updates
+    setInterval(updateOrbData, 10000);
+    setInterval(loadQuantumNodes, 10000);
+}
+
+
+/* ==========================================================
+   DASHBOARD INIT
+   ========================================================== */
+
+function initDashboard() {
+    updateDashboard();        // first load
+    setInterval(updateDashboard, 9000); // stable refresh cycle
+}
