@@ -688,28 +688,36 @@ async function loadQuantumNodes() {
 }
 
 /* --------------------------- INIT ---------------------------------- */
-
 document.addEventListener("DOMContentLoaded", async () => {
-  /* INIT ORB */
-  orbCanvas = document.getElementById("marketOrb");
 
-  if (orbCanvas) {
-    orbCanvas.width = window.innerWidth;
-    orbCanvas.height = window.innerHeight;
+    /* ----------------------------
+       ORB INIT (One-Time Setup)
+    ---------------------------- */
+    orbCanvas = document.getElementById("marketOrb");
 
-    orb = orbCanvas.getContext("2d");
+    if (orbCanvas) {
+        const resizeOrb = () => {
+            orbCanvas.width = window.innerWidth;
+            orbCanvas.height = window.innerHeight;
+        };
 
-    await loadQuantumNodes();
-    fusionLoop();
+        resizeOrb();
+        window.addEventListener("resize", resizeOrb);
 
-    window.addEventListener("resize", () => {
-      orbCanvas.width = window.innerWidth;
-      orbCanvas.height = window.innerHeight;
-    });
-  }
+        orb = orbCanvas.getContext("2d");
 
-  /* INIT DASHBOARD */
-  updateDashboard();
-  setInterval(updateDashboard, 10000);
-  setInterval(loadQuantumNodes, 10000);
+        await loadQuantumNodes();  // preload initial nodes
+        requestAnimationFrame(fusionLoop); // start ONE animation loop only
+    }
+
+    /* ----------------------------
+       DASHBOARD INIT
+    ---------------------------- */
+    updateDashboard();
+
+    // Refresh UI every 10 sec (safe)
+    setInterval(updateDashboard, 10000);
+
+    // Refresh ORB nodes every 10 sec
+    setInterval(loadQuantumNodes, 10000);
 });
