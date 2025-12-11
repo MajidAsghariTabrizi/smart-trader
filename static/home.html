@@ -5,35 +5,21 @@
     <title>SmartTrader – ربات معاملاتی خودکار</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/static/css/style.css" />
+    <script src="js/home.js"></script>
 </head>
 
 <body class="st-body">
 <div id="app" class="st-page">
-<section class="st-mega-banner">
-    <div class="st-mega-inner">
+<section class="st-orb-banner">
+    <canvas id="marketOrb"></canvas>
 
-        <h1 class="st-mega-title">
-            آینده‌ی معامله‌گری هوشمند
-            <span>اینجا شروع می‌شود.</span>
-        </h1>
-
-        <p class="st-mega-desc">
-            SmartTrader یک موتور تحلیل الگوریتمی است که با ترکیب ADX، ATR، مدل تصمیم‌گیری MTF
-            و تکنیک‌های هوش مصنوعی، بازار را در لحظه پردازش می‌کند.
+    <div class="orb-overlay">
+        <h1 class="orb-title">SmartTrader Live Market Orb</h1>
+        <p class="orb-desc">
+            نمایش زندهٔ روند بازار، شدت نوسان و تصمیم لحظه‌ای ربات
         </p>
-
-        <div class="st-mega-actions">
-            <a href="#priceChart" class="mega-btn mega-primary">مشاهده سیگنال‌ها</a>
-            <a href="#decision-list" class="mega-btn mega-ghost">آخرین تصمیم‌ها</a>
-        </div>
-
     </div>
-
-    <!-- Background aesthetic -->
-    <div class="mega-bg"></div>
 </section>
-
-
 
 <header class="st-hero">
 

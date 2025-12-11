@@ -663,6 +663,86 @@ async function renderBubbleSpectrum() {
 renderBubbleSpectrum();
 setInterval(renderBubbleSpectrum, 60000);
 
+/* ==========================================================
+   LIVING MARKET ORB — SmartTrader Dynamic Shape Engine
+   ========================================================== */
+
+const orbCanvas = document.getElementById("marketOrb");
+const orb = orbCanvas.getContext("2d");
+
+let t = 0;
+
+// تابع تبدیل داده‌های ربات → پارامترهای شکل
+function orbState(dec, trend, adx, power) {
+    return {
+        color:
+            dec === "BUY" ? "#4fffd2" :
+            dec === "SELL" ? "#ff5b5b" :
+            "#ffe680",
+
+        pulse: 0.6 + Math.min(adx / 50, 1.4),   // قدرت نوسان
+        deform: Math.abs(power) * 1.4,          // شدت تغییری شکل
+        trendShift: trend * 40                  // جهت‌گیری بالا/پایین
+    };
+}
+
+function drawOrb(state) {
+    const w = orbCanvas.width = window.innerWidth;
+    const h = orbCanvas.height = window.innerHeight;
+
+    orb.clearRect(0, 0, w, h);
+
+    const cx = w / 2;
+    const cy = h / 2 + state.trendShift;
+
+    const baseRadius = Math.min(w, h) * 0.22;
+
+    orb.beginPath();
+
+    for (let i = 0; i <= 360; i++) {
+        const ang = (i * Math.PI) / 180;
+        const noise = Math.sin(i * 0.1 + t * state.pulse) * state.deform * 15;
+
+        const r = baseRadius + noise;
+
+        const x = cx + r * Math.cos(ang);
+        const y = cy + r * Math.sin(ang);
+
+        if (i === 0) orb.moveTo(x, y);
+        else orb.lineTo(x, y);
+    }
+
+    orb.closePath();
+    orb.fillStyle = state.color + "88";
+    orb.fill();
+
+    orb.strokeStyle = state.color;
+    orb.lineWidth = 3;
+    orb.stroke();
+}
+
+async function orbLoop() {
+    const [last] = await Promise.all([
+        api("/api/decisions?limit=1"),
+    ]);
+
+    const d = last?.[0];
+
+    if (d) {
+        const st = orbState(
+            d.final_decision,
+            d.trend_raw ?? 0,
+            Number(d.confirm_adx ?? d.adx ?? 0),
+            d.aggregate_s ?? 0
+        );
+        drawOrb(st);
+    }
+
+    t += 0.015;
+    requestAnimationFrame(orbLoop);
+}
+
+orbLoop();
 
 
 /* --------------------------- THEME (Optional) ----------------------- */
