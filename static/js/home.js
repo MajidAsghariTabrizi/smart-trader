@@ -662,17 +662,14 @@ async function renderBubbleSpectrum() {
 
 renderBubbleSpectrum();
 setInterval(renderBubbleSpectrum, 60000);
-
 /* ==========================================================
-   LIVING MARKET ORB — SmartTrader Dynamic Shape Engine
+   LIVING MARKET ORB — SAFE VERSION
    ========================================================== */
 
-const orbCanvas = document.getElementById("marketOrb");
-const orb = orbCanvas.getContext("2d");
-
+let orbCanvas = null;
+let orb = null;
 let t = 0;
 
-// تابع تبدیل داده‌های ربات → پارامترهای شکل
 function orbState(dec, trend, adx, power) {
     return {
         color:
@@ -680,13 +677,15 @@ function orbState(dec, trend, adx, power) {
             dec === "SELL" ? "#ff5b5b" :
             "#ffe680",
 
-        pulse: 0.6 + Math.min(adx / 50, 1.4),   // قدرت نوسان
-        deform: Math.abs(power) * 1.4,          // شدت تغییری شکل
-        trendShift: trend * 40                  // جهت‌گیری بالا/پایین
+        pulse: 0.6 + Math.min(adx / 50, 1.4),
+        deform: Math.abs(power) * 1.4,
+        trendShift: trend * 40
     };
 }
 
 function drawOrb(state) {
+    if (!orbCanvas || !orb) return;
+
     const w = orbCanvas.width = window.innerWidth;
     const h = orbCanvas.height = window.innerHeight;
 
@@ -722,27 +721,32 @@ function drawOrb(state) {
 }
 
 async function orbLoop() {
-    const [last] = await Promise.all([
-        api("/api/decisions?limit=1"),
-    ]);
+    if (!orbCanvas || !orb) return;  // IMPORTANT
 
-    const d = last?.[0];
+    const res = await api("/api/decisions?limit=1");
+    const d = Array.isArray(res) ? res[0] : null;
 
     if (d) {
-        const st = orbState(
+        const s = orbState(
             d.final_decision,
             d.trend_raw ?? 0,
             Number(d.confirm_adx ?? d.adx ?? 0),
             d.aggregate_s ?? 0
         );
-        drawOrb(st);
+        drawOrb(s);
     }
 
     t += 0.015;
     requestAnimationFrame(orbLoop);
 }
 
-orbLoop();
+document.addEventListener("DOMContentLoaded", () => {
+    orbCanvas = document.getElementById("marketOrb");
+    if (orbCanvas) {
+        orb = orbCanvas.getContext("2d");
+        orbLoop();
+    }
+});
 
 
 /* --------------------------- THEME (Optional) ----------------------- */
