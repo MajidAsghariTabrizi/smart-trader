@@ -641,158 +641,141 @@ function drawQuantumFlux(data, ts) {
 
 let orbState = null;
 
-function initMarketOrb() {
-  const canvas = document.getElementById("marketOrb");
-  if (!canvas) return;
+function drawEnergyOrb_ULTRA(data) {
+    const canvas = document.getElementById("marketOrb");
+    if (!canvas) return;
 
-  const ctx = canvas.getContext("2d");
-  const dpr = window.devicePixelRatio || 1;
+    // Responsive
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
 
-  const state = {
-    canvas,
-    ctx,
-    dpr,
-    logicalSize: 0,
-    cx: 0,
-    cy: 0,
-    particles: [],
-    lastFrame: 0,
-    resizeTimer: null,
-  };
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width;
+    const H = canvas.height;
+    const CX = W / 2;
+    const CY = H / 2;
 
-  // create particles on 3 rings
-  const rings = [0, 1, 2];
-  const particleCount = 54;
+    ctx.clearRect(0, 0, W, H);
 
-  for (let i = 0; i < particleCount; i++) {
-    const ringIndex = rings[i % rings.length];
-    state.particles.push({
-      ring: ringIndex,
-      baseAngle: (Math.PI * 2 * i) / particleCount,
-      speed: 0.0006 + 0.0003 * Math.random(),
-      jitter: Math.random() * Math.PI * 2,
-    });
-  }
+    const last = data[data.length - 1];
+    const t = Date.now() * 0.001;
 
-  function resizeOrb() {
-    const rect = canvas.getBoundingClientRect();
-    const size = Math.min(rect.width, rect.height);
+    /* ==========================================================
+       1) NEON MESH GRID (شبکه دیجیتال)
+    ========================================================== */
+    const gridSize = 22;
+    ctx.lineWidth = 0.35;
+    ctx.strokeStyle = "rgba(80,120,255,0.14)";
 
-    const dprNow = window.devicePixelRatio || 1;
-    state.dpr = dprNow;
-
-    canvas.width = size * dprNow;
-    canvas.height = size * dprNow;
-
-    state.logicalSize = size;
-    state.cx = size / 2;
-    state.cy = size / 2;
-
-    // draw in logical coordinates (0..size)
-    ctx.setTransform(dprNow, 0, 0, dprNow, 0, 0);
-  }
-
-  resizeOrb();
-  window.addEventListener("resize", () => {
-    clearTimeout(state.resizeTimer);
-    state.resizeTimer = setTimeout(resizeOrb, 150);
-  });
-
-  function frame(ts) {
-    const now = ts || performance.now();
-
-    // FPS limit ~30
-    if (now - state.lastFrame < 1000 / 30) {
-      requestAnimationFrame(frame);
-      return;
+    for (let x = 0; x < W; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, H);
+        ctx.stroke();
     }
-    state.lastFrame = now;
-
-    const size = state.logicalSize;
-    const cx = state.cx;
-    const cy = state.cy;
-
-    if (!size) {
-      requestAnimationFrame(frame);
-      return;
+    for (let y = 0; y < H; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
     }
 
-    ctx.clearRect(0, 0, size, size);
+    /* ==========================================================
+       2) ENERGY BLOOM (پالس انرژی BUY/SELL)
+    ========================================================== */
+    const bloomR = W * 0.12 + Math.sin(t * 4) * 6;
 
-    const baseRadius = size * 0.22;
-    const ringGap = size * 0.14;
-    const t = now * 0.0012;
+    let bloomColor =
+        last?.decision === "BUY"
+            ? "rgba(0,255,140,0.25)"
+            : last?.decision === "SELL"
+            ? "rgba(255,70,70,0.25)"
+            : "rgba(255,220,120,0.22)";
 
-    // background radial glow
-    const grd = ctx.createRadialGradient(
-      cx,
-      cy,
-      baseRadius * 0.3,
-      cx,
-      cy,
-      baseRadius * 3
-    );
-    grd.addColorStop(0, "rgba(255,230,150,0.30)");
-    grd.addColorStop(1, "rgba(5,8,20,0.98)");
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, size, size);
-
-    // outer rings with pulse
-    for (let i = 0; i < 3; i++) {
-      const r =
-        baseRadius +
-        ringGap * i +
-        Math.sin(t * (1 + i * 0.2)) * (i === 0 ? 2 : 4);
-
-      ctx.beginPath();
-      ctx.lineWidth = i === 0 ? 2.4 : 1.6;
-      ctx.strokeStyle =
-        i === 1
-          ? "rgba(129,140,248,0.8)"
-          : "rgba(148,163,255,0.55)";
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-
-    // core orb with soft breathing
-    const coreR = baseRadius * 0.8 + Math.sin(t * 1.6) * 2;
     ctx.beginPath();
-    ctx.fillStyle = "rgba(252,211,77,0.92)";
-    ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
+    ctx.fillStyle = bloomColor;
+    ctx.arc(CX, CY, bloomR, 0, Math.PI * 2);
     ctx.fill();
 
-    // small inner halo
+    /* ==========================================================
+       CORE (هسته تصمیم)
+    ========================================================== */
+    const coreColor =
+        last?.decision === "BUY"
+            ? "rgba(0,255,150,0.9)"
+            : last?.decision === "SELL"
+            ? "rgba(255,80,80,0.9)"
+            : "rgba(255,220,120,0.9)";
+
     ctx.beginPath();
-    ctx.strokeStyle = "rgba(250,250,210,0.75)";
-    ctx.lineWidth = 1.2;
-    ctx.arc(cx, cy, coreR + 6, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.fillStyle = coreColor;
+    ctx.arc(CX, CY, W * 0.085, 0, Math.PI * 2);
+    ctx.fill();
 
-    // particles orbiting on rings
-    state.particles.forEach((p) => {
-      const ringR = baseRadius + ringGap * p.ring;
-      const speedFactor = 0.5 + p.ring * 0.25;
-      const angle = p.baseAngle + t * speedFactor;
+    /* ==========================================================
+       3) MULTI-RING WAVEFORM (موج چند حلقه‌ای)
+    ========================================================== */
+    const baseR = W * 0.18;
+    const rings = [0.0, 0.14, 0.28];
 
-      const radius =
-        ringR + Math.sin(t * 1.7 + p.jitter) * 3.5;
+    rings.forEach((offset, idx) => {
+        const r = baseR + offset * W + Math.sin(t * (1.5 + idx * 0.3)) * 6;
 
-      const x = cx + Math.cos(angle) * radius;
-      const y = cy + Math.sin(angle) * radius;
+        ctx.beginPath();
+        ctx.lineWidth = 1.6;
+        ctx.strokeStyle =
+            idx === 0
+                ? "rgba(120,180,255,0.55)"
+                : idx === 1
+                ? "rgba(180,200,255,0.35)"
+                : "rgba(150,160,255,0.25)";
 
-      const dotSize = 2.6 + (p.ring === 0 ? 0 : 1.4);
-
-      ctx.beginPath();
-      ctx.fillStyle = "rgba(252,211,77,0.96)";
-      ctx.arc(x, y, dotSize, 0, Math.PI * 2);
-      ctx.fill();
+        ctx.arc(CX, CY, r, 0, Math.PI * 2);
+        ctx.stroke();
     });
 
-    requestAnimationFrame(frame);
-  }
+    /* ==========================================================
+       4) DECISION GRAVITY FIELD (جاذبه تصمیمات)
+    ========================================================== */
+    const ringR = baseR + 0.28 * W;
 
-  orbState = state;
-  requestAnimationFrame(frame);
+    data.slice(-140).forEach((d, i) => {
+        let angle = i * (Math.PI * 2 / 140) + t * 0.32;
+        let intensity = Math.abs(d.aggregate_s ?? 0.12);
+
+        // جاذبه رنگی
+        const pColor =
+            d.decision === "BUY"
+                ? `rgba(0,255,150,${0.55 + intensity})`
+                : d.decision === "SELL"
+                ? `rgba(255,90,90,${0.55 + intensity})`
+                : `rgba(255,230,120,${0.50 + intensity})`;
+
+        let px = CX + Math.cos(angle) * ringR;
+        let py = CY + Math.sin(angle) * ringR;
+
+        /* -----------------------------------
+           5) PARTICLE TRAILS (دنباله نوری)
+        ----------------------------------- */
+        ctx.beginPath();
+        ctx.strokeStyle = pColor;
+        ctx.lineWidth = 1.8;
+
+        let trailX = CX + Math.cos(angle - 0.12) * ringR;
+        let trailY = CY + Math.sin(angle - 0.12) * ringR;
+
+        ctx.moveTo(trailX, trailY);
+        ctx.lineTo(px, py);
+        ctx.stroke();
+
+        // خود نقطه
+        ctx.beginPath();
+        ctx.fillStyle = pColor;
+        ctx.arc(px, py, 4 + intensity * 3.5, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    requestAnimationFrame(() => drawEnergyOrb_ULTRA(data));
 }
 
 /* --------------------------- Bubble Spectrum ------------------------ */
@@ -854,8 +837,13 @@ setInterval(renderBubbleSpectrum, 60000);
 
 /* --------------------------- THEME / BOOTSTRAP ---------------------- */
 
-document.addEventListener("DOMContentLoaded", () => {
-  initMarketOrb();
-  updateDashboard();
-  setInterval(updateDashboard, 10000);
+document.addEventListener("DOMContentLoaded", async () => {
+    updateDashboard();
+
+    const data = await api("/api/decisions?limit=200");
+    if (Array.isArray(data) && data.length) {
+        drawEnergyOrb_ULTRA(data);
+    }
+
+    setInterval(updateDashboard, 10000);
 });

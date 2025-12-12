@@ -61,72 +61,99 @@ html {
 /* =========================================================
    🌌 ORB / QUANTUM FUSION BANNER
    ========================================================= */
-/* ================= ORB HERO – FINAL PRO VERSION ================== */
+/* ========================= ORB – ENERGY FIELD ========================= */
 
 .st-orb-banner {
     position: relative;
     width: 100%;
-    min-height: 88vh;              /* ارتفاع پایدار */
+    min-height: 90vh;
     padding-top: 80px;
-    padding-bottom: 80px;          /* جلوگیری از overlap */
+    padding-bottom: 80px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
+    background: #050a14;
     overflow: visible;
-    background: var(--bg-main);
-    z-index: 5;
 }
 
+/* Container */
 .orb-canvas-wrap {
     position: relative;
-    width: min(480px, 75vw);
+    width: min(520px, 78vw);
     aspect-ratio: 1/1;
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10;
+    isolation: isolate;
 }
 
+/* Glow Core Behind Canvas */
+.orb-canvas-wrap::before {
+    content: "";
+    position: absolute;
+    width: 55%;
+    height: 55%;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        rgba(255, 240, 160, 0.95) 0%,
+        rgba(255, 240, 160, 0.35) 40%,
+        rgba(255, 240, 160, 0.02) 80%
+    );
+    filter: blur(22px);
+    z-index: 1;
+}
+
+/* Energy Field Glow */
+.orb-canvas-wrap::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        circle,
+        rgba(0, 160, 255, 0.18),
+        rgba(0, 0, 0, 0)
+    );
+    z-index: 0;
+}
+
+/* Canvas itself */
 #marketOrb {
     width: 100% !important;
     height: 100% !important;
     display: block;
-    pointer-events: none;
-    z-index: 12;
+    position: relative;
+    z-index: 4;
+    filter: drop-shadow(0 0 12px rgba(0, 200, 255, 0.35))
+            drop-shadow(0 0 28px rgba(0, 140, 255, 0.25));
+    transition: filter 0.25s ease-out;
 }
 
-/* متن زیر ORB */
+#marketOrb:hover {
+    filter: drop-shadow(0 0 20px rgba(0, 200, 255, 0.5))
+            drop-shadow(0 0 40px rgba(0, 140, 255, 0.35));
+}
+
+/* Text Block */
 .orb-overlay {
-    margin-top: 30px;
+    margin-top: 32px;
     text-align: center;
     z-index: 20;
-    position: relative;
 }
 
 .orb-title {
-    font-size: 42px;
+    font-size: 46px;
     font-weight: 900;
-    margin-bottom: 8px;
     color: #e6faff;
-    text-shadow: 0 0 26px #00eaff66;
+    text-shadow: 0 0 18px rgba(0, 200, 255, 0.6);
 }
 
 .orb-desc {
+    margin-top: 8px;
     font-size: 18px;
     opacity: .9;
-}
-
-/* جلوگیری از تداخل Canvas دوم (quantumFlux) */
-#quantumFlux {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 360px;          /* ارتفاع محدود */
-    opacity: .22;
-    z-index: 0;             /* همیشه پشت همه */
-    pointer-events: none;
+    color: #dcecff;
 }
 
 /* =========================================================
