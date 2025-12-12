@@ -57,105 +57,63 @@ html {
     background: rgba(255,255,255,0.25);
     border-radius: 99px;
 }
+/* ====================== ORB FULL-BLEED WRAPPER ====================== */
 
-/* =========================================================
-   🌌 ORB / QUANTUM FUSION BANNER
-   ========================================================= */
-/* ========================= ORB – ENERGY FIELD ========================= */
+.st-orb-banner {
+    /* اورب تمام عرض صفحه، مستقل از max-width #app */
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+    padding-block: clamp(32px, 6vh, 64px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    background: var(--bg-main);
+}
 
-/* ---------------------------------------
-   Neural Mesh ORB – Base CSS
----------------------------------------- */
-/* Crystal Neural ORB – Advanced Mesh */
+.orb-canvas-wrap {
+    position: relative;
+    width: min(1150px, 100%);
+    /* نسبت تصویر ثابت ولی ارتفاع ریسپانسیو */
+    aspect-ratio: 16 / 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
 #marketOrb {
-    width: 100%;
-    height: 780px;
-    position: relative;
-    overflow: hidden;
-    background: radial-gradient(circle at center,
-        rgba(10,10,20,1) 0%,
-        rgba(5,5,15,1) 60%,
-        rgba(0,0,0,1) 100%
-    );
-    border-radius: 50%;
-    filter: drop-shadow(0 0 45px rgba(120,150,255,0.35))
-            drop-shadow(0 0 85px rgba(90,130,255,0.2));
+    will-change: transform;
 }
-
-/* Fog layers for depth */
-.orb-fog-top,
-.orb-fog-mid,
-.orb-fog-bottom {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    mix-blend-mode: screen;
-}
-
-.orb-fog-top {
-    background: radial-gradient(circle,
-        rgba(255,255,255,0.08),
-        rgba(255,255,255,0.02) 55%,
-        rgba(0,0,0,0) 80%
-    );
-}
-
-.orb-fog-mid {
-    background: radial-gradient(circle,
-        rgba(255,220,140,0.08),
-        rgba(255,200,120,0.03) 45%,
-        rgba(0,0,0,0) 80%
-    );
-}
-
-.orb-fog-bottom {
-    background: radial-gradient(circle,
-        rgba(120,160,255,0.05),
-        rgba(80,120,255,0.02) 40%,
-        rgba(0,0,0,0) 80%
-    );
-}
-
-/* Photon nodes */
-.mesh-node {
-    width: 5px;
-    height: 5px;
-    position: absolute;
-    border-radius: 50%;
-    box-shadow:
-        0 0 8px rgba(255,255,220,0.9),
-        0 0 14px rgba(255,255,180,0.7);
-}
-
-/* Crystal mesh links */
-.mesh-link {
-    position: absolute;
-    height: 1.4px;
-    transform-origin: left center;
-    mix-blend-mode: screen;
-}
-
-
-/* Text Block */
+/* متن زیر اورب */
 .orb-overlay {
-    margin-top: 32px;
     text-align: center;
-    z-index: 20;
+    padding-inline: 16px;
 }
 
 .orb-title {
-    font-size: 46px;
+    font-size: clamp(28px, 4vw, 40px);
     font-weight: 900;
     color: #e6faff;
     text-shadow: 0 0 18px rgba(0, 200, 255, 0.6);
+    margin: 0;
 }
 
 .orb-desc {
     margin-top: 8px;
-    font-size: 18px;
+    font-size: clamp(13px, 2vw, 16px);
     opacity: .9;
     color: #dcecff;
+}
+
+/* موبایل: اورب کوچیک‌تر که بیرون نزنه */
+@media (max-width: 768px) {
+    .st-orb-banner {
+        padding-block: 24px;
+    }
+    .orb-canvas-wrap {
+        aspect-ratio: 1 / 1;
+        width: min(420px, 100%);
+    }
 }
 
 /* =========================================================
