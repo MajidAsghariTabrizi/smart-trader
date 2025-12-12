@@ -66,76 +66,74 @@ html {
 /* ---------------------------------------
    Neural Mesh ORB – Base CSS
 ---------------------------------------- */
+/* Crystal Neural ORB – Advanced Mesh */
 
 #marketOrb {
     width: 100%;
-    height: 680px;
-    display: block;
-    margin: 0 auto;
+    height: 780px;
     position: relative;
-    filter: drop-shadow(0 0 35px rgba(120,160,255,0.35));
-    background: radial-gradient(
-        circle,
-        rgba(10,14,25,1) 0%,
-        rgba(5,8,15,1) 65%,
+    overflow: hidden;
+    background: radial-gradient(circle at center,
+        rgba(10,10,20,1) 0%,
+        rgba(5,5,15,1) 60%,
         rgba(0,0,0,1) 100%
     );
     border-radius: 50%;
-    overflow: hidden;
+    filter: drop-shadow(0 0 45px rgba(120,150,255,0.35))
+            drop-shadow(0 0 85px rgba(90,130,255,0.2));
 }
 
-/* مه پلاسما */
-.orb-fog {
+/* Fog layers for depth */
+.orb-fog-top,
+.orb-fog-mid,
+.orb-fog-bottom {
     position: absolute;
     inset: 0;
-    background: radial-gradient(
-        circle,
-        rgba(255,255,220,0.12),
-        rgba(255,255,120,0.05) 40%,
-        rgba(0,0,0,0) 70%
-    );
     pointer-events: none;
     mix-blend-mode: screen;
 }
 
-/* چشمک‌های شبکه */
-.mesh-node {
-    width: 6px;
-    height: 6px;
-    background: rgba(255,255,200,0.9);
-    border-radius: 50%;
-    position: absolute;
-    filter: blur(1px);
-    box-shadow: 0 0 12px rgba(255,255,200,0.9);
+.orb-fog-top {
+    background: radial-gradient(circle,
+        rgba(255,255,255,0.08),
+        rgba(255,255,255,0.02) 55%,
+        rgba(0,0,0,0) 80%
+    );
 }
 
-/* اتصال نوری نودها */
+.orb-fog-mid {
+    background: radial-gradient(circle,
+        rgba(255,220,140,0.08),
+        rgba(255,200,120,0.03) 45%,
+        rgba(0,0,0,0) 80%
+    );
+}
+
+.orb-fog-bottom {
+    background: radial-gradient(circle,
+        rgba(120,160,255,0.05),
+        rgba(80,120,255,0.02) 40%,
+        rgba(0,0,0,0) 80%
+    );
+}
+
+/* Photon nodes */
+.mesh-node {
+    width: 5px;
+    height: 5px;
+    position: absolute;
+    border-radius: 50%;
+    box-shadow:
+        0 0 8px rgba(255,255,220,0.9),
+        0 0 14px rgba(255,255,180,0.7);
+}
+
+/* Crystal mesh links */
 .mesh-link {
     position: absolute;
-    background: rgba(120,180,255,0.35);
-    height: 2px;
+    height: 1.4px;
     transform-origin: left center;
-    border-radius: 2px;
-    filter: blur(0.7px);
-}
-
-/* Shockwave */
-.shockwave {
-    position: absolute;
-    border-radius: 50%;
-    border: 2px solid rgba(255,240,180,0.7);
-    animation: shock 1.2s ease-out forwards;
-}
-
-@keyframes shock {
-    from {
-        transform: scale(0.2);
-        opacity: 0.9;
-    }
-    to {
-        transform: scale(3.5);
-        opacity: 0;
-    }
+    mix-blend-mode: screen;
 }
 
 

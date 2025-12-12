@@ -639,7 +639,7 @@ function drawQuantumFlux(data, ts) {
 
 /* --------------------------- Market ORB Hero ------------------------ */
 
-function drawNeuralMesh_ORB(data) {
+function drawCrystalNeural_ORB(data) {
 
     const canvas = document.getElementById("marketOrb");
     if (!canvas) return;
@@ -655,99 +655,112 @@ function drawNeuralMesh_ORB(data) {
 
     ctx.clearRect(0,0,W,H);
 
-    const last = data[data.length - 1];
+    const last = data[data.length - 1] ?? {};
     const t = performance.now() * 0.001;
 
-    /* -------------------------------------
-       Plasma Background
-    -------------------------------------- */
-    const grd = ctx.createRadialGradient(CX, CY, 10, CX, CY, W*0.55);
-    grd.addColorStop(0, "rgba(255,240,160,0.6)");
-    grd.addColorStop(0.3, "rgba(255,220,120,0.25)");
-    grd.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = grd;
-    ctx.fillRect(0,0,W,H);
+    /* -------------------------------------------------
+       1) Core with refractive light
+    ------------------------------------------------- */
+    const coreColor =
+        last.decision === "BUY"  ? "rgba(0,255,180,0.92)" :
+        last.decision === "SELL" ? "rgba(255,80,80,0.92)" :
+                                   "rgba(255,230,150,0.92)";
 
-    /* -------------------------------------
-       Core Fusion
-    -------------------------------------- */
     ctx.beginPath();
-    ctx.fillStyle = "rgba(255,240,140,0.95)";
-    ctx.arc(CX, CY, W*0.07 + Math.sin(t*3)*3, 0, Math.PI*2);
+    ctx.fillStyle = coreColor;
+    ctx.arc(CX, CY, W * 0.085 + Math.sin(t*3)*3, 0, Math.PI*2);
     ctx.fill();
 
-    /* -------------------------------------
-       Neural Node Cloud
-    -------------------------------------- */
+    /* Chromatic halo */
+    let halo = ctx.createRadialGradient(CX,CY,20, CX,CY, W*0.25);
+    halo.addColorStop(0, coreColor);
+    halo.addColorStop(0.3, "rgba(255,240,200,0.25)");
+    halo.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = halo;
+    ctx.fillRect(0,0,W,H);
 
-    const nodes = 150;
-    const radius = W * 0.28;
+    /* -------------------------------------------------
+       2) Crystal-Mesh multi-layer (3 depth planes)
+    ------------------------------------------------- */
 
-    let meshPoints = [];
+    const layers = [
+        { r: W*0.26, drift: 0.35, color:"rgba(160,180,255,0.35)" },
+        { r: W*0.32, drift: 0.22, color:"rgba(120,140,255,0.28)" },
+        { r: W*0.38, drift: 0.18, color:"rgba(90,110,255,0.18)" }
+    ];
 
-    for (let i = 0; i < nodes; i++) {
+    layers.forEach((layer, li) => {
 
-        let angle = i * (Math.PI * 2 / nodes);
+        const nodes = 150;
+        const pts = [];
 
-        angle += Math.sin(t * 0.7 + i * 0.15) * 0.22;  // Magnetic field
-        angle += (last.aggregate_s ?? 0) * 0.6;        // Decision bending
+        for (let i = 0; i < nodes; i++) {
 
-        let r = radius + Math.sin(t*1.5 + i*0.3) * 22;
+            let baseAng = i * (Math.PI*2 / nodes);
 
-        let x = CX + Math.cos(angle) * r;
-        let y = CY + Math.sin(angle) * r;
+            // 3D drift effect
+            let ang = baseAng +
+                      Math.sin(t * 0.7 + i*0.12 + li) * layer.drift +
+                      (last.aggregate_s ?? 0) * 0.3;
 
-        meshPoints.push({ x, y });
+            // radius wobble
+            let r = layer.r + Math.sin(t*2 + i*0.25) * (8 + li*4);
 
-        // Node glow
-        ctx.beginPath();
-        ctx.fillStyle = "rgba(255,255,200,0.85)";
-        ctx.arc(x, y, 3, 0, Math.PI*2);
-        ctx.fill();
-    }
+            let x = CX + Math.cos(ang) * r;
+            let y = CY + Math.sin(ang) * r;
 
-    /* -------------------------------------
-       Neural Links (Mesh)
-    -------------------------------------- */
+            pts.push({x, y});
+        }
 
-    ctx.strokeStyle = "rgba(160,200,255,0.25)";
-    ctx.lineWidth = 1;
+        // Mesh lines
+        ctx.strokeStyle = layer.color;
+        ctx.lineWidth = 0.8;
 
-    for (let i = 0; i < nodes; i++) {
-        const A = meshPoints[i];
-        const B = meshPoints[(i + 8) % nodes];     // subtle mesh linking
-        const C = meshPoints[(i + 20) % nodes];
+        for (let i = 0; i < nodes; i++) {
+            let A = pts[i];
+            let B = pts[(i+4) % nodes];
+            let C = pts[(i+13)% nodes];
 
-        ctx.beginPath();
-        ctx.moveTo(A.x, A.y);
-        ctx.lineTo(B.x, B.y);
-        ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(A.x, A.y);
+            ctx.lineTo(B.x, B.y);
+            ctx.stroke();
 
-        ctx.beginPath();
-        ctx.moveTo(A.x, A.y);
-        ctx.lineTo(C.x, C.y);
-        ctx.stroke();
-    }
+            ctx.beginPath();
+            ctx.moveTo(A.x, A.y);
+            ctx.lineTo(C.x, C.y);
+            ctx.stroke();
+        }
 
-    /* -------------------------------------
-       Shockwave (Decision)
-    -------------------------------------- */
+        // Nodes
+        for (let i = 0; i < nodes; i++) {
+
+            let p = pts[i];
+            let inten = Math.abs(data[i]?.aggregate_s ?? 0.15);
+
+            ctx.beginPath();
+            ctx.fillStyle = `rgba(255,255,220,${0.55 + inten})`;
+            ctx.arc(p.x, p.y, 2.3 + inten*2, 0, Math.PI*2);
+            ctx.fill();
+        }
+    });
+
+    /* -------------------------------------------------
+       3) Decision Spark (flash when new)
+    ------------------------------------------------- */
 
     if (data.justUpdated) {
-        const shock = document.createElement("div");
-        shock.className = "shockwave";
-        shock.style.left = CX + "px";
-        shock.style.top = CY + "px";
-        shock.style.width = "20px";
-        shock.style.height = "20px";
-        canvas.parentElement.appendChild(shock);
-
-        setTimeout(() => shock.remove(), 1200);
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(255,255,200,0.9)";
+        ctx.lineWidth = 3;
+        ctx.arc(CX, CY, W*0.12, 0, Math.PI*2);
+        ctx.stroke();
         data.justUpdated = false;
     }
 
-    requestAnimationFrame(() => drawNeuralMesh_ORB(data));
+    requestAnimationFrame(() => drawCrystalNeural_ORB(data));
 }
+
 
 
 
@@ -815,7 +828,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const data = await api("/api/decisions?limit=200");
     if (Array.isArray(data) && data.length) {
-        drawNeuralMesh_ORB(data);
+        drawCrystalNeural_ORB(data);
     }
 
     setInterval(updateDashboard, 10000);
