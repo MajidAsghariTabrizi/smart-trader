@@ -697,65 +697,87 @@ function initOrbCanvas() {
 function rebuildOrbFromDecisions(decisions) {
   if (!orbState.canvas || !decisions || !decisions.length) return;
 
-  const N = Math.min(280, decisions.length); // حداکثر ۲۸۰ نود
+  const N = Math.min(280, decisions.length);
+  const size = orbState.W;
   const CX = orbState.CX;
   const CY = orbState.CY;
-  const size = orbState.W;
-  const baseR = size * 0.24;
+
+  /* -------------------------------
+     محدوده‌ها و شعاع‌ها
+  --------------------------------*/
+  const CORE_DEAD_ZONE = size * 0.22;   // مرکز خالی
+  const SHELL_MIN = size * 0.32;        // شروع نودها
+  const SHELL_MAX = size * 0.65;        // بیشترین فاصله نودها
 
   orbState.particles = [];
   orbState.bands = [[], [], []];
   orbState.cloud = [];
-  orbState.lastDecision = decisions[decisions.length - 1] || null;
+  orbState.lastDecision = decisions.at(-1);
 
-  // نودها: از جدید به قدیم، نزدیک‌تر به هسته
+  /* -------------------------------
+     ساخت نودها (Particles)
+  --------------------------------*/
   for (let i = 0; i < N; i++) {
     const d = decisions[decisions.length - 1 - i];
-    const ageNorm = i / N; // ۰ جدید، ۱ خیلی قدیمی
+    const age = i / N;
 
-    // سه باند: داخلی، میانی، خارجی
+    // انتخاب باند بر اساس سن
     const band =
-      ageNorm < 0.33 ? 0 : ageNorm < 0.7 ? 1 : 2;
+      age < 0.25 ? 0 :
+      age < 0.60 ? 1 :
+      2;
 
-    const bandBaseR =
-      band === 0
-        ? baseR * 0.7
-        : band === 1
-        ? baseR * 1.0
-        : baseR * 1.35;
+    // شعاع پایه کاملاً تصادفی ولی محدود در پوسته‌ها
+    const baseRadius =
+      SHELL_MIN +
+      Math.random() * (SHELL_MAX - SHELL_MIN) +
+      band * (size * 0.06);
 
-    const baseAngle = Math.random() * Math.PI * 2;
+    let r0 = baseRadius;
+
+    // تضمین: هیچ نودی وارد مرکز نشود
+    if (r0 < CORE_DEAD_ZONE) {
+      r0 = CORE_DEAD_ZONE + Math.random() * (size * 0.08);
+    }
+
+    const angle = Math.random() * Math.PI * 2;
 
     const p = {
       d,
       band,
-      baseAngle,
-      baseRadius: bandBaseR,
-      angleDrift: (Math.random() - 0.5) * 0.6,
-      radiusJitter: 20 + Math.random() * 30,
-      speed: 0.35 + Math.random() * 0.25,
-      noiseSeed: Math.random() * 1000,
-      ageNorm,
+      baseAngle: angle,
+      baseRadius: r0,
+      angleDrift: (Math.random() - 0.5) * 0.5,
+      radiusJitter: 22 + Math.random() * 40,
+      noiseSeed: Math.random() * 500,
+      speed: 0.25 + Math.random() * 0.3,
+      ageNorm: age
     };
 
     orbState.particles.push(p);
     orbState.bands[band].push(p);
   }
 
-  // ترتیب هندسی پایدار روی هر باند (حلقه‌ها پاره نشوند)
-  orbState.bands.forEach((bandArr) => {
-    bandArr.sort((a, b) => a.baseAngle - b.baseAngle);
+  /* -------------------------------
+     مرتب‌سازی باندها برای اتصال طبیعی
+  --------------------------------*/
+  orbState.bands.forEach(b => {
+    b.sort((a, b) => a.baseAngle - b.baseAngle);
   });
 
-  // ابر پلاسما داخل هسته
-  const cloudN = 180;
+  /* -------------------------------
+     پلاسما درونی (Cloud)
+  --------------------------------*/
+  const cloudN = 150;
+  orbState.cloud = [];
+
   for (let i = 0; i < cloudN; i++) {
     orbState.cloud.push({
       angle: Math.random() * Math.PI * 2,
-      radius: baseR * (0.15 + Math.random() * 0.45),
+      radius: CORE_DEAD_ZONE * (0.25 + Math.random() * 0.8),
       phase: Math.random() * Math.PI * 2,
-      speed: 0.7 + Math.random() * 0.9,
-      size: 1.2 + Math.random() * 1.4,
+      speed: 0.7 + Math.random() * 1.2,
+      size: 1.2 + Math.random() * 1.6
     });
   }
 }
