@@ -84,37 +84,127 @@ html {
 
 /* ====================== ORB CANVAS ====================== */
 
+/* =========================================================
+   ORB – FULLBLEED FREEFORM v3
+   No Circle • No Wrapper Radius • Full Responsive
+   ========================================================= */
+
+/* بنر اصلی اورب */
+.st-orb-banner {
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+    padding-top: 60px;
+    padding-bottom: 40px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    /* پس‌زمینه کل صفحه */
+    background: var(--bg-main);
+}
+
+
+/* ظرف اورب - آزاد، بدون دایره */
+.orb-canvas-wrap {
+    position: relative;
+    width: min(1150px, 96%);
+    aspect-ratio: 1 / 1;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* ❌ هیچ‌گونه دایره‌ای نباید باشد */
+    border-radius: 0 !important;
+    overflow: visible !important;
+}
+
+/* =========================================================
+   ORB – FREEFORM + SOFT FADE-OUT EDGES (v4 Cinematic)
+   No Circle • No Box • Natural Outer Glow Dissolve
+   ========================================================= */
+
+.st-orb-banner {
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+    padding-top: 60px;
+    padding-bottom: 40px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    background: var(--bg-main);
+}
+
+.orb-canvas-wrap {
+    position: relative;
+    width: min(1250px, 95%);
+    aspect-ratio: 1 / 1;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: visible !important;
+    border-radius: 0 !important;
+}
+
+
+/* =========================================================
+   ORB CANVAS — Freeform + Outer Fade Mask
+   ========================================================= */
 #marketOrb {
     width: 100%;
     height: 100%;
     display: block;
 
-    /* شکل دایره‌ای کامل */
-    border-radius: 50%;
-    overflow: hidden;
+    /* ❌ no circle */
+    border-radius: 0 !important;
+    overflow: visible;
 
-    /* پس‌زمینه اورب */
+    /* Backdrop */
     background: radial-gradient(circle at center,
-        rgba(10,10,20,1) 0%,
-        rgba(5,5,15,1) 60%,
+        rgba(12,12,22,1) 0%,
+        rgba(6,6,15,1) 60%,
         rgba(0,0,0,1) 100%
     );
 
-    /* جلوه‌های نور */
-    filter:
-        drop-shadow(0 0 40px rgba(120,150,255,0.35))
-        drop-shadow(0 0 80px rgba(90,130,255,0.22));
+    /* Soft fade edges using mask-image */
+    -webkit-mask-image: radial-gradient(
+        circle,
+        rgba(0,0,0,1) 55%,
+        rgba(0,0,0,0.8) 72%,
+        rgba(0,0,0,0.55) 82%,
+        rgba(0,0,0,0.25) 90%,
+        rgba(0,0,0,0) 100%
+    );
+    mask-image: radial-gradient(
+        circle,
+        rgba(0,0,0,1) 55%,
+        rgba(0,0,0,0.8) 72%,
+        rgba(0,0,0,0.55) 82%,
+        rgba(0,0,0,0.25) 90%,
+        rgba(0,0,0,0) 100%
+    );
 
-    /* بهبود رندر */
+    /* Glow */
+    filter:
+        drop-shadow(0 0 60px rgba(120,150,255,0.35))
+        drop-shadow(0 0 120px rgba(90,130,255,0.20));
+
     will-change: transform;
-    translate: none;
-    rotate: none;
 }
 
-/* ------------------ متن زیر اورب ------------------ */
+
+/* =========================================================
+   ORB TITLE + DESCRIPTION
+   ========================================================= */
 
 .orb-overlay {
     text-align: center;
+    margin-top: 20px;
     padding-inline: 16px;
 }
 
@@ -127,19 +217,24 @@ html {
 }
 
 .orb-desc {
-    margin-top: 8px;
-    font-size: clamp(13px, 2vw, 16px);
-    opacity: .9;
+    margin-top: 6px;
+    font-size: clamp(13px, 2vw, 17px);
+    opacity: .85;
     color: #dcecff;
 }
 
-/* موبایل */
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
 @media (max-width: 768px) {
     .orb-canvas-wrap {
-        aspect-ratio: 1 / 1;
-        width: min(420px, 100%);
+        width: 100%;
+        aspect-ratio: 1/1;
     }
 }
+
 
 
 /* =========================================================
