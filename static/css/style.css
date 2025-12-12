@@ -59,8 +59,9 @@ html {
 }
 /* ====================== ORB FULL-BLEED WRAPPER ====================== */
 
+/* ====================== ORB FULL-BLEED WRAPPER ====================== */
+
 .st-orb-banner {
-    /* اورب تمام عرض صفحه، مستقل از max-width #app */
     width: 100vw;
     margin-inline: calc(50% - 50vw);
     padding-block: clamp(32px, 6vh, 64px);
@@ -71,20 +72,47 @@ html {
     background: var(--bg-main);
 }
 
+/* ظرف اصلی اورب */
 .orb-canvas-wrap {
     position: relative;
     width: min(1150px, 100%);
-    /* نسبت تصویر ثابت ولی ارتفاع ریسپانسیو */
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 1 / 1;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
+/* ====================== ORB CANVAS ====================== */
+
 #marketOrb {
+    width: 100%;
+    height: 100%;
+    display: block;
+
+    /* شکل دایره‌ای کامل */
+    border-radius: 50%;
+    overflow: hidden;
+
+    /* پس‌زمینه اورب */
+    background: radial-gradient(circle at center,
+        rgba(10,10,20,1) 0%,
+        rgba(5,5,15,1) 60%,
+        rgba(0,0,0,1) 100%
+    );
+
+    /* جلوه‌های نور */
+    filter:
+        drop-shadow(0 0 40px rgba(120,150,255,0.35))
+        drop-shadow(0 0 80px rgba(90,130,255,0.22));
+
+    /* بهبود رندر */
     will-change: transform;
+    translate: none;
+    rotate: none;
 }
-/* متن زیر اورب */
+
+/* ------------------ متن زیر اورب ------------------ */
+
 .orb-overlay {
     text-align: center;
     padding-inline: 16px;
@@ -105,16 +133,14 @@ html {
     color: #dcecff;
 }
 
-/* موبایل: اورب کوچیک‌تر که بیرون نزنه */
+/* موبایل */
 @media (max-width: 768px) {
-    .st-orb-banner {
-        padding-block: 24px;
-    }
     .orb-canvas-wrap {
         aspect-ratio: 1 / 1;
         width: min(420px, 100%);
     }
 }
+
 
 /* =========================================================
    HERO SECTION (Below ORB)
