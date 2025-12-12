@@ -641,11 +641,10 @@ function drawQuantumFlux(data, ts) {
 
 let orbState = null;
 
-function drawEnergyOrb_ULTRA(data) {
+function drawEnergyOrb_ULTRA_NEURAL(data) {
     const canvas = document.getElementById("marketOrb");
     if (!canvas) return;
 
-    // Responsive
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
 
@@ -660,12 +659,12 @@ function drawEnergyOrb_ULTRA(data) {
     const last = data[data.length - 1];
     const t = Date.now() * 0.001;
 
-    /* ==========================================================
-       1) NEON MESH GRID (شبکه دیجیتال)
-    ========================================================== */
+    /* ----------------------------------------------------------
+       GRID BACKGROUND (حفظ می‌کنیم)
+    ---------------------------------------------------------- */
     const gridSize = 22;
     ctx.lineWidth = 0.35;
-    ctx.strokeStyle = "rgba(80,120,255,0.14)";
+    ctx.strokeStyle = "rgba(80,120,255,0.12)";
 
     for (let x = 0; x < W; x += gridSize) {
         ctx.beginPath();
@@ -680,46 +679,46 @@ function drawEnergyOrb_ULTRA(data) {
         ctx.stroke();
     }
 
-    /* ==========================================================
-       2) ENERGY BLOOM (پالس انرژی BUY/SELL)
-    ========================================================== */
-    const bloomR = W * 0.12 + Math.sin(t * 4) * 6;
+    /* ----------------------------------------------------------
+       ENERGY BLOOM
+    ---------------------------------------------------------- */
+    const bloomR = W * 0.12 + Math.sin(t * 4) * 7;
 
     let bloomColor =
         last?.decision === "BUY"
-            ? "rgba(0,255,140,0.25)"
+            ? "rgba(0,255,140,0.28)"
             : last?.decision === "SELL"
-            ? "rgba(255,70,70,0.25)"
-            : "rgba(255,220,120,0.22)";
+            ? "rgba(255,70,70,0.28)"
+            : "rgba(255,220,120,0.25)";
 
     ctx.beginPath();
     ctx.fillStyle = bloomColor;
     ctx.arc(CX, CY, bloomR, 0, Math.PI * 2);
     ctx.fill();
 
-    /* ==========================================================
-       CORE (هسته تصمیم)
-    ========================================================== */
+    /* ----------------------------------------------------------
+       CORE
+    ---------------------------------------------------------- */
     const coreColor =
         last?.decision === "BUY"
-            ? "rgba(0,255,150,0.9)"
+            ? "rgba(0,255,150,0.92)"
             : last?.decision === "SELL"
-            ? "rgba(255,80,80,0.9)"
-            : "rgba(255,220,120,0.9)";
+            ? "rgba(255,80,80,0.92)"
+            : "rgba(255,220,120,0.92)";
 
     ctx.beginPath();
     ctx.fillStyle = coreColor;
     ctx.arc(CX, CY, W * 0.085, 0, Math.PI * 2);
     ctx.fill();
 
-    /* ==========================================================
-       3) MULTI-RING WAVEFORM (موج چند حلقه‌ای)
-    ========================================================== */
+    /* ----------------------------------------------------------
+       MULTI RING WAVEFORM
+    ---------------------------------------------------------- */
     const baseR = W * 0.18;
     const rings = [0.0, 0.14, 0.28];
 
     rings.forEach((offset, idx) => {
-        const r = baseR + offset * W + Math.sin(t * (1.5 + idx * 0.3)) * 6;
+        const r = baseR + offset * W + Math.sin(t * (1.6 + idx * 0.25)) * 6;
 
         ctx.beginPath();
         ctx.lineWidth = 1.6;
@@ -734,13 +733,17 @@ function drawEnergyOrb_ULTRA(data) {
         ctx.stroke();
     });
 
-    /* ==========================================================
-       4) DECISION GRAVITY FIELD (جاذبه تصمیمات)
-    ========================================================== */
+    /* ----------------------------------------------------------
+       PARTICLES + NEURAL MOTION
+    ---------------------------------------------------------- */
+
     const ringR = baseR + 0.28 * W;
 
     data.slice(-140).forEach((d, i) => {
+        // زاویه + نویز ریز
         let angle = i * (Math.PI * 2 / 140) + t * 0.32;
+        angle += Math.sin(t * 1.5 + i * 0.3) * 0.03;  // Neural drift
+
         let intensity = Math.abs(d.aggregate_s ?? 0.12);
 
         // جاذبه رنگی
@@ -751,32 +754,70 @@ function drawEnergyOrb_ULTRA(data) {
                 ? `rgba(255,90,90,${0.55 + intensity})`
                 : `rgba(255,230,120,${0.50 + intensity})`;
 
-        let px = CX + Math.cos(angle) * ringR;
-        let py = CY + Math.sin(angle) * ringR;
+        // شعاع با نویز
+        let pr = ringR + Math.sin(t * 2 + i) * 3; // Quantum noise
 
-        /* -----------------------------------
-           5) PARTICLE TRAILS (دنباله نوری)
-        ----------------------------------- */
+        let px = CX + Math.cos(angle) * pr;
+        let py = CY + Math.sin(angle) * pr;
+
+        /* ---------------------------------------------
+           TRAIL EFFECT (دنباله نور)
+        --------------------------------------------- */
+        let trailX = CX + Math.cos(angle - 0.1) * pr;
+        let trailY = CY + Math.sin(angle - 0.1) * pr;
+
         ctx.beginPath();
         ctx.strokeStyle = pColor;
-        ctx.lineWidth = 1.8;
-
-        let trailX = CX + Math.cos(angle - 0.12) * ringR;
-        let trailY = CY + Math.sin(angle - 0.12) * ringR;
-
+        ctx.lineWidth = 1.4;
         ctx.moveTo(trailX, trailY);
         ctx.lineTo(px, py);
         ctx.stroke();
 
-        // خود نقطه
+        /* ---------------------------------------------
+           SPARK (چشمک نور) — فقط برای سیگنال قوی
+        --------------------------------------------- */
+        if (intensity > 0.25 && Math.random() < 0.08) {
+            ctx.beginPath();
+            ctx.fillStyle = pColor;
+            ctx.arc(px, py, 6 + intensity * 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        /* ---------------------------------------------
+           PARTICLE ITSELF
+        --------------------------------------------- */
         ctx.beginPath();
         ctx.fillStyle = pColor;
-        ctx.arc(px, py, 4 + intensity * 3.5, 0, Math.PI * 2);
+        ctx.arc(px, py, 4 + intensity * 3, 0, Math.PI * 2);
         ctx.fill();
     });
 
-    requestAnimationFrame(() => drawEnergyOrb_ULTRA(data));
+    /* ----------------------------------------------------------
+       NEURAL LINKS (اتصال نورونی)
+    ---------------------------------------------------------- */
+    if (Math.random() < 0.18) {
+        const a = Math.floor(Math.random() * 140);
+        const b = (a + 8 + Math.floor(Math.random() * 20)) % 140;
+
+        let angle1 = a * (Math.PI * 2 / 140) + t * 0.32;
+        let angle2 = b * (Math.PI * 2 / 140) + t * 0.32;
+
+        let x1 = CX + Math.cos(angle1) * ringR;
+        let y1 = CY + Math.sin(angle1) * ringR;
+        let x2 = CX + Math.cos(angle2) * ringR;
+        let y2 = CY + Math.sin(angle2) * ringR;
+
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(120,200,255,0.25)";
+        ctx.lineWidth = 1;
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+    }
+
+    requestAnimationFrame(() => drawEnergyOrb_ULTRA_NEURAL(data));
 }
+
 
 /* --------------------------- Bubble Spectrum ------------------------ */
 
@@ -842,7 +883,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const data = await api("/api/decisions?limit=200");
     if (Array.isArray(data) && data.length) {
-        drawEnergyOrb_ULTRA(data);
+        drawEnergyOrb_ULTRA_NEURAL(data);
     }
 
     setInterval(updateDashboard, 10000);
