@@ -63,77 +63,81 @@ html {
    ========================================================= */
 /* ========================= ORB – ENERGY FIELD ========================= */
 
-.st-orb-banner {
-    position: relative;
+/* ---------------------------------------
+   Neural Mesh ORB – Base CSS
+---------------------------------------- */
+
+#marketOrb {
     width: 100%;
-    min-height: 90vh;
-    padding-top: 80px;
-    padding-bottom: 80px;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    background: #050a14;
-    overflow: visible;
-}
-
-/* Container */
-.orb-canvas-wrap {
+    height: 680px;
+    display: block;
+    margin: 0 auto;
     position: relative;
-    width: min(520px, 78vw);
-    aspect-ratio: 1/1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    isolation: isolate;
-}
-
-/* Glow Core Behind Canvas */
-.orb-canvas-wrap::before {
-    content: "";
-    position: absolute;
-    width: 55%;
-    height: 55%;
-    border-radius: 50%;
+    filter: drop-shadow(0 0 35px rgba(120,160,255,0.35));
     background: radial-gradient(
         circle,
-        rgba(255, 240, 160, 0.95) 0%,
-        rgba(255, 240, 160, 0.35) 40%,
-        rgba(255, 240, 160, 0.02) 80%
+        rgba(10,14,25,1) 0%,
+        rgba(5,8,15,1) 65%,
+        rgba(0,0,0,1) 100%
     );
-    filter: blur(22px);
-    z-index: 1;
+    border-radius: 50%;
+    overflow: hidden;
 }
 
-/* Energy Field Glow */
-.orb-canvas-wrap::after {
-    content: "";
+/* مه پلاسما */
+.orb-fog {
     position: absolute;
     inset: 0;
     background: radial-gradient(
         circle,
-        rgba(0, 160, 255, 0.18),
-        rgba(0, 0, 0, 0)
+        rgba(255,255,220,0.12),
+        rgba(255,255,120,0.05) 40%,
+        rgba(0,0,0,0) 70%
     );
-    z-index: 0;
+    pointer-events: none;
+    mix-blend-mode: screen;
 }
 
-/* Canvas itself */
-#marketOrb {
-    width: 100% !important;
-    height: 100% !important;
-    display: block;
-    position: relative;
-    z-index: 4;
-    filter: drop-shadow(0 0 12px rgba(0, 200, 255, 0.35))
-            drop-shadow(0 0 28px rgba(0, 140, 255, 0.25));
-    transition: filter 0.25s ease-out;
+/* چشمک‌های شبکه */
+.mesh-node {
+    width: 6px;
+    height: 6px;
+    background: rgba(255,255,200,0.9);
+    border-radius: 50%;
+    position: absolute;
+    filter: blur(1px);
+    box-shadow: 0 0 12px rgba(255,255,200,0.9);
 }
 
-#marketOrb:hover {
-    filter: drop-shadow(0 0 20px rgba(0, 200, 255, 0.5))
-            drop-shadow(0 0 40px rgba(0, 140, 255, 0.35));
+/* اتصال نوری نودها */
+.mesh-link {
+    position: absolute;
+    background: rgba(120,180,255,0.35);
+    height: 2px;
+    transform-origin: left center;
+    border-radius: 2px;
+    filter: blur(0.7px);
 }
+
+/* Shockwave */
+.shockwave {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid rgba(255,240,180,0.7);
+    animation: shock 1.2s ease-out forwards;
+}
+
+@keyframes shock {
+    from {
+        transform: scale(0.2);
+        opacity: 0.9;
+    }
+    to {
+        transform: scale(3.5);
+        opacity: 0;
+    }
+}
+
 
 /* Text Block */
 .orb-overlay {

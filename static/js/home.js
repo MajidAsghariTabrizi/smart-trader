@@ -639,7 +639,8 @@ function drawQuantumFlux(data, ts) {
 
 /* --------------------------- Market ORB Hero ------------------------ */
 
-function drawEnergyOrb_QUANTUM_LIQUID(data) {
+function drawNeuralMesh_ORB(data) {
+
     const canvas = document.getElementById("marketOrb");
     if (!canvas) return;
 
@@ -652,134 +653,102 @@ function drawEnergyOrb_QUANTUM_LIQUID(data) {
     const CX = W / 2;
     const CY = H / 2;
 
-    ctx.clearRect(0, 0, W, H);
+    ctx.clearRect(0,0,W,H);
 
     const last = data[data.length - 1];
-    const t = Date.now() * 0.001;
+    const t = performance.now() * 0.001;
 
-    /* -------------------------------------------------------------
-       1) VOLUMETRIC HALO CLOUDS (ابر پلاسما)
-    ------------------------------------------------------------- */
-    let haloGrad = ctx.createRadialGradient(CX, CY, 0, CX, CY, W * 0.4);
-    haloGrad.addColorStop(0, "rgba(255,240,150,0.45)");
-    haloGrad.addColorStop(0.4, "rgba(255,220,120,0.18)");
-    haloGrad.addColorStop(1, "rgba(0,0,0,0)");
+    /* -------------------------------------
+       Plasma Background
+    -------------------------------------- */
+    const grd = ctx.createRadialGradient(CX, CY, 10, CX, CY, W*0.55);
+    grd.addColorStop(0, "rgba(255,240,160,0.6)");
+    grd.addColorStop(0.3, "rgba(255,220,120,0.25)");
+    grd.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grd;
+    ctx.fillRect(0,0,W,H);
 
+    /* -------------------------------------
+       Core Fusion
+    -------------------------------------- */
     ctx.beginPath();
-    ctx.fillStyle = haloGrad;
-    ctx.arc(CX, CY, W * 0.38, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,240,140,0.95)";
+    ctx.arc(CX, CY, W*0.07 + Math.sin(t*3)*3, 0, Math.PI*2);
     ctx.fill();
 
-    /* -------------------------------------------------------------
-       2) CORE + MAGNETIC PULSE GLOW 
-    ------------------------------------------------------------- */
-    const coreColor =
-        last?.decision === "BUY"
-            ? "rgba(0,255,190,0.9)"
-            : last?.decision === "SELL"
-            ? "rgba(255,80,80,0.9)"
-            : "rgba(255,220,120,0.9)";
+    /* -------------------------------------
+       Neural Node Cloud
+    -------------------------------------- */
 
-    const pulseR = W * 0.1 + Math.sin(t * 6) * 4;
+    const nodes = 150;
+    const radius = W * 0.28;
 
-    ctx.beginPath();
-    ctx.fillStyle = coreColor;
-    ctx.arc(CX, CY, pulseR, 0, Math.PI * 2);
-    ctx.fill();
+    let meshPoints = [];
 
-    /* magnetic radial pulse */
-    ctx.beginPath();
-    ctx.strokeStyle = coreColor.replace("0.9", "0.25");
-    ctx.lineWidth = 2;
-    ctx.arc(CX, CY, pulseR + 12 + Math.sin(t * 4) * 6, 0, Math.PI * 2);
-    ctx.stroke();
+    for (let i = 0; i < nodes; i++) {
 
-    /* -------------------------------------------------------------
-       3) ORBIT DRIFT (پرلین/نویز مدار)
-    ------------------------------------------------------------- */
-    const baseR = W * 0.28;
-    const layers = 3;
+        let angle = i * (Math.PI * 2 / nodes);
 
-    for (let i = 0; i < layers; i++) {
-        const rr = baseR + i * 40 + Math.sin(t * (1.2 + i * 0.4)) * 8;
+        angle += Math.sin(t * 0.7 + i * 0.15) * 0.22;  // Magnetic field
+        angle += (last.aggregate_s ?? 0) * 0.6;        // Decision bending
 
+        let r = radius + Math.sin(t*1.5 + i*0.3) * 22;
+
+        let x = CX + Math.cos(angle) * r;
+        let y = CY + Math.sin(angle) * r;
+
+        meshPoints.push({ x, y });
+
+        // Node glow
         ctx.beginPath();
-        ctx.lineWidth = 1.2;
-        ctx.strokeStyle = "rgba(180,200,255," + (0.4 - i * 0.1) + ")";
-        ctx.arc(CX, CY, rr, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-
-    /* -------------------------------------------------------------
-       4) PARTICLES + MAGNETIC FIELD ATTRACTION
-    ------------------------------------------------------------- */
-    const particleCount = 160;
-    const ringR = baseR + 50;
-
-    for (let i = 0; i < particleCount; i++) {
-        let d = data[data.length - 1 - (i % data.length)];
-
-        let intensity = Math.abs(d.aggregate_s ?? 0.18);
-        let angle = (i / particleCount) * Math.PI * 2;
-        angle += Math.sin(t * 0.7 + i * 0.5) * 0.15; // drift
-
-        /* magnetic effect → جذب جزئی به مرکز */
-        let magnetic = Math.sin(t * 2 + i) * 6 * intensity;
-
-        let pr = ringR + magnetic + Math.sin(t * 3 + i) * 4;
-
-        let px = CX + Math.cos(angle) * pr;
-        let py = CY + Math.sin(angle) * pr;
-
-        /* ---------------------------------------------------------
-           PARTICLE FUSION — اگر نزدیک هم شدند، فلش نور
-        --------------------------------------------------------- */
-        if (i > 0) {
-            let prevA = ((i - 1) / particleCount) * Math.PI * 2;
-            let prevX = CX + Math.cos(prevA) * pr;
-            let prevY = CY + Math.sin(prevA) * pr;
-
-            const dist = Math.hypot(prevX - px, prevY - py);
-
-            if (dist < 10 && Math.random() < 0.3) {
-                ctx.beginPath();
-                ctx.strokeStyle = "rgba(255,255,255,0.45)";
-                ctx.lineWidth = 2;
-                ctx.moveTo(prevX, prevY);
-                ctx.lineTo(px, py);
-                ctx.stroke();
-            }
-        }
-
-        /* particle draw */
-        ctx.beginPath();
-        const pColor =
-            d.decision === "BUY"
-                ? `rgba(0,255,170,${0.45 + intensity})`
-                : d.decision === "SELL"
-                ? `rgba(255,80,80,${0.45 + intensity})`
-                : `rgba(255,240,150,${0.40 + intensity})`;
-
-        ctx.fillStyle = pColor;
-        ctx.arc(px, py, 3 + intensity * 3, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,200,0.85)";
+        ctx.arc(x, y, 3, 0, Math.PI*2);
         ctx.fill();
     }
 
-    /* -------------------------------------------------------------
-       5) SHOCKWAVE (اگر سیگنال قوی بود)
-    ------------------------------------------------------------- */
-    if (Math.abs(last?.aggregate_s ?? 0) > 0.22) {
-        const radius = baseR + ((t % 1) * 200);
+    /* -------------------------------------
+       Neural Links (Mesh)
+    -------------------------------------- */
+
+    ctx.strokeStyle = "rgba(160,200,255,0.25)";
+    ctx.lineWidth = 1;
+
+    for (let i = 0; i < nodes; i++) {
+        const A = meshPoints[i];
+        const B = meshPoints[(i + 8) % nodes];     // subtle mesh linking
+        const C = meshPoints[(i + 20) % nodes];
 
         ctx.beginPath();
-        ctx.strokeStyle = coreColor.replace("0.9", "0.25");
-        ctx.lineWidth = 2;
-        ctx.arc(CX, CY, radius, 0, Math.PI * 2);
+        ctx.moveTo(A.x, A.y);
+        ctx.lineTo(B.x, B.y);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(A.x, A.y);
+        ctx.lineTo(C.x, C.y);
         ctx.stroke();
     }
 
-    requestAnimationFrame(() => drawEnergyOrb_QUANTUM_LIQUID(data));
+    /* -------------------------------------
+       Shockwave (Decision)
+    -------------------------------------- */
+
+    if (data.justUpdated) {
+        const shock = document.createElement("div");
+        shock.className = "shockwave";
+        shock.style.left = CX + "px";
+        shock.style.top = CY + "px";
+        shock.style.width = "20px";
+        shock.style.height = "20px";
+        canvas.parentElement.appendChild(shock);
+
+        setTimeout(() => shock.remove(), 1200);
+        data.justUpdated = false;
+    }
+
+    requestAnimationFrame(() => drawNeuralMesh_ORB(data));
 }
+
 
 
 /* --------------------------- Bubble Spectrum ------------------------ */
@@ -846,7 +815,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const data = await api("/api/decisions?limit=200");
     if (Array.isArray(data) && data.length) {
-        drawEnergyOrb_QUANTUM_LIQUID(data);
+        drawNeuralMesh_ORB(data);
     }
 
     setInterval(updateDashboard, 10000);
