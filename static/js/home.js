@@ -210,8 +210,9 @@ function renderHero(last, perf, btc) {
   set("hero-adx", last?.adx != null ? last.adx.toFixed(1) : "–");
   set("hero-winrate", perf?.winrate != null ? perf.winrate + "٪" : "–");
   set("hero-btc-price", fmtNum(btc?.price_tmn ?? btc?.price));
+
   const floatBox = document.getElementById("floating-btc");
-if (floatBox) floatBox.classList.add("fx-glow");
+  if (floatBox) floatBox.classList.add("fx-glow");
 }
 
 function renderMetrics(perf) {
@@ -498,15 +499,14 @@ async function updateDashboard() {
 
     globalDecisions = decisionsSafe;
 
-    /* HERO */
+    /* HERO / SUMMARY */
     renderHero(last, perfSafe, btc || {});
     renderMetrics(perfSafe);
     renderHeatmap(decisionsSafe);
     renderVol(last);
     renderSentiment(dailySafe);
 
-    if (btc && Array.isArray(btc.history))
-      renderSparkline(btc.history);
+    if (btc && Array.isArray(btc.history)) renderSparkline(btc.history);
 
     /* Probability */
     const prob = computeProb(last?.decision, perfSafe.winrate);
@@ -530,144 +530,332 @@ async function updateDashboard() {
   }
 }
 
+/* --------------------------- QuantumFlux BG ------------------------- */
+
 async function loadFluxData() {
-    let res = await api("/api/decisions?limit=80");   // FIXED: getJSON → api
-    if (!Array.isArray(res)) return [];
+  const res = await api("/api/decisions?limit=80");
+  if (!Array.isArray(res)) return [];
 
-    return res.map(d => ({
-        t: d.timestamp,
-        energy: d.confirm_s ?? 0,
-        type: d.final_decision,
-        vol: Math.abs(d.confirm_adx || 0)
-    }));
+  return res.map((d) => ({
+    t: d.timestamp,
+    energy: d.confirm_s ?? 0,
+    type: d.final_decision,
+    vol: Math.abs(d.confirm_adx || 0),
+  }));
 }
 
+let fluxLastFrame = 0;
 
-function drawQuantumFlux(data) {
-    const canvas = document.getElementById("quantumFlux");
-    const ctx = canvas.getContext("2d");
+function drawQuantumFlux(data, ts) {
+  const canvas = document.getElementById("quantumFlux");
+  if (!canvas) return;
 
-    const W = canvas.width;
-    const H = canvas.height;
-    const CX = W / 2;
-    const CY = H / 2;
+  const ctx = canvas.getContext("2d");
+  const now = ts ?? performance.now();
 
-    ctx.clearRect(0, 0, W, H);
+  // FPS limit ~30
+  if (now - fluxLastFrame < 1000 / 30) {
+    requestAnimationFrame((t) => drawQuantumFlux(data, t));
+    return;
+  }
+  fluxLastFrame = now;
 
-    // Extract meaningful dynamic data
-    const avgEnergy = data.reduce((a,b)=>a+b.energy,0) / data.length;
-    const avgVol = data.reduce((a,b)=>a+b.vol,0) / data.length;
+  const W = canvas.width;
+  const H = canvas.height;
+  const CX = W / 2;
+  const CY = H / 2;
 
-    // core color
-    let coreColor =
-        avgEnergy > 0.15 ? "rgba(80,255,160,0.7)" :
-        avgEnergy < -0.15 ? "rgba(255,80,80,0.7)" :
-                            "rgba(255,230,80,0.7)";
+  ctx.clearRect(0, 0, W, H);
 
-    const rings = [
-        { r: 80, speed: 0.02 + avgVol*0.001, width: 2, color: coreColor },
-        { r: 140, speed: 0.015 + avgVol*0.001, width: 1.5, color: "rgba(100,180,255,0.4)" },
-        { r: 220, speed: 0.01 + avgVol*0.001, width: 1, color: "rgba(80,120,255,0.25)" }
-    ];
+  const avgEnergy = data.reduce((a, b) => a + b.energy, 0) / data.length;
+  const avgVol = data.reduce((a, b) => a + b.vol, 0) / data.length;
 
-    let t = Date.now() * 0.002;
+  let coreColor =
+    avgEnergy > 0.15
+      ? "rgba(80,255,160,0.7)"
+      : avgEnergy < -0.15
+      ? "rgba(255,80,80,0.7)"
+      : "rgba(255,230,80,0.7)";
 
-    rings.forEach(r => {
-        ctx.beginPath();
-        ctx.lineWidth = r.width;
-        ctx.strokeStyle = r.color;
+  const rings = [
+    { r: 80, speed: 0.02 + avgVol * 0.001, width: 2, color: coreColor },
+    {
+      r: 140,
+      speed: 0.015 + avgVol * 0.001,
+      width: 1.5,
+      color: "rgba(100,180,255,0.4)",
+    },
+    {
+      r: 220,
+      speed: 0.01 + avgVol * 0.001,
+      width: 1,
+      color: "rgba(80,120,255,0.25)",
+    },
+  ];
 
-        let radius = r.r + Math.sin(t * r.speed) * 12;
-        ctx.arc(CX, CY, radius, 0, Math.PI * 2);
-        ctx.stroke();
-    });
+  const t = now * 0.002;
 
-    // particles
-    data.slice(0,40).forEach((d,i)=>{
-        let angle = (t*0.1 + i*0.3);
-        let radius = 160 + Math.sin(t*0.02+i)*40;
+  rings.forEach((r) => {
+    ctx.beginPath();
+    ctx.lineWidth = r.width;
+    ctx.strokeStyle = r.color;
 
-        ctx.beginPath();
+    const radius = r.r + Math.sin(t * r.speed) * 12;
+    ctx.arc(CX, CY, radius, 0, Math.PI * 2);
+    ctx.stroke();
+  });
 
-        let pc =
-            d.energy > 0.2 ? "rgba(90,255,180,0.8)" :
-            d.energy < -0.2 ? "rgba(255,90,90,0.8)" :
-                              "rgba(255,230,100,0.8)";
+  // particles
+  data.slice(0, 40).forEach((d, i) => {
+    const angle = t * 0.1 + i * 0.3;
+    const radius = 160 + Math.sin(t * 0.02 + i) * 40;
 
-        ctx.fillStyle = pc;
-        ctx.arc(CX + Math.cos(angle)*radius, CY + Math.sin(angle)*radius, 4, 0, Math.PI*2);
-        ctx.fill();
-    });
+    ctx.beginPath();
 
-    requestAnimationFrame(()=>drawQuantumFlux(data));
+    const pc =
+      d.energy > 0.2
+        ? "rgba(90,255,180,0.8)"
+        : d.energy < -0.2
+        ? "rgba(255,90,90,0.8)"
+        : "rgba(255,230,100,0.8)";
+
+    ctx.fillStyle = pc;
+    ctx.arc(CX + Math.cos(angle) * radius, CY + Math.sin(angle) * radius, 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  requestAnimationFrame((t2) => drawQuantumFlux(data, t2));
 }
 
-(async function initFlux(){
-    let data = await loadFluxData();
-    if (data.length === 0) return;
-    drawQuantumFlux(data);
+(async function initFlux() {
+  const canvas = document.getElementById("quantumFlux");
+  if (!canvas) return;
+
+  const data = await loadFluxData();
+  if (!data.length) return;
+
+  requestAnimationFrame((t) => drawQuantumFlux(data, t));
 })();
-async function renderBubbleSpectrum() {
-    const container = document.getElementById("bubble-spectrum");
-    if (!container) return;
 
-    container.innerHTML = "";
+/* --------------------------- Market ORB Hero ------------------------ */
 
-    const data = await api("/api/decisions?limit=150");
-    if (!data) return;
+let orbState = null;
 
-    const W = container.clientWidth;
-    const H = container.clientHeight;
+function initMarketOrb() {
+  const canvas = document.getElementById("marketOrb");
+  if (!canvas) return;
 
-    // ---- Gridlines ----
-    const gridCount = 6;
-    for (let i = 1; i < gridCount; i++) {
-        const line = document.createElement("div");
-        line.className = "spectrum-grid";
-        line.style.left = (i / gridCount) * W + "px";
-        container.appendChild(line);
+  const ctx = canvas.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+
+  const state = {
+    canvas,
+    ctx,
+    dpr,
+    logicalSize: 0,
+    cx: 0,
+    cy: 0,
+    particles: [],
+    lastFrame: 0,
+    resizeTimer: null,
+  };
+
+  // create particles on 3 rings
+  const rings = [0, 1, 2];
+  const particleCount = 54;
+
+  for (let i = 0; i < particleCount; i++) {
+    const ringIndex = rings[i % rings.length];
+    state.particles.push({
+      ring: ringIndex,
+      baseAngle: (Math.PI * 2 * i) / particleCount,
+      speed: 0.0006 + 0.0003 * Math.random(),
+      jitter: Math.random() * Math.PI * 2,
+    });
+  }
+
+  function resizeOrb() {
+    const rect = canvas.getBoundingClientRect();
+    const size = Math.min(rect.width, rect.height);
+
+    const dprNow = window.devicePixelRatio || 1;
+    state.dpr = dprNow;
+
+    canvas.width = size * dprNow;
+    canvas.height = size * dprNow;
+
+    state.logicalSize = size;
+    state.cx = size / 2;
+    state.cy = size / 2;
+
+    // draw in logical coordinates (0..size)
+    ctx.setTransform(dprNow, 0, 0, dprNow, 0, 0);
+  }
+
+  resizeOrb();
+  window.addEventListener("resize", () => {
+    clearTimeout(state.resizeTimer);
+    state.resizeTimer = setTimeout(resizeOrb, 150);
+  });
+
+  function frame(ts) {
+    const now = ts || performance.now();
+
+    // FPS limit ~30
+    if (now - state.lastFrame < 1000 / 30) {
+      requestAnimationFrame(frame);
+      return;
+    }
+    state.lastFrame = now;
+
+    const size = state.logicalSize;
+    const cx = state.cx;
+    const cy = state.cy;
+
+    if (!size) {
+      requestAnimationFrame(frame);
+      return;
     }
 
-    // ---- Bubbles ----
-    data.forEach((d, i) => {
-        let bubble = document.createElement("div");
-        bubble.classList.add("bubble");
+    ctx.clearRect(0, 0, size, size);
 
-        const type = d.decision?.toUpperCase();
-        bubble.classList.add(
-            type === "BUY" ? "bubble-buy" :
-            type === "SELL" ? "bubble-sell" :
-            "bubble-hold"
-        );
+    const baseRadius = size * 0.22;
+    const ringGap = size * 0.14;
+    const t = now * 0.0012;
 
-        // Size by aggregate_s intensity
-        const intensity = Math.abs(d.aggregate_s ?? 0.15);
-        const size = 10 + intensity * 35;
-        bubble.style.width = size + "px";
-        bubble.style.height = size + "px";
+    // background radial glow
+    const grd = ctx.createRadialGradient(
+      cx,
+      cy,
+      baseRadius * 0.3,
+      cx,
+      cy,
+      baseRadius * 3
+    );
+    grd.addColorStop(0, "rgba(255,230,150,0.30)");
+    grd.addColorStop(1, "rgba(5,8,20,0.98)");
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, size, size);
 
-        // X position
-        const x = (i / data.length) * (W - size);
-        bubble.style.left = x + "px";
+    // outer rings with pulse
+    for (let i = 0; i < 3; i++) {
+      const r =
+        baseRadius +
+        ringGap * i +
+        Math.sin(t * (1 + i * 0.2)) * (i === 0 ? 2 : 4);
 
-        // Y position (-1..1 mapped to 0..1)
-        const yNorm = 0.5 - (d.aggregate_s ?? 0) / 2;
-        let y = yNorm * (H - size);
-        y += Math.random() * 20 - 10;
-        bubble.style.top = y + "px";
+      ctx.beginPath();
+      ctx.lineWidth = i === 0 ? 2.4 : 1.6;
+      ctx.strokeStyle =
+        i === 1
+          ? "rgba(129,140,248,0.8)"
+          : "rgba(148,163,255,0.55)";
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
 
-        container.appendChild(bubble);
+    // core orb with soft breathing
+    const coreR = baseRadius * 0.8 + Math.sin(t * 1.6) * 2;
+    ctx.beginPath();
+    ctx.fillStyle = "rgba(252,211,77,0.92)";
+    ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // small inner halo
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(250,250,210,0.75)";
+    ctx.lineWidth = 1.2;
+    ctx.arc(cx, cy, coreR + 6, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // particles orbiting on rings
+    state.particles.forEach((p) => {
+      const ringR = baseRadius + ringGap * p.ring;
+      const speedFactor = 0.5 + p.ring * 0.25;
+      const angle = p.baseAngle + t * speedFactor;
+
+      const radius =
+        ringR + Math.sin(t * 1.7 + p.jitter) * 3.5;
+
+      const x = cx + Math.cos(angle) * radius;
+      const y = cy + Math.sin(angle) * radius;
+
+      const dotSize = 2.6 + (p.ring === 0 ? 0 : 1.4);
+
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(252,211,77,0.96)";
+      ctx.arc(x, y, dotSize, 0, Math.PI * 2);
+      ctx.fill();
     });
+
+    requestAnimationFrame(frame);
+  }
+
+  orbState = state;
+  requestAnimationFrame(frame);
+}
+
+/* --------------------------- Bubble Spectrum ------------------------ */
+
+async function renderBubbleSpectrum() {
+  const container = document.getElementById("bubble-spectrum");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  const data = await api("/api/decisions?limit=150");
+  if (!data) return;
+
+  const W = container.clientWidth;
+  const H = container.clientHeight;
+
+  // ---- Gridlines ----
+  const gridCount = 6;
+  for (let i = 1; i < gridCount; i++) {
+    const line = document.createElement("div");
+    line.className = "spectrum-grid";
+    line.style.left = (i / gridCount) * W + "px";
+    container.appendChild(line);
+  }
+
+  // ---- Bubbles ----
+  data.forEach((d, i) => {
+    const bubble = document.createElement("div");
+    bubble.classList.add("bubble");
+
+    const type = d.decision?.toUpperCase();
+    bubble.classList.add(
+      type === "BUY"
+        ? "bubble-buy"
+        : type === "SELL"
+        ? "bubble-sell"
+        : "bubble-hold"
+    );
+
+    const intensity = Math.abs(d.aggregate_s ?? 0.15);
+    const size = 10 + intensity * 35;
+    bubble.style.width = size + "px";
+    bubble.style.height = size + "px";
+
+    const x = (i / data.length) * (W - size);
+    bubble.style.left = x + "px";
+
+    const yNorm = 0.5 - (d.aggregate_s ?? 0) / 2;
+    let y = yNorm * (H - size);
+    y += Math.random() * 20 - 10;
+    bubble.style.top = y + "px";
+
+    container.appendChild(bubble);
+  });
 }
 
 renderBubbleSpectrum();
 setInterval(renderBubbleSpectrum, 60000);
 
-
-
-/* --------------------------- THEME (Optional) ----------------------- */
+/* --------------------------- THEME / BOOTSTRAP ---------------------- */
 
 document.addEventListener("DOMContentLoaded", () => {
+  initMarketOrb();
   updateDashboard();
   setInterval(updateDashboard, 10000);
 });
