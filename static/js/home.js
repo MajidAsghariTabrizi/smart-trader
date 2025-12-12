@@ -639,7 +639,7 @@ function drawQuantumFlux(data, ts) {
 
 /* --------------------------- Market ORB Hero ------------------------ */
 
-function drawEnergyOrb_LIQUID(data) {
+function drawEnergyOrb_QUANTUM_LIQUID(data) {
     const canvas = document.getElementById("marketOrb");
     if (!canvas) return;
 
@@ -651,135 +651,134 @@ function drawEnergyOrb_LIQUID(data) {
     const H = canvas.height;
     const CX = W / 2;
     const CY = H / 2;
-    const t = Date.now() * 0.001;
 
     ctx.clearRect(0, 0, W, H);
 
     const last = data[data.length - 1];
+    const t = Date.now() * 0.001;
 
-    /* ======================================================
-       1) BACKGROUND GRID (soft)
-    ====================================================== */
-    ctx.strokeStyle = "rgba(80,120,255,0.06)";
-    ctx.lineWidth = 0.4;
-    const grid = 24;
+    /* -------------------------------------------------------------
+       1) VOLUMETRIC HALO CLOUDS (ابر پلاسما)
+    ------------------------------------------------------------- */
+    let haloGrad = ctx.createRadialGradient(CX, CY, 0, CX, CY, W * 0.4);
+    haloGrad.addColorStop(0, "rgba(255,240,150,0.45)");
+    haloGrad.addColorStop(0.4, "rgba(255,220,120,0.18)");
+    haloGrad.addColorStop(1, "rgba(0,0,0,0)");
 
-    for (let x = 0; x < W; x += grid) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, H);
-        ctx.stroke();
-    }
-    for (let y = 0; y < H; y += grid) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(W, y);
-        ctx.stroke();
-    }
+    ctx.beginPath();
+    ctx.fillStyle = haloGrad;
+    ctx.arc(CX, CY, W * 0.38, 0, Math.PI * 2);
+    ctx.fill();
 
-    /* ======================================================
-       2) CORE + ENERGY PULSE
-    ====================================================== */
-
-    const coreR = W * 0.085 + Math.sin(t * 3) * 4;
-
+    /* -------------------------------------------------------------
+       2) CORE + MAGNETIC PULSE GLOW 
+    ------------------------------------------------------------- */
     const coreColor =
         last?.decision === "BUY"
-            ? "rgba(0,255,150,0.90)"
+            ? "rgba(0,255,190,0.9)"
             : last?.decision === "SELL"
-            ? "rgba(255,80,80,0.90)"
-            : "rgba(255,230,120,0.92)";
+            ? "rgba(255,80,80,0.9)"
+            : "rgba(255,220,120,0.9)";
+
+    const pulseR = W * 0.1 + Math.sin(t * 6) * 4;
 
     ctx.beginPath();
     ctx.fillStyle = coreColor;
-    ctx.arc(CX, CY, coreR, 0, Math.PI * 2);
+    ctx.arc(CX, CY, pulseR, 0, Math.PI * 2);
     ctx.fill();
 
-    // Pulsing ripple
-    const rippleR = coreR + 25 + Math.sin(t * 2) * 12;
+    /* magnetic radial pulse */
     ctx.beginPath();
-    ctx.strokeStyle = coreColor.replace("0.90","0.25");
+    ctx.strokeStyle = coreColor.replace("0.9", "0.25");
     ctx.lineWidth = 2;
-    ctx.arc(CX, CY, rippleR, 0, Math.PI * 2);
+    ctx.arc(CX, CY, pulseR + 12 + Math.sin(t * 4) * 6, 0, Math.PI * 2);
     ctx.stroke();
 
-    /* ======================================================
-       3) FLOW FIELD – میدان جریان مایع
-    ====================================================== */
+    /* -------------------------------------------------------------
+       3) ORBIT DRIFT (پرلین/نویز مدار)
+    ------------------------------------------------------------- */
+    const baseR = W * 0.28;
+    const layers = 3;
 
-    function flowField(x, y) {
-        const dx = x - CX;
-        const dy = y - CY;
-        const angle = Math.sin(t + dx * 0.01) + Math.cos(t + dy * 0.01);
-        return angle * 0.9;
+    for (let i = 0; i < layers; i++) {
+        const rr = baseR + i * 40 + Math.sin(t * (1.2 + i * 0.4)) * 8;
+
+        ctx.beginPath();
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = "rgba(180,200,255," + (0.4 - i * 0.1) + ")";
+        ctx.arc(CX, CY, rr, 0, Math.PI * 2);
+        ctx.stroke();
     }
 
-    /* ======================================================
-       4) LIQUID PARTICLES
-    ====================================================== */
+    /* -------------------------------------------------------------
+       4) PARTICLES + MAGNETIC FIELD ATTRACTION
+    ------------------------------------------------------------- */
+    const particleCount = 160;
+    const ringR = baseR + 50;
 
-    const particleCount = Math.min(180, data.length);
+    for (let i = 0; i < particleCount; i++) {
+        let d = data[data.length - 1 - (i % data.length)];
 
-    data.slice(-particleCount).forEach((d, i) => {
-        let intensity = Math.abs(d.aggregate_s ?? 0.2);
+        let intensity = Math.abs(d.aggregate_s ?? 0.18);
+        let angle = (i / particleCount) * Math.PI * 2;
+        angle += Math.sin(t * 0.7 + i * 0.5) * 0.15; // drift
 
-        // initial rough circular distribution
-        let baseA = i * (Math.PI * 2 / particleCount);
+        /* magnetic effect → جذب جزئی به مرکز */
+        let magnetic = Math.sin(t * 2 + i) * 6 * intensity;
 
-        // fluid noise motion
-        let angle = baseA + flowField(
-            CX + Math.cos(baseA) * 40,
-            CY + Math.sin(baseA) * 40
-        );
+        let pr = ringR + magnetic + Math.sin(t * 3 + i) * 4;
 
-        let radius =
-            W * 0.32 +
-            Math.sin(t * 1.6 + i * 0.2) * 18 +    // liquid thickness
-            Math.cos(t * 0.8 + i) * 6;           // wobble motion
+        let px = CX + Math.cos(angle) * pr;
+        let py = CY + Math.sin(angle) * pr;
 
-        let x = CX + Math.cos(angle) * radius;
-        let y = CY + Math.sin(angle) * radius;
+        /* ---------------------------------------------------------
+           PARTICLE FUSION — اگر نزدیک هم شدند، فلش نور
+        --------------------------------------------------------- */
+        if (i > 0) {
+            let prevA = ((i - 1) / particleCount) * Math.PI * 2;
+            let prevX = CX + Math.cos(prevA) * pr;
+            let prevY = CY + Math.sin(prevA) * pr;
 
-        /* ---- Trails ---- */
-        let px2 = CX + Math.cos(angle - 0.15) * (radius - 8);
-        let py2 = CY + Math.sin(angle - 0.15) * (radius - 8);
+            const dist = Math.hypot(prevX - px, prevY - py);
 
+            if (dist < 10 && Math.random() < 0.3) {
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(255,255,255,0.45)";
+                ctx.lineWidth = 2;
+                ctx.moveTo(prevX, prevY);
+                ctx.lineTo(px, py);
+                ctx.stroke();
+            }
+        }
+
+        /* particle draw */
+        ctx.beginPath();
         const pColor =
             d.decision === "BUY"
-                ? `rgba(0,255,150,${0.55 + intensity})`
+                ? `rgba(0,255,170,${0.45 + intensity})`
                 : d.decision === "SELL"
-                ? `rgba(255,90,90,${0.55 + intensity})`
-                : `rgba(255,230,120,${0.55 + intensity})`;
+                ? `rgba(255,80,80,${0.45 + intensity})`
+                : `rgba(255,240,150,${0.40 + intensity})`;
 
-        ctx.beginPath();
-        ctx.strokeStyle = pColor;
-        ctx.lineWidth = 2.2;
-        ctx.moveTo(px2, py2);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-
-        /* ---- glowing particle ---- */
-        ctx.beginPath();
         ctx.fillStyle = pColor;
-        ctx.shadowBlur = 18 + intensity * 10;
-        ctx.shadowColor = pColor;
-        ctx.arc(x, y, 4.5 + intensity * 3.5, 0, Math.PI * 2);
+        ctx.arc(px, py, 3 + intensity * 3, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
+    }
 
-        /* occasional spark */
-        if (intensity > 0.25 && Math.random() < 0.05) {
-            ctx.beginPath();
-            ctx.fillStyle = pColor;
-            ctx.arc(x, y, 7 + intensity * 4, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    });
+    /* -------------------------------------------------------------
+       5) SHOCKWAVE (اگر سیگنال قوی بود)
+    ------------------------------------------------------------- */
+    if (Math.abs(last?.aggregate_s ?? 0) > 0.22) {
+        const radius = baseR + ((t % 1) * 200);
 
-    /* ======================================================
-       LOOP
-    ====================================================== */
-    requestAnimationFrame(() => drawEnergyOrb_LIQUID(data));
+        ctx.beginPath();
+        ctx.strokeStyle = coreColor.replace("0.9", "0.25");
+        ctx.lineWidth = 2;
+        ctx.arc(CX, CY, radius, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    requestAnimationFrame(() => drawEnergyOrb_QUANTUM_LIQUID(data));
 }
 
 
@@ -847,7 +846,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const data = await api("/api/decisions?limit=200");
     if (Array.isArray(data) && data.length) {
-        drawEnergyOrb_LIQUID(data);
+        drawEnergyOrb_QUANTUM_LIQUID(data);
     }
 
     setInterval(updateDashboard, 10000);
