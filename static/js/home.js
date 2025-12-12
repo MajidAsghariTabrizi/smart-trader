@@ -637,9 +637,11 @@ function drawQuantumFlux(data, ts) {
   requestAnimationFrame((t) => drawQuantumFlux(data, t));
 })();
 
-/* --------------------------- Market ORB Hero – CHAOTIC NEURAL ORB --- */
+/* ============================================================
+   SmartTrader – CHAOTIC NEURAL ORB (Final Refactored Version)
+   Natural Fog-Mesh • Plasma Core • Magnetic Field • Shockwaves
+   ============================================================ */
 
-// حالت داخلی اورب
 const orbState = {
   canvas: null,
   ctx: null,
@@ -647,16 +649,16 @@ const orbState = {
   H: 0,
   CX: 0,
   CY: 0,
-  particles: [],   // نودهای اصلی (همه تصمیم‌ها)
-  bands: [[], [], []], // نودها تقسیم شده روی 3 باند
-  cloud: [],       // ذرات مه‌مانند داخل هسته
+  particles: [],
+  bands: [[], [], []],
+  cloud: [],
   lastDecision: null,
   t0: performance.now(),
   resizeTimer: null,
 };
 
-// نویز شبه‌پرلین ساده برای اعوجاج طبیعی
-function orbNoise(x) {
+/* --------------------- Utility: Natural Noise ---------------------- */
+function noise(x) {
   return (
     Math.sin(x * 1.37) * 0.6 +
     Math.sin(x * 2.71 + 1.3) * 0.3 +
@@ -664,7 +666,7 @@ function orbNoise(x) {
   );
 }
 
-// آماده‌سازی بوم
+/* ------------------------ INIT CANVAS ----------------------- */
 function initOrbCanvas() {
   const canvas = document.getElementById("marketOrb");
   if (!canvas) return;
@@ -676,7 +678,6 @@ function initOrbCanvas() {
   function resize() {
     const rect = canvas.getBoundingClientRect();
     const size = Math.min(rect.width, rect.height);
-
     canvas.width = size;
     canvas.height = size;
 
@@ -693,100 +694,69 @@ function initOrbCanvas() {
   });
 }
 
-// ساخت نودها از روی لیست تصمیم‌ها
+/* -------------------- BUILD ORB FROM DECISIONS -------------------- */
 function rebuildOrbFromDecisions(decisions) {
-  if (!orbState.canvas || !decisions || !decisions.length) return;
+  if (!orbState.canvas || !decisions?.length) return;
 
-  const N = Math.min(280, decisions.length);
+  const N = Math.min(260, decisions.length);
   const size = orbState.W;
-  const CX = orbState.CX;
-  const CY = orbState.CY;
-
-  /* -------------------------------
-     محدوده‌ها و شعاع‌ها
-  --------------------------------*/
-  const CORE_DEAD_ZONE = size * 0.22;   // مرکز خالی
-  const SHELL_MIN = size * 0.32;        // شروع نودها
-  const SHELL_MAX = size * 0.65;        // بیشترین فاصله نودها
+  const CORE_GAP = size * 0.11;     // فضای خالی طبیعی نزدیک مرکز
+  const R_MIN = size * 0.28;
+  const R_MAX = size * 0.62;
 
   orbState.particles = [];
   orbState.bands = [[], [], []];
   orbState.cloud = [];
   orbState.lastDecision = decisions.at(-1);
 
-  /* -------------------------------
-     ساخت نودها (Particles)
-  --------------------------------*/
+  /* --- PARTICLES --- */
   for (let i = 0; i < N; i++) {
     const d = decisions[decisions.length - 1 - i];
     const age = i / N;
 
-    // انتخاب باند بر اساس سن
-    const band =
-      age < 0.25 ? 0 :
-      age < 0.60 ? 1 :
-      2;
+    const band = age < 0.28 ? 0 : age < 0.65 ? 1 : 2;
 
-    // شعاع پایه کاملاً تصادفی ولی محدود در پوسته‌ها
-    const baseRadius =
-      SHELL_MIN +
-      Math.random() * (SHELL_MAX - SHELL_MIN) +
-      band * (size * 0.06);
+    let baseRadius = R_MIN + Math.random() * (R_MAX - R_MIN);
 
-    let r0 = baseRadius;
-
-    // تضمین: هیچ نودی وارد مرکز نشود
-    if (r0 < CORE_DEAD_ZONE) {
-      r0 = CORE_DEAD_ZONE + Math.random() * (size * 0.08);
-    }
-
-    const angle = Math.random() * Math.PI * 2;
+    if (baseRadius < CORE_GAP) baseRadius = CORE_GAP + Math.random() * (size * 0.08);
 
     const p = {
       d,
       band,
-      baseAngle: angle,
-      baseRadius: r0,
-      angleDrift: (Math.random() - 0.5) * 0.5,
-      radiusJitter: 22 + Math.random() * 40,
+      baseAngle: Math.random() * Math.PI * 2,
+      baseRadius,
+      angleDrift: (Math.random() - 0.5) * 0.45,
+      radiusJitter: 20 + Math.random() * 35,
       noiseSeed: Math.random() * 500,
-      speed: 0.25 + Math.random() * 0.3,
-      ageNorm: age
+      speed: 0.25 + Math.random() * 0.28,
+      ageNorm: age,
     };
 
     orbState.particles.push(p);
     orbState.bands[band].push(p);
   }
 
-  /* -------------------------------
-     مرتب‌سازی باندها برای اتصال طبیعی
-  --------------------------------*/
-  orbState.bands.forEach(b => {
-    b.sort((a, b) => a.baseAngle - b.baseAngle);
-  });
+  /* --- SORT BANDS for Smooth Mesh --- */
+  orbState.bands.forEach(b => b.sort((a, b) => a.baseAngle - b.baseAngle));
 
-  /* -------------------------------
-     پلاسما درونی (Cloud)
-  --------------------------------*/
-  const cloudN = 150;
-  orbState.cloud = [];
-
-  for (let i = 0; i < cloudN; i++) {
+  /* --- INNER PLASMA CLOUD --- */
+  const cloudCount = 140;
+  for (let i = 0; i < cloudCount; i++) {
     orbState.cloud.push({
       angle: Math.random() * Math.PI * 2,
-      radius: CORE_DEAD_ZONE * (0.25 + Math.random() * 0.8),
+      radius: CORE_GAP * (0.3 + Math.random() * 0.9),
       phase: Math.random() * Math.PI * 2,
-      speed: 0.7 + Math.random() * 1.2,
-      size: 1.2 + Math.random() * 1.6
+      speed: 0.5 + Math.random() * 1.1,
+      size: 1.2 + Math.random() * 1.5,
     });
   }
 }
 
-// انیمیشن اصلی اورب
+/* --------------------------- RENDER ORB ----------------------------- */
 function animateOrb(now) {
-  if (!orbState.canvas || !orbState.ctx) return;
-
   const ctx = orbState.ctx;
+  if (!ctx) return;
+
   const W = orbState.W;
   const H = orbState.H;
   const CX = orbState.CX;
@@ -795,24 +765,16 @@ function animateOrb(now) {
 
   ctx.clearRect(0, 0, W, H);
 
-  /* ---------------------- پشت‌زمینه هاله‌ای ---------------------- */
-  const outerR = W * 0.5;
-  const bgGrad = ctx.createRadialGradient(
-    CX,
-    CY,
-    W * 0.1,
-    CX,
-    CY,
-    outerR
-  );
-  bgGrad.addColorStop(0, "rgba(10,10,20,0)");
-  bgGrad.addColorStop(1, "rgba(3,5,16,0.95)");
-  ctx.fillStyle = bgGrad;
+  /* ---------------- BACKGROUND HALO ---------------- */
+  const bg = ctx.createRadialGradient(CX, CY, W * 0.1, CX, CY, W * 0.5);
+  bg.addColorStop(0, "rgba(10,10,20,0)");
+  bg.addColorStop(1, "rgba(3,5,16,0.95)");
+  ctx.fillStyle = bg;
   ctx.beginPath();
-  ctx.arc(CX, CY, outerR, 0, Math.PI * 2);
+  ctx.arc(CX, CY, W * 0.5, 0, Math.PI * 2);
   ctx.fill();
 
-  /* --------------------------- هسته --------------------------- */
+  /* ---------------- CORE ---------------- */
   const last = orbState.lastDecision;
   const coreColor =
     last?.decision === "BUY"
@@ -821,94 +783,65 @@ function animateOrb(now) {
       ? "rgba(255,90,120,0.95)"
       : "rgba(255,235,170,0.95)";
 
-  const coreR = W * (0.06 + Math.sin(t * 3) * 0.004);
+  const coreR = W * (0.065 + Math.sin(t * 2) * 0.004);
 
-  // هاله‌ی نرم دور هسته
-  const coreGrad = ctx.createRadialGradient(
-    CX,
-    CY,
-    coreR * 0.4,
-    CX,
-    CY,
-    coreR * 2.5
-  );
-  coreGrad.addColorStop(0, "rgba(255,255,255,0.85)");
-  coreGrad.addColorStop(0.3, coreColor);
-  coreGrad.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = coreGrad;
+  const halo = ctx.createRadialGradient(CX, CY, coreR * 0.4, CX, CY, coreR * 2.3);
+  halo.addColorStop(0, "rgba(255,255,255,0.9)");
+  halo.addColorStop(0.35, coreColor);
+  halo.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = halo;
   ctx.beginPath();
-  ctx.arc(CX, CY, coreR * 2.5, 0, Math.PI * 2);
+  ctx.arc(CX, CY, coreR * 2.3, 0, Math.PI * 2);
   ctx.fill();
 
-  // دیسک مرکزی
   ctx.beginPath();
   ctx.fillStyle = coreColor;
   ctx.arc(CX, CY, coreR, 0, Math.PI * 2);
   ctx.fill();
 
-  /* ---------------------- ابر پلاسما (cloud) ---------------------- */
-  ctx.fillStyle = "rgba(180,210,255,0.13)";
-  orbState.cloud.forEach((c, idx) => {
-    const rr =
-      c.radius +
-      Math.sin(t * c.speed + c.phase) * 3.5;
-
-    const ang =
-      c.angle +
-      Math.sin(t * 0.4 + idx * 0.37) * 0.4;
+  /* ---------------- INNER CLOUD ---------------- */
+  orbState.cloud.forEach((c, i) => {
+    const rr = c.radius + Math.sin(t * c.speed + c.phase) * 3.2;
+    const ang = c.angle + Math.sin(t * 0.4 + i * 0.3) * 0.35;
 
     const x = CX + Math.cos(ang) * rr;
     const y = CY + Math.sin(ang) * rr;
 
-    const alpha =
-      0.08 +
-      0.07 *
-        Math.sin(t * 1.3 + c.phase + idx * 0.21);
+    const a = 0.08 + 0.06 * Math.sin(t * 1.2 + c.phase);
 
     ctx.beginPath();
-    ctx.fillStyle = `rgba(190,220,255,${alpha})`;
+    ctx.fillStyle = `rgba(200,220,255,${a})`;
     ctx.arc(x, y, c.size, 0, Math.PI * 2);
     ctx.fill();
   });
 
-  /* ---------------------- موج شوک (Shockwave) ---------------------- */
+  /* ---------------- SHOCKWAVE ---------------- */
   const energy = Math.abs(last?.aggregate_s ?? 0);
   if (energy > 0.25) {
-    const phase = (t * 1.6) % 1; // ۰..۱
-    const r =
-      W * 0.18 + phase * (W * 0.35);
-    const alpha = 0.6 * (1 - phase);
+    const p = (t * 1.4) % 1;
+    const r = W * 0.18 + p * (W * 0.33);
+    const alpha = 0.55 * (1 - p);
 
     ctx.beginPath();
-    ctx.lineWidth = 1.8;
-    ctx.strokeStyle = `rgba(120,210,255,${alpha})`;
+    ctx.strokeStyle = `rgba(150,210,255,${alpha})`;
+    ctx.lineWidth = 1.6;
     ctx.arc(CX, CY, r, 0, Math.PI * 2);
     ctx.stroke();
   }
 
-  /* ---------------------- خطوط میدان مغناطیسی ---------------------- */
+  /* ---------------- MAGNETIC FIELD LINES ---------------- */
+  ctx.strokeStyle = "rgba(80,140,255,0.18)";
   ctx.lineWidth = 0.7;
-  ctx.strokeStyle = "rgba(80,140,255,0.20)";
-  const fieldLines = 14;
-  for (let i = 0; i < fieldLines; i++) {
-    const baseAng =
-      (i / fieldLines) * Math.PI * 2 +
-      Math.sin(t * 0.5 + i) * 0.12;
+  const FL = 12;
+  for (let i = 0; i < FL; i++) {
+    const a = (i / FL) * Math.PI * 2 + Math.sin(t * 0.4 + i) * 0.1;
+    const bend = Math.sin(t * 0.7 + i * 1.7) * 0.4;
 
-    const bend = Math.sin(t * 0.8 + i * 1.9) * 0.45;
+    const x1 = CX + Math.cos(a - bend) * (W * 0.12);
+    const y1 = CY + Math.sin(a - bend) * (W * 0.12);
 
-    const r1 = W * 0.11;
-    const r2 = W * 0.45;
-
-    const x1 =
-      CX + Math.cos(baseAng - bend) * r1;
-    const y1 =
-      CY + Math.sin(baseAng - bend) * r1;
-
-    const x2 =
-      CX + Math.cos(baseAng + bend) * r2;
-    const y2 =
-      CY + Math.sin(baseAng + bend) * r2;
+    const x2 = CX + Math.cos(a + bend) * (W * 0.42);
+    const y2 = CY + Math.sin(a + bend) * (W * 0.42);
 
     ctx.beginPath();
     ctx.moveTo(x1, y1);
@@ -916,130 +849,101 @@ function animateOrb(now) {
     ctx.stroke();
   }
 
-  /* ---------------------- حلقه‌های مش (Bands) ---------------------- */
-  orbState.bands.forEach((bandArr, bandIdx) => {
+  /* ---------------- FOG-MESH RINGS (bands) ---------------- */
+  orbState.bands.forEach((bandArr, bIdx) => {
     if (!bandArr.length) return;
 
-    ctx.beginPath();
+    ctx.strokeStyle =
+      bIdx === 0
+        ? "rgba(190,210,255,0.40)"
+        : bIdx === 1
+        ? "rgba(150,190,255,0.32)"
+        : "rgba(110,150,255,0.25)";
 
-    bandArr.forEach((p, idx) => {
-      const noiseVal = orbNoise(p.noiseSeed + t * 0.7);
+    ctx.lineWidth = bIdx === 0 ? 1.0 : 0.8;
+    ctx.globalAlpha = 0.20; // soften the lines
+
+    ctx.beginPath();
+    let prev = null;
+
+    bandArr.forEach((p, i) => {
       const r =
         p.baseRadius +
-        noiseVal * p.radiusJitter +
-        Math.sin(t * 1.1 + p.noiseSeed) * 4;
+        noise(p.noiseSeed + t * 0.7) * p.radiusJitter +
+        Math.sin(t * 1.1 + p.noiseSeed) * 3.5;
 
       const ang =
         p.baseAngle +
         t * p.speed +
-        p.angleDrift *
-          Math.sin(t * 0.8 + p.noiseSeed);
+        p.angleDrift * Math.sin(t * 0.8 + p.noiseSeed);
 
       const x = CX + Math.cos(ang) * r;
       const y = CY + Math.sin(ang) * r;
 
-      p._x = x; // برای پاس بعدی (نقطه و نود)
+      p._x = x;
       p._y = y;
 
-      if (idx === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+      if (prev) {
+        ctx.bezierCurveTo(
+          (prev.x + x) / 2 + noise(t + i) * 15,
+          (prev.y + y) / 2 + noise(t + i * 2) * 15,
+          (prev.x + x) / 2 + noise(t + i * 3) * 22,
+          (prev.y + y) / 2 + noise(t + i * 4) * 22,
+          x,
+          y
+        );
+      } else {
+        ctx.moveTo(x, y);
+      }
+
+      prev = { x, y };
     });
 
-    ctx.closePath();
-
-    const alpha =
-      bandIdx === 0 ? 0.65 : bandIdx === 1 ? 0.45 : 0.30;
-    const col =
-      bandIdx === 0
-        ? `rgba(190,210,255,${alpha})`
-        : bandIdx === 1
-        ? `rgba(150,190,255,${alpha})`
-        : `rgba(110,150,255,${alpha})`;
-
-    ctx.lineWidth = bandIdx === 0 ? 1.2 : 0.9;
-    ctx.strokeStyle = col;
     ctx.stroke();
+    ctx.globalAlpha = 1;
   });
 
-  /* ---------------------- نودهای نورانی (تصمیم‌ها) ---------------------- */
-  orbState.particles.forEach((p, idx) => {
-    const d = p.d || {};
-    const dec = (d.decision || "").toUpperCase();
-    const intensity = Math.abs(d.aggregate_s ?? 0.12);
+  /* ---------------- NODES ---------------- */
+  orbState.particles.forEach((p) => {
+    const d = p.d;
+    const dec = (d?.decision || "").toUpperCase();
+    const intensity = Math.abs(d?.aggregate_s ?? 0.1);
 
-    const age = p.ageNorm; // نزدیک صفر = جدیدتر
-    const baseSize = 2.3 + (1 - age) * 2.7;
-    const size = baseSize + intensity * 2.3;
+    let col =
+      dec === "BUY"
+        ? `rgba(0,255,190,${0.45 + intensity * 0.7})`
+        : dec === "SELL"
+        ? `rgba(255,110,140,${0.45 + intensity * 0.7})`
+        : `rgba(255,230,170,${0.35 + intensity * 0.7})`;
 
-    let col;
-    if (dec === "BUY")
-      col = `rgba(0,255,190,${0.45 + intensity * 0.8})`;
-    else if (dec === "SELL")
-      col = `rgba(255,110,140,${0.45 + intensity * 0.8})`;
-    else
-      col = `rgba(255,230,170,${0.35 + intensity * 0.8})`;
+    const size = 2.3 + (1 - p.ageNorm) * 2.3 + intensity * 1.5;
 
-    // آخرین تصمیم → هایلایت بیشتر
-    let glowExtra = 0;
-    if (
-      orbState.lastDecision &&
-      d.timestamp === orbState.lastDecision.timestamp
-    ) {
-      glowExtra = 0.4;
-    }
-
-    // گلو (هاله) کوچک
-    const glowR = size * 2.7;
-    const gx = p._x;
-    const gy = p._y;
-
-    const gGrad = ctx.createRadialGradient(
-      gx,
-      gy,
-      0,
-      gx,
-      gy,
-      glowR
-    );
-    gGrad.addColorStop(
-      0,
-      col.replace("rgba", "rgba").replace(/\)\s*$/, "")
-    );
-    gGrad.addColorStop(
-      1,
-      `rgba(0,0,0,0)`
-    );
-    ctx.fillStyle = gGrad;
+    /* glow */
+    const g = ctx.createRadialGradient(p._x, p._y, 0, p._x, p._y, size * 3.2);
+    g.addColorStop(0, col);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.arc(gx, gy, glowR, 0, Math.PI * 2);
+    ctx.arc(p._x, p._y, size * 3.2, 0, Math.PI * 2);
     ctx.fill();
 
-    // خود نود
+    /* node */
     ctx.beginPath();
     ctx.fillStyle = col;
-    ctx.arc(gx, gy, size, 0, Math.PI * 2);
+    ctx.arc(p._x, p._y, size, 0, Math.PI * 2);
     ctx.fill();
-
-    // فلاش خیلی کوتاه برای سیگنال‌های قوی
-    if (intensity > 0.35 && Math.random() < 0.04) {
-      ctx.beginPath();
-      ctx.fillStyle = col;
-      ctx.arc(gx, gy, size * 1.7, 0, Math.PI * 2);
-      ctx.fill();
-    }
   });
 
   requestAnimationFrame(animateOrb);
 }
 
-// آپدیت دیتا هر چند ثانیه یک بار
+/* ---------------- REFRESH DATA ---------------- */
 async function refreshOrbData() {
-  const data = await api("/api/decisions?limit=280");
+  const data = await api("/api/decisions?limit=260");
   if (Array.isArray(data) && data.length) {
     rebuildOrbFromDecisions(data);
   }
 }
-
 
 
 /* --------------------------- Bubble Spectrum ------------------------ */
