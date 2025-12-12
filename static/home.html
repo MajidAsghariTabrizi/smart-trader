@@ -10,62 +10,21 @@
 <body class="st-body">
 <div id="app" class="st-page">
 <section class="st-orb-banner">
-    <canvas id="marketOrb"></canvas>
- <div class="orb-overlay">
+
+    <!-- ظرف دایره‌ی کنوس -->
+    <div class="orb-canvas-wrap">
+        <canvas id="marketOrb"></canvas>
+    </div>
+
+    <!-- متن زیر اورب -->
+    <div class="orb-overlay">
         <h1 class="orb-title">SmartTrader Live Market Orb</h1>
-        <p class="orb-desc">نمایش زندهٔ روند بازار، شدت نوسان و تصمیم لحظه‌ای ربات</p>
-    </div>
-</section>
-
-<header class="st-hero">
-
-    <!-- 🌌 QuantumFlux Background -->
-    <canvas id="quantumFlux" width="1400" height="420"></canvas>
-
-    <!-- 💎 Floating Live Price Badge -->
-    <div class="floating-price">
-        <span class="fp-label">قیمت لحظه‌ای بیت‌کوین</span>
-<span id="hero-btc-price" class="fp-value">--</span>
-    </div>
-
-    <!-- RIGHT — Branding + Stats -->
-    <div class="st-hero-right">
-
-        <div class="st-pill st-pill-primary">
-            SmartTrader • ربات معاملاتی خودکار
-        </div>
-
-        <h1 class="st-hero-title">
-            تحلیل و معامله‌گری هوشمند مبتنی بر داده و اندیکاتورها
-        </h1>
-
-        <p class="st-hero-subtitle">
-            ترکیب MTF Indicators، ADX، ATR و مدل ریسک داخلی SmartTrader
+        <p class="orb-desc">
+            نمایش زندهٔ روند بازار، شدت نوسان و تصمیم لحظه‌ای ربات
         </p>
-
-        <div class="st-hero-badges">
-            <div class="st-badge">
-                <span class="st-badge-label">آخرین تصمیم</span>
-                <span id="hero-last-decision" class="st-badge-value">--</span>
-            </div>
-            <div class="st-badge">
-                <span class="st-badge-label">حالت بازار</span>
-                <span id="hero-regime" class="st-badge-value">--</span>
-            </div>
-            <div class="st-badge">
-                <span class="st-badge-label">قدرت روند (ADX)</span>
-                <span id="hero-adx" class="st-badge-value">--</span>
-            </div>
-            <div class="st-badge">
-                <span class="st-badge-label">Winrate</span>
-                <span id="hero-winrate" class="st-badge-value">--</span>
-            </div>
-        </div>
     </div>
 
-</header>
-
-
+</section>
 
     <!-- MAIN -->
     <main class="st-main">
