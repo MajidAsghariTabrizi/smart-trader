@@ -120,108 +120,40 @@ html {
     overflow: visible !important;
 }
 
-/* =========================================================
-   ORB – FREEFORM + SOFT FADE-OUT EDGES (v4 Cinematic)
-   No Circle • No Box • Natural Outer Glow Dissolve
-   ========================================================= */
 
-.st-orb-banner {
-    width: 100vw;
-    margin-inline: calc(50% - 50vw);
-    padding-top: 60px;
-    padding-bottom: 40px;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    background: var(--bg-main);
-}
-
-.orb-canvas-wrap {
-    position: relative;
-    width: min(1250px, 95%);
-    aspect-ratio: 1 / 1;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    overflow: visible !important;
-    border-radius: 0 !important;
-}
-
-
-/* =========================================================
-   ORB — TRUE FREEFORM NO-BOX MODE
-   The canvas expands outside its container + full fade mask
-   ========================================================= */
-
-/* Container with ZERO visual boundary */
-.orb-canvas-wrap {
-    position: relative;
-    width: min(1250px, 95%);
-    aspect-ratio: 1 / 1;
-    overflow: visible !important;   /* 🔥 مهم‌ترین نکته */
-    border-radius: 0 !important;
-    background: none !important;
-}
-
-
-/* =========================================================
-   THE CANVAS — Larger than container to remove square edges
-   ========================================================= */
-
+/* ======================================
+   🔵 خود Canvas اورب – آزاد، غیر دایره‌ای
+   ====================================== */
 #marketOrb {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-
-    /* 🔥 اورب را 130٪ بزرگتر می‌کنیم تا هیچ لبه‌ای دیده نشود */
-    width: 130%;
-    height: 130%;
-
-    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
     display: block;
 
-    /* حذف کامل شکل‌های تیز */
+    /* ❌ این خط باعث دایره‌ای شدن میشد — حذف کامل */
     border-radius: 0 !important;
-    overflow: visible !important;
-    background: none;
+    overflow: visible;
 
-    /* محوشدن طبیعی لبه‌ها */
-    -webkit-mask-image: radial-gradient(
-        circle,
-        rgba(0, 0, 0, 1) 45%,
-        rgba(0, 0, 0, 0.85) 65%,
-        rgba(0, 0, 0, 0.55) 78%,
-        rgba(0, 0, 0, 0.22) 88%,
-        rgba(0, 0, 0, 0) 100%
-    );
-    mask-image: radial-gradient(
-        circle,
-        rgba(0, 0, 0, 1) 45%,
-        rgba(0, 0, 0, 0.85) 65%,
-        rgba(0, 0, 0, 0.55) 78%,
-        rgba(0, 0, 0, 0.22) 88%,
-        rgba(0, 0, 0, 0) 100%
+    /* پس‌زمینه اورب */
+    background: radial-gradient(circle at center,
+        rgba(10,10,20,1) 0%,
+        rgba(5,5,15,1) 60%,
+        rgba(0,0,0,1) 100%
     );
 
-    /* Glow cinematic */
+    /* افکت‌های نور */
     filter:
-        drop-shadow(0 0 50px rgba(255,255,200,0.4))
-        drop-shadow(0 0 80px rgba(160,180,255,0.25));
+        drop-shadow(0 0 60px rgba(120,150,255,0.35))
+        drop-shadow(0 0 140px rgba(90,130,255,0.22));
+
+    /* GPU Boost */
+    will-change: transform;
 }
 
 
-/* =========================================================
-   ORB TITLE + DESCRIPTION
-   ========================================================= */
-
+/* متن زیر اورب */
 .orb-overlay {
     text-align: center;
-    margin-top: 20px;
-    padding-inline: 16px;
+    margin-top: 22px;
 }
 
 .orb-title {
@@ -229,7 +161,6 @@ html {
     font-weight: 900;
     color: #e6faff;
     text-shadow: 0 0 18px rgba(0, 200, 255, 0.6);
-    margin: 0;
 }
 
 .orb-desc {
@@ -240,17 +171,13 @@ html {
 }
 
 
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
+/* موبایل */
 @media (max-width: 768px) {
     .orb-canvas-wrap {
         width: 100%;
-        aspect-ratio: 1/1;
+        aspect-ratio: 1 / 1;
     }
 }
-
 
 
 /* =========================================================
