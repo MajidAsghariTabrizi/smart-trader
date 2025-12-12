@@ -639,8 +639,7 @@ function drawQuantumFlux(data, ts) {
 
 /* --------------------------- Market ORB Hero ------------------------ */
 
-function drawCrystalNeural_ORB(data) {
-
+function drawEnergyOrb_CHAOTIC(data) {
     const canvas = document.getElementById("marketOrb");
     if (!canvas) return;
 
@@ -653,113 +652,124 @@ function drawCrystalNeural_ORB(data) {
     const CX = W / 2;
     const CY = H / 2;
 
-    ctx.clearRect(0,0,W,H);
+    ctx.clearRect(0, 0, W, H);
 
-    const last = data[data.length - 1] ?? {};
-    const t = performance.now() * 0.001;
+    const last = data[data.length - 1];
+    const t = Date.now() * 0.001;
 
-    /* -------------------------------------------------
-       1) Core with refractive light
-    ------------------------------------------------- */
+    /* ----------------------------- BACKDROP ----------------------------- */
+    let grd = ctx.createRadialGradient(CX, CY, 10, CX, CY, W * 0.55);
+    grd.addColorStop(0, "rgba(255,255,200,0.25)");
+    grd.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, W, H);
+
+    /* ----------------------------- CORE ----------------------------- */
     const coreColor =
-        last.decision === "BUY"  ? "rgba(0,255,180,0.92)" :
-        last.decision === "SELL" ? "rgba(255,80,80,0.92)" :
-                                   "rgba(255,230,150,0.92)";
+        last?.decision === "BUY"
+            ? "rgba(0,255,180,0.9)"
+            : last?.decision === "SELL"
+            ? "rgba(255,80,120,0.9)"
+            : "rgba(255,230,150,0.9)";
 
     ctx.beginPath();
     ctx.fillStyle = coreColor;
-    ctx.arc(CX, CY, W * 0.085 + Math.sin(t*3)*3, 0, Math.PI*2);
+    ctx.arc(CX, CY, W * 0.07 + Math.sin(t*4)*3, 0, Math.PI * 2);
     ctx.fill();
 
-    /* Chromatic halo */
-    let halo = ctx.createRadialGradient(CX,CY,20, CX,CY, W*0.25);
-    halo.addColorStop(0, coreColor);
-    halo.addColorStop(0.3, "rgba(255,240,200,0.25)");
-    halo.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = halo;
-    ctx.fillRect(0,0,W,H);
+    /* --------------------------- PARAMETERS --------------------------- */
+    const N = 260;                     // تعداد نودها
+    const baseR = W * 0.23;
+    const spikes = [];
 
-    /* -------------------------------------------------
-       2) Crystal-Mesh multi-layer (3 depth planes)
-    ------------------------------------------------- */
+    /* ------ Simplex/Perlin Noise جایگزین noise() شده ------ */
+    const noise = (x, y) => Math.sin(x*1.7 + Math.cos(y*1.3)) * 0.5;
 
-    const layers = [
-        { r: W*0.26, drift: 0.35, color:"rgba(160,180,255,0.35)" },
-        { r: W*0.32, drift: 0.22, color:"rgba(120,140,255,0.28)" },
-        { r: W*0.38, drift: 0.18, color:"rgba(90,110,255,0.18)" }
-    ];
+    /* ----------------------------- NODES ----------------------------- */
+    let pts = [];
 
-    layers.forEach((layer, li) => {
+    for (let i = 0; i < N; i++) {
+        let angle = (i / N) * Math.PI * 2;
 
-        const nodes = 150;
-        const pts = [];
+        // اعوجاج شعاعی واقعی
+        let distortion =
+            noise(i * 0.15, t * 0.4) * 45 +
+            noise(i * 0.05 + t, t * 0.2) * 25;
 
-        for (let i = 0; i < nodes; i++) {
+        // پخش‌شدن نامنظم
+        let radius = baseR + distortion;
 
-            let baseAng = i * (Math.PI*2 / nodes);
+        let px = CX + Math.cos(angle) * radius;
+        let py = CY + Math.sin(angle) * radius;
 
-            // 3D drift effect
-            let ang = baseAng +
-                      Math.sin(t * 0.7 + i*0.12 + li) * layer.drift +
-                      (last.aggregate_s ?? 0) * 0.3;
+        pts.push({ x: px, y: py, r: radius, a: angle });
+    }
 
-            // radius wobble
-            let r = layer.r + Math.sin(t*2 + i*0.25) * (8 + li*4);
+    /* ---------------------- CHAOTIC MESH LINES ----------------------- */
+    ctx.lineWidth = 0.6;
+    ctx.strokeStyle = "rgba(120,160,255,0.25)";
 
-            let x = CX + Math.cos(ang) * r;
-            let y = CY + Math.sin(ang) * r;
-
-            pts.push({x, y});
-        }
-
-        // Mesh lines
-        ctx.strokeStyle = layer.color;
-        ctx.lineWidth = 0.8;
-
-        for (let i = 0; i < nodes; i++) {
-            let A = pts[i];
-            let B = pts[(i+4) % nodes];
-            let C = pts[(i+13)% nodes];
+    for (let i = 0; i < N; i++) {
+        if (Math.random() < 0.05) {
+            let a = pts[i];
+            let b = pts[(i + Math.floor(Math.random() * 40)) % N];
 
             ctx.beginPath();
-            ctx.moveTo(A.x, A.y);
-            ctx.lineTo(B.x, B.y);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(A.x, A.y);
-            ctx.lineTo(C.x, C.y);
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
             ctx.stroke();
         }
+    }
 
-        // Nodes
-        for (let i = 0; i < nodes; i++) {
+    /* ------------------------------ SPIKES ---------------------------- */
+    pts.forEach((p) => {
+        if (Math.random() < 0.1) {
+            let len = 20 + Math.random() * 40;
+            let x2 = p.x + Math.cos(p.a) * len;
+            let y2 = p.y + Math.sin(p.a) * len;
 
-            let p = pts[i];
-            let inten = Math.abs(data[i]?.aggregate_s ?? 0.15);
+            ctx.strokeStyle = "rgba(120,180,255,0.3)";
+            ctx.lineWidth = 1.2;
 
             ctx.beginPath();
-            ctx.fillStyle = `rgba(255,255,220,${0.55 + inten})`;
-            ctx.arc(p.x, p.y, 2.3 + inten*2, 0, Math.PI*2);
-            ctx.fill();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
         }
     });
 
-    /* -------------------------------------------------
-       3) Decision Spark (flash when new)
-    ------------------------------------------------- */
+    /* ------------------------ NODE PARTICLES ------------------------ */
+    pts.forEach((p, i) => {
+        const d = data[(data.length - N + i) % data.length];
+        let intensity = Math.abs(d?.aggregate_s ?? 0.12);
 
-    if (data.justUpdated) {
+        let c =
+            d?.decision === "BUY"
+                ? `rgba(0,255,180,${0.4 + intensity * 0.8})`
+                : d?.decision === "SELL"
+                ? `rgba(255,80,120,${0.4 + intensity * 0.8})`
+                : `rgba(255,220,150,${0.35 + intensity * 0.8})`;
+
         ctx.beginPath();
-        ctx.strokeStyle = "rgba(255,255,200,0.9)";
-        ctx.lineWidth = 3;
-        ctx.arc(CX, CY, W*0.12, 0, Math.PI*2);
+        ctx.fillStyle = c;
+        ctx.arc(p.x, p.y, 3 + intensity * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    /* -------------------------- SHOCKWAVE ---------------------------- */
+    if (last?.aggregate_s > 0.35) {
+        let shockR = baseR + (Math.sin(t * 5) + 1) * 40;
+
+        ctx.beginPath();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(0,255,200,0.4)";
+        ctx.arc(CX, CY, shockR, 0, Math.PI * 2);
         ctx.stroke();
-        data.justUpdated = false;
     }
 
-    requestAnimationFrame(() => drawCrystalNeural_ORB(data));
+    requestAnimationFrame(() => drawEnergyOrb_CHAOTIC(data));
 }
+
 
 
 
@@ -828,7 +838,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const data = await api("/api/decisions?limit=200");
     if (Array.isArray(data) && data.length) {
-        drawCrystalNeural_ORB(data);
+        drawEnergyOrb_CHAOTIC(data);
     }
 
     setInterval(updateDashboard, 10000);
