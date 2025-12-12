@@ -639,9 +639,7 @@ function drawQuantumFlux(data, ts) {
 
 /* --------------------------- Market ORB Hero ------------------------ */
 
-let orbState = null;
-
-function drawEnergyOrb_ULTRA_NEURAL(data) {
+function drawEnergyOrb_LIQUID(data) {
     const canvas = document.getElementById("marketOrb");
     if (!canvas) return;
 
@@ -653,169 +651,135 @@ function drawEnergyOrb_ULTRA_NEURAL(data) {
     const H = canvas.height;
     const CX = W / 2;
     const CY = H / 2;
+    const t = Date.now() * 0.001;
 
     ctx.clearRect(0, 0, W, H);
 
     const last = data[data.length - 1];
-    const t = Date.now() * 0.001;
 
-    /* ----------------------------------------------------------
-       GRID BACKGROUND (حفظ می‌کنیم)
-    ---------------------------------------------------------- */
-    const gridSize = 22;
-    ctx.lineWidth = 0.35;
-    ctx.strokeStyle = "rgba(80,120,255,0.12)";
+    /* ======================================================
+       1) BACKGROUND GRID (soft)
+    ====================================================== */
+    ctx.strokeStyle = "rgba(80,120,255,0.06)";
+    ctx.lineWidth = 0.4;
+    const grid = 24;
 
-    for (let x = 0; x < W; x += gridSize) {
+    for (let x = 0; x < W; x += grid) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, H);
         ctx.stroke();
     }
-    for (let y = 0; y < H; y += gridSize) {
+    for (let y = 0; y < H; y += grid) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(W, y);
         ctx.stroke();
     }
 
-    /* ----------------------------------------------------------
-       ENERGY BLOOM
-    ---------------------------------------------------------- */
-    const bloomR = W * 0.12 + Math.sin(t * 4) * 7;
+    /* ======================================================
+       2) CORE + ENERGY PULSE
+    ====================================================== */
 
-    let bloomColor =
-        last?.decision === "BUY"
-            ? "rgba(0,255,140,0.28)"
-            : last?.decision === "SELL"
-            ? "rgba(255,70,70,0.28)"
-            : "rgba(255,220,120,0.25)";
+    const coreR = W * 0.085 + Math.sin(t * 3) * 4;
 
-    ctx.beginPath();
-    ctx.fillStyle = bloomColor;
-    ctx.arc(CX, CY, bloomR, 0, Math.PI * 2);
-    ctx.fill();
-
-    /* ----------------------------------------------------------
-       CORE
-    ---------------------------------------------------------- */
     const coreColor =
         last?.decision === "BUY"
-            ? "rgba(0,255,150,0.92)"
+            ? "rgba(0,255,150,0.90)"
             : last?.decision === "SELL"
-            ? "rgba(255,80,80,0.92)"
-            : "rgba(255,220,120,0.92)";
+            ? "rgba(255,80,80,0.90)"
+            : "rgba(255,230,120,0.92)";
 
     ctx.beginPath();
     ctx.fillStyle = coreColor;
-    ctx.arc(CX, CY, W * 0.085, 0, Math.PI * 2);
+    ctx.arc(CX, CY, coreR, 0, Math.PI * 2);
     ctx.fill();
 
-    /* ----------------------------------------------------------
-       MULTI RING WAVEFORM
-    ---------------------------------------------------------- */
-    const baseR = W * 0.18;
-    const rings = [0.0, 0.14, 0.28];
+    // Pulsing ripple
+    const rippleR = coreR + 25 + Math.sin(t * 2) * 12;
+    ctx.beginPath();
+    ctx.strokeStyle = coreColor.replace("0.90","0.25");
+    ctx.lineWidth = 2;
+    ctx.arc(CX, CY, rippleR, 0, Math.PI * 2);
+    ctx.stroke();
 
-    rings.forEach((offset, idx) => {
-        const r = baseR + offset * W + Math.sin(t * (1.6 + idx * 0.25)) * 6;
+    /* ======================================================
+       3) FLOW FIELD – میدان جریان مایع
+    ====================================================== */
 
-        ctx.beginPath();
-        ctx.lineWidth = 1.6;
-        ctx.strokeStyle =
-            idx === 0
-                ? "rgba(120,180,255,0.55)"
-                : idx === 1
-                ? "rgba(180,200,255,0.35)"
-                : "rgba(150,160,255,0.25)";
+    function flowField(x, y) {
+        const dx = x - CX;
+        const dy = y - CY;
+        const angle = Math.sin(t + dx * 0.01) + Math.cos(t + dy * 0.01);
+        return angle * 0.9;
+    }
 
-        ctx.arc(CX, CY, r, 0, Math.PI * 2);
-        ctx.stroke();
-    });
+    /* ======================================================
+       4) LIQUID PARTICLES
+    ====================================================== */
 
-    /* ----------------------------------------------------------
-       PARTICLES + NEURAL MOTION
-    ---------------------------------------------------------- */
+    const particleCount = Math.min(180, data.length);
 
-    const ringR = baseR + 0.28 * W;
+    data.slice(-particleCount).forEach((d, i) => {
+        let intensity = Math.abs(d.aggregate_s ?? 0.2);
 
-    data.slice(-140).forEach((d, i) => {
-        // زاویه + نویز ریز
-        let angle = i * (Math.PI * 2 / 140) + t * 0.32;
-        angle += Math.sin(t * 1.5 + i * 0.3) * 0.03;  // Neural drift
+        // initial rough circular distribution
+        let baseA = i * (Math.PI * 2 / particleCount);
 
-        let intensity = Math.abs(d.aggregate_s ?? 0.12);
+        // fluid noise motion
+        let angle = baseA + flowField(
+            CX + Math.cos(baseA) * 40,
+            CY + Math.sin(baseA) * 40
+        );
 
-        // جاذبه رنگی
+        let radius =
+            W * 0.32 +
+            Math.sin(t * 1.6 + i * 0.2) * 18 +    // liquid thickness
+            Math.cos(t * 0.8 + i) * 6;           // wobble motion
+
+        let x = CX + Math.cos(angle) * radius;
+        let y = CY + Math.sin(angle) * radius;
+
+        /* ---- Trails ---- */
+        let px2 = CX + Math.cos(angle - 0.15) * (radius - 8);
+        let py2 = CY + Math.sin(angle - 0.15) * (radius - 8);
+
         const pColor =
             d.decision === "BUY"
                 ? `rgba(0,255,150,${0.55 + intensity})`
                 : d.decision === "SELL"
                 ? `rgba(255,90,90,${0.55 + intensity})`
-                : `rgba(255,230,120,${0.50 + intensity})`;
-
-        // شعاع با نویز
-        let pr = ringR + Math.sin(t * 2 + i) * 3; // Quantum noise
-
-        let px = CX + Math.cos(angle) * pr;
-        let py = CY + Math.sin(angle) * pr;
-
-        /* ---------------------------------------------
-           TRAIL EFFECT (دنباله نور)
-        --------------------------------------------- */
-        let trailX = CX + Math.cos(angle - 0.1) * pr;
-        let trailY = CY + Math.sin(angle - 0.1) * pr;
+                : `rgba(255,230,120,${0.55 + intensity})`;
 
         ctx.beginPath();
         ctx.strokeStyle = pColor;
-        ctx.lineWidth = 1.4;
-        ctx.moveTo(trailX, trailY);
-        ctx.lineTo(px, py);
+        ctx.lineWidth = 2.2;
+        ctx.moveTo(px2, py2);
+        ctx.lineTo(x, y);
         ctx.stroke();
 
-        /* ---------------------------------------------
-           SPARK (چشمک نور) — فقط برای سیگنال قوی
-        --------------------------------------------- */
-        if (intensity > 0.25 && Math.random() < 0.08) {
-            ctx.beginPath();
-            ctx.fillStyle = pColor;
-            ctx.arc(px, py, 6 + intensity * 4, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        /* ---------------------------------------------
-           PARTICLE ITSELF
-        --------------------------------------------- */
+        /* ---- glowing particle ---- */
         ctx.beginPath();
         ctx.fillStyle = pColor;
-        ctx.arc(px, py, 4 + intensity * 3, 0, Math.PI * 2);
+        ctx.shadowBlur = 18 + intensity * 10;
+        ctx.shadowColor = pColor;
+        ctx.arc(x, y, 4.5 + intensity * 3.5, 0, Math.PI * 2);
         ctx.fill();
+        ctx.shadowBlur = 0;
+
+        /* occasional spark */
+        if (intensity > 0.25 && Math.random() < 0.05) {
+            ctx.beginPath();
+            ctx.fillStyle = pColor;
+            ctx.arc(x, y, 7 + intensity * 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
     });
 
-    /* ----------------------------------------------------------
-       NEURAL LINKS (اتصال نورونی)
-    ---------------------------------------------------------- */
-    if (Math.random() < 0.18) {
-        const a = Math.floor(Math.random() * 140);
-        const b = (a + 8 + Math.floor(Math.random() * 20)) % 140;
-
-        let angle1 = a * (Math.PI * 2 / 140) + t * 0.32;
-        let angle2 = b * (Math.PI * 2 / 140) + t * 0.32;
-
-        let x1 = CX + Math.cos(angle1) * ringR;
-        let y1 = CY + Math.sin(angle1) * ringR;
-        let x2 = CX + Math.cos(angle2) * ringR;
-        let y2 = CY + Math.sin(angle2) * ringR;
-
-        ctx.beginPath();
-        ctx.strokeStyle = "rgba(120,200,255,0.25)";
-        ctx.lineWidth = 1;
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-    }
-
-    requestAnimationFrame(() => drawEnergyOrb_ULTRA_NEURAL(data));
+    /* ======================================================
+       LOOP
+    ====================================================== */
+    requestAnimationFrame(() => drawEnergyOrb_LIQUID(data));
 }
 
 
@@ -883,7 +847,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const data = await api("/api/decisions?limit=200");
     if (Array.isArray(data) && data.length) {
-        drawEnergyOrb_ULTRA_NEURAL(data);
+        drawEnergyOrb_LIQUID(data);
     }
 
     setInterval(updateDashboard, 10000);
