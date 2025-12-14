@@ -84,13 +84,13 @@ html {
     }
 }
 /* ======================================================
-   Quantum Neural ORB – Hero Section (Final / Polished)
+   Quantum Neural ORB – Hero Section (Mobile-Fixed)
    ====================================================== */
 
-/* فولد اول – کاملاً آزاد، بدون حس قاب */
+/* فولد اول – آزاد، بدون باکس */
 .st-orb-banner {
     width: 100vw;
-    height: 100svh; /* mobile-safe viewport */
+    height: 100svh;
     margin-inline: calc(50% - 50vw);
     padding: 0;
 
@@ -100,7 +100,6 @@ html {
     display: grid;
     place-items: center;
 
-    /* کمک می‌کنه بک‌گراند پشت ORB نرم‌تر دیده بشه */
     background: radial-gradient(
         ellipse at center,
         rgba(10,14,28,0.35) 0%,
@@ -109,7 +108,7 @@ html {
     );
 }
 
-/* ORB canvas – شناور، بدون باکس، کاملاً دایره‌ای */
+/* ORB canvas */
 .st-orb-canvas {
     width: min(720px, 92vw);
     aspect-ratio: 1 / 1;
@@ -121,15 +120,12 @@ html {
     will-change: transform, filter;
     animation: orb-float 9s ease-in-out infinite;
 
-    /* glow کنترل‌شده (نه تیز، نه haze) */
     filter:
         drop-shadow(0 0 28px rgba(120,160,255,0.32))
         drop-shadow(0 0 64px rgba(80,110,255,0.16));
 }
 
-/* نفس کشیدن ORB
-   بزرگ → کمی محو لبه‌ها
-   کوچک → دایره شارپ */
+/* نفس کشیدن ORB */
 @keyframes orb-float {
     0% {
         transform: scale(0.95);
@@ -145,96 +141,50 @@ html {
     }
 }
 
-/* متن روی ORB – جای فعلی حفظ شده (دست نخورده) */
+/* متن – دست نخورده */
 .orb-overlay {
     position: absolute;
     bottom: 14%;
     left: 50%;
     transform: translateX(-50%);
-
     text-align: center;
     padding-inline: 16px;
-
     z-index: 2;
     pointer-events: none;
 }
 
-.orb-title {
-    margin: 0 0 6px;
-
-    font-size: clamp(30px, 4vw, 42px);
-    font-weight: 900;
-    letter-spacing: 0.25px;
-
-    color: #e6faff;
-    text-shadow:
-        0 0 16px rgba(0, 200, 255, 0.6),
-        0 0 32px rgba(0, 120, 255, 0.32);
-}
-
-.orb-desc {
-    margin: 0;
-
-    font-size: clamp(13px, 2vw, 16px);
-    line-height: 1.6;
-
-    color: #dcecff;
-    opacity: 0.9;
-}
-
-/* Scroll hint – مینیمال، محو */
-.scroll-hint {
-    position: absolute;
-    bottom: 18px;
-    left: 50%;
-    transform: translateX(-50%);
-
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    font-size: 11px;
-    letter-spacing: 0.3px;
-
-    color: #cbd5f5;
-    opacity: 0.65;
-}
-
-.scroll-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 999px;
-
-    background: #c4d3ff;
-
-    animation: scroll-dot-pulse 1.6s infinite ease-in-out;
-}
-
-@keyframes scroll-dot-pulse {
-    0% {
-        transform: translateY(0);
-        opacity: 0.35;
-    }
-    50% {
-        transform: translateY(6px);
-        opacity: 1;
-    }
-    100% {
-        transform: translateY(0);
-        opacity: 0.35;
-    }
-}
-
-/* موبایل */
+/* =======================
+   📱 MOBILE FIX
+   ======================= */
 @media (max-width: 768px) {
+
+    /* به جای وسط‌چین، ORB کمی بالا میاد */
+    .st-orb-banner {
+        height: auto;
+        min-height: 100vh;
+
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+
+        padding-top: 28px;   /* 👈 فاصله‌ی منطقی از بالا */
+        padding-bottom: 48px;
+    }
+
     .st-orb-canvas {
         width: min(420px, 96vw);
+    }
+
+    /* متن کمی بالاتر بیاد ولی جای فعلی حفظ بشه */
+    .orb-overlay {
+        bottom: 12%;
     }
 
     .scroll-hint {
         display: none;
     }
 }
+
 
 /* -------------------- Mobile -------------------- */
 @media (max-width: 768px) {

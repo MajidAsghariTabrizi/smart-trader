@@ -763,13 +763,22 @@ function animateOrb(now) {
   const t = (now - orbState.t0) * 0.001;
 
   const last = orbState.lastDecision;
-  const energy = Math.abs(last?.aggregate_s ?? 0);
+  const energyRaw = Math.abs(last?.aggregate_s ?? 0);
 
-  /* ---------------- SAFE ORGANIC PULSE ---------------- */
-  const pulseRaw = Math.sin(t * 1.6);
-  const pulse = 0.015 + Math.min(0.018, energy * 0.035) * pulseRaw;
+  /* -------- energy normalize (stable & bounded) -------- */
+  const energy = Math.min(1, energyRaw * 1.6);
 
-  /* ---------------- CLEAR ---------------- */
+  /* -------- BREATH SYNC WITH aggregate_s --------
+     - base pulse: همیشه زنده
+     - depth: مستقیماً از انرژی
+     - jitter: فقط وقتی انرژی بالاست
+  ------------------------------------------------ */
+  const breathBase = Math.sin(t * 1.4);
+  const breathDepth = 0.012 + energy * 0.028;
+  const breathJitter = energy > 0.35 ? Math.sin(t * 3.2) * energy * 0.01 : 0;
+  const pulse = breathBase * breathDepth + breathJitter;
+
+  /* -------- clear (NO BOX) -------- */
   ctx.clearRect(0, 0, W, W);
 
   ctx.save();
@@ -777,13 +786,13 @@ function animateOrb(now) {
   ctx.scale(1 + pulse, 1 - pulse * 0.55);
   ctx.translate(-CX, -CY);
 
-  /* ---------------- BACKGROUND HALO (SOFT, NON-BOX) ---------------- */
-  const bg = ctx.createRadialGradient(CX, CY, W * 0.15, CX, CY, W * 0.55);
+  /* ---------------- BACKGROUND HALO (pure radial) ---------------- */
+  const bg = ctx.createRadialGradient(CX, CY, W * 0.18, CX, CY, W * 0.6);
   bg.addColorStop(0, "rgba(12,16,32,0)");
   bg.addColorStop(1, "rgba(6,10,24,0.85)");
   ctx.fillStyle = bg;
   ctx.beginPath();
-  ctx.arc(CX, CY, W * 0.55, 0, Math.PI * 2);
+  ctx.arc(CX, CY, W * 0.6, 0, Math.PI * 2);
   ctx.fill();
 
   /* ---------------- CORE ---------------- */
@@ -794,17 +803,17 @@ function animateOrb(now) {
       ? "rgba(255,90,120,0.95)"
       : "rgba(255,235,170,0.92)";
 
-  const corePulse = 0.004 + energy * 0.009;
-  const coreR = W * (0.06 + Math.sin(t * 2.1) * corePulse);
+  const corePulse = 0.004 + energy * 0.012;
+  const coreR = W * (0.058 + Math.sin(t * 2.1) * corePulse);
 
-  const halo = ctx.createRadialGradient(CX, CY, coreR * 0.4, CX, CY, coreR * 2.4);
+  const halo = ctx.createRadialGradient(CX, CY, coreR * 0.5, CX, CY, coreR * 2.6);
   halo.addColorStop(0, "rgba(255,255,255,0.85)");
   halo.addColorStop(0.35, coreColor);
   halo.addColorStop(1, "rgba(0,0,0,0)");
 
   ctx.fillStyle = halo;
   ctx.beginPath();
-  ctx.arc(CX, CY, coreR * 2.4, 0, Math.PI * 2);
+  ctx.arc(CX, CY, coreR * 2.6, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.beginPath();
@@ -814,13 +823,13 @@ function animateOrb(now) {
 
   /* ---------------- INNER CLOUD ---------------- */
   orbState.cloud.forEach((c, i) => {
-    const rr = c.radius + Math.sin(t * c.speed + c.phase) * 2.6;
+    const rr = c.radius + Math.sin(t * c.speed + c.phase) * (2 + energy * 3);
     const ang = c.angle + Math.sin(t * 0.35 + i * 0.2) * 0.25;
 
     const x = CX + Math.cos(ang) * rr;
     const y = CY + Math.sin(ang) * rr;
 
-    const a = 0.06 + 0.05 * Math.sin(t * 1.1 + c.phase);
+    const a = 0.05 + energy * 0.08;
 
     ctx.beginPath();
     ctx.fillStyle = `rgba(190,210,255,${a})`;
@@ -828,18 +837,18 @@ function animateOrb(now) {
     ctx.fill();
   });
 
-  /* ---------------- SHOCKWAVE (RARE, CLEAN) ---------------- */
-  if (energy > 0.3) {
-    const p = (t * 1.3) % 1;
-    const r = W * (0.18 + p * 0.35);
+  /* ---------------- SHOCKWAVE (rare & meaningful) ---------------- */
+  if (energy > 0.45) {
+    const p = (t * 1.25) % 1;
+    const r = W * (0.2 + p * 0.35);
     ctx.beginPath();
-    ctx.strokeStyle = `rgba(150,210,255,${0.45 * (1 - p)})`;
-    ctx.lineWidth = 1.4;
+    ctx.strokeStyle = `rgba(150,210,255,${0.4 * (1 - p)})`;
+    ctx.lineWidth = 1.3;
     ctx.arc(CX, CY, r, 0, Math.PI * 2);
     ctx.stroke();
   }
 
-  /* ---------------- FOG MESH (SUBTLE) ---------------- */
+  /* ---------------- FOG MESH (DE-EMPHASIZED) ---------------- */
   ctx.globalCompositeOperation = "lighter";
 
   orbState.bands.forEach((bandArr, idx) => {
@@ -847,19 +856,19 @@ function animateOrb(now) {
 
     ctx.strokeStyle =
       idx === 0
-        ? "rgba(180,200,255,0.14)"
+        ? "rgba(170,200,255,0.12)"
         : idx === 1
-        ? "rgba(140,180,255,0.10)"
-        : "rgba(100,140,255,0.07)";
+        ? "rgba(130,170,255,0.09)"
+        : "rgba(90,130,255,0.06)";
 
-    ctx.lineWidth = idx === 0 ? 0.7 : 0.5;
+    ctx.lineWidth = idx === 0 ? 0.6 : 0.45;
     ctx.beginPath();
 
     let prev = null;
-    bandArr.forEach((p, i) => {
+    bandArr.forEach((p) => {
       const r =
         p.baseRadius +
-        noise(p.noiseSeed + t * 0.6) * (p.radiusJitter * 0.6);
+        noise(p.noiseSeed + t * 0.6) * (p.radiusJitter * 0.55);
 
       const ang =
         p.baseAngle +
@@ -883,7 +892,7 @@ function animateOrb(now) {
 
   ctx.globalCompositeOperation = "source-over";
 
-  /* ---------------- NODES (FOCUS ELEMENT) ---------------- */
+  /* ---------------- NODES (PRIMARY FOCUS) ---------------- */
   orbState.particles.forEach((p) => {
     const d = p.d;
     const dec = (d?.decision || "").toUpperCase();
@@ -891,12 +900,12 @@ function animateOrb(now) {
 
     const col =
       dec === "BUY"
-        ? `rgba(0,255,190,${0.45 + intensity * 0.5})`
+        ? `rgba(0,255,190,${0.45 + intensity * 0.45})`
         : dec === "SELL"
-        ? `rgba(255,110,140,${0.45 + intensity * 0.5})`
-        : `rgba(255,230,170,${0.35 + intensity * 0.5})`;
+        ? `rgba(255,110,140,${0.45 + intensity * 0.45})`
+        : `rgba(255,230,170,${0.35 + intensity * 0.45})`;
 
-    const size = 2 + (1 - p.ageNorm) * 2.2 + intensity * 0.8;
+    const size = 2 + (1 - p.ageNorm) * 2.2 + intensity;
 
     const g = ctx.createRadialGradient(p._x, p._y, 0, p._x, p._y, size * 3);
     g.addColorStop(0, col);
