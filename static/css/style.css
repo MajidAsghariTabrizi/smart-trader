@@ -103,26 +103,28 @@ html {
 
 /* ORB canvas – بدون قاب، با fade در لبه‌ها */
 .st-orb-canvas {
-    width: min(1200px, 90vw);
+    width: min(900px, 90vw);
     height: auto;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 1 / 1;
     display: block;
-    border-radius: 0;
-    overflow: visible;
 
-    /* fade در لبه‌ها روی خود کانواس */
+    /* جلوگیری از stretch */
+    object-fit: contain;
+
+    /* حذف blur ابری بی‌کیفیت */
+    filter:
+        drop-shadow(0 0 40px rgba(120,160,255,0.35))
+        drop-shadow(0 0 80px rgba(80,110,255,0.18));
+
+    /* Fade تمیزتر، بدون haze */
     -webkit-mask-image: radial-gradient(circle at center,
         rgba(0,0,0,1) 0%,
-        rgba(0,0,0,1) 60%,
+        rgba(0,0,0,1) 70%,
         rgba(0,0,0,0) 100%);
     mask-image: radial-gradient(circle at center,
         rgba(0,0,0,1) 0%,
-        rgba(0,0,0,1) 60%,
+        rgba(0,0,0,1) 70%,
         rgba(0,0,0,0) 100%);
-
-    filter:
-        drop-shadow(0 0 50px rgba(160,180,255,0.40))
-        drop-shadow(0 0 110px rgba(80,110,255,0.22));
 }
 
 .orb-overlay {
