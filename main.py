@@ -659,6 +659,10 @@ Reasons:
     # ---------------- Risk / Execution layer ---------------- #
 
     # 1) اول: در صورت سیگنال معکوس، سریع ببند
+    # 1) اول TP / SL
+    _maybe_close_position(dc240.price)
+
+    # 2) بعد Reverse signal
     if account.position and action in ("BUY", "SELL"):
         desired_side = "LONG" if action == "BUY" else "SHORT"
         if account.position.side != desired_side:
@@ -669,13 +673,12 @@ Reasons:
             _close_position(dc240.price, "REVERSE_SIGNAL")
 
     # 2) بعد: مدیریت TP/SL روی پوزیشن باقی‌مانده
-    _maybe_close_position(dc240.price)
-
     # 2) Entry policy / allow_intracandle
     execute_now = True
-    if not cfg.STRATEGY["allow_intracandle"]:
+    # allow_intracandle فقط برای HOLD
+    if not cfg.STRATEGY["allow_intracandle"] and action == "HOLD":
         execute_now = False
-        dc240.reasons.append("Intracandle disabled: execution deferred until close")
+        dc240.reasons.append("Intracandle disabled: HOLD-only mode")
 
     # Only one open position at a time (بعد از closeهای بالا)
     if account.position:

@@ -69,8 +69,6 @@ class Position:
     tp_hit: bool = False           # اگر TP بسته شد، True
 
 
-
-
 @dataclass
 class Account:
     equity: float
@@ -131,9 +129,7 @@ class SignalEngine:
 
         adx_val = dc.adx if math.isfinite(dc.adx) else 0.0
 
-        # 1) ADX-aware gating روی ترند
-        #    قبلاً اگر ADX زیر حد بود ترند رو صفر می‌کردیم؛
-        #    الان فقط ضعیفش می‌کنیم تا «زودتر» سیگنال ترندی بگیریم.
+        # 1) ADX-aware gating روی ترند (نرم)
         trend_component = dc.trend_raw
         if adx_val < p.min_adx_for_trend:
             trend_component *= 0.4
@@ -146,8 +142,8 @@ class SignalEngine:
         mr = dc.meanrev_raw
         bo = dc.breakout_raw
 
-        # 2.5) تضاد شدید Trend vs Mean-Reversion → کلاً HOLD
-        #     یعنی جایی که خودش می‌گوید "conflict"، اصلاً ترید نمی‌کنیم.
+        # 2.5) تضاد Trend vs Mean-Reversion:
+        # قبلاً FORCE HOLD بود (بد). الان فقط MeanRev رو سرکوب می‌کنیم
         conflict = False
         mr_conf_level = 0.40  # شدت لازم برای اینکه بگیم برگشتی خیلی قویه
 
@@ -157,16 +153,12 @@ class SignalEngine:
             conflict = True
 
         if conflict:
+            # بازار ترندی معمولاً meanrev نویزی ضد ترند دارد؛ کل تصمیم را نکُش
+            mr *= 0.2
             dc.reasons.append(
                 f"Trend/MeanRev conflict: trend_raw={dc.trend_raw:.3f}, "
-                f"meanrev_raw={dc.meanrev_raw:.3f} → FORCE HOLD"
+                f"meanrev_raw={dc.meanrev_raw:.3f} → meanrev suppressed"
             )
-            dc.trend = 0.0
-            dc.momentum = 0.0
-            dc.meanrev = 0.0
-            dc.breakout = 0.0
-            dc.aggregate_s = 0.0
-            return dc
 
         # 3) Regime scaling
         regime_scale = p.regime_scale.get(dc.regime, 1.0)
@@ -187,10 +179,10 @@ class SignalEngine:
 
         # 6) Aggregate S
         aggregate = (
-                w_trend * dc.trend +
-                w_mom * dc.momentum +
-                w_mr * dc.meanrev +
-                w_bo * dc.breakout
+            w_trend * dc.trend +
+            w_mom * dc.momentum +
+            w_mr * dc.meanrev +
+            w_bo * dc.breakout
         )
 
         dc.aggregate_s = float(aggregate) * float(regime_scale)
@@ -200,10 +192,16 @@ class SignalEngine:
     # ---------------- MTF Confirmation ---------------- #
 
     def _mtf_confirm_pass(
-            self,
-            dc_primary: DecisionContext,
-            dc_confirm: Optional[DecisionContext]
+        self,
+        dc_primary: DecisionContext,
+        dc_confirm: Optional[DecisionContext]
     ) -> Tuple[bool, List[str]]:
+        """
+        New behavior (بدون تغییر نام/امضا):
+        - اگر require_mtf_agreement=False → همیشه PASS
+        - اگر True → MTF فقط نقش veto دارد (فقط وقتی شدیداً مخالف باشد رد می‌کند)
+        - نبودن confirm TF دیگر باعث رد شدن نمی‌شود
+        """
         p = self.params
         reasons: List[str] = []
 
@@ -214,45 +212,32 @@ class SignalEngine:
         primary_s = float(dc_primary.aggregate_s)
         primary_abs = abs(primary_s)
 
-        # اگر تایم فریم تأیید نداریم:
-        # اگر خود پرایمری به حد کافی قوی باشد، اجازه می‌دهیم تنها تصمیم بگیرد.
         if dc_confirm is None:
-            if primary_abs >= p.mtf_confirm_bar:
-                reasons.append(
-                    f"MTF missing, primary strong ({primary_abs:.3f}>={p.mtf_confirm_bar:.3f}) → PASS"
-                )
-                return True, reasons
+            reasons.append("MTF missing → PASS (no veto)")
+            return True, reasons
+
+        confirm_s = float(dc_confirm.aggregate_s)
+
+        # اگر تایم‌فریم تاییدی «واقعاً مخالف» باشد veto می‌کنیم
+        # آستانه‌ی مخالفت را از decision_buffer / mtf_confirm_bar می‌گیریم تا سخت‌کُد نشود
+        veto_bar = max(float(p.decision_buffer) * 2.0, float(p.mtf_confirm_bar) * 0.35, 0.05)
+
+        if primary_s > 0.0 and confirm_s < -veto_bar:
             reasons.append(
-                f"MTF reject: confirm TF missing & primary weak ({primary_abs:.3f}<{p.mtf_confirm_bar:.3f})"
+                f"MTF veto: primary={primary_s:.3f}, confirm={confirm_s:.3f}, veto_bar={veto_bar:.3f}"
             )
             return False, reasons
 
-        confirm_s = float(dc_confirm.aggregate_s)
-        confirm_abs = abs(confirm_s)
-
-        same_sign = (
-                (primary_s >= 0 and confirm_s >= 0) or
-                (primary_s < 0 and confirm_s < 0)
-        )
-
-        # نرم‌تر: یا پرایمری قوی باشد، یا کانفرم حداقل ۸۰٪ بار را رد کند
-        strong_enough = (
-                primary_abs >= p.mtf_confirm_bar or
-                confirm_abs >= p.mtf_confirm_bar * 0.8
-        )
-
-        if same_sign and strong_enough:
+        if primary_s < 0.0 and confirm_s > veto_bar:
             reasons.append(
-                f"MTF agree: primary={primary_s:.3f}, confirm={confirm_s:.3f}, "
-                f"bar={p.mtf_confirm_bar:.3f}"
+                f"MTF veto: primary={primary_s:.3f}, confirm={confirm_s:.3f}, veto_bar={veto_bar:.3f}"
             )
-            return True, reasons
+            return False, reasons
 
         reasons.append(
-            f"MTF reject: primary={primary_s:.3f}, confirm={confirm_s:.3f}, "
-            f"same_sign={same_sign}, strong_enough={strong_enough}"
+            f"MTF pass (no veto): primary={primary_s:.3f}, confirm={confirm_s:.3f}"
         )
-        return False, reasons
+        return True, reasons
 
     # ---------------- Stop Builder ---------------- #
 
@@ -287,22 +272,52 @@ class SignalEngine:
         action = "HOLD"
         pos: Optional[Position] = None
 
-        # تصمیم با حاشیه‌ی امنیت (buffer)
-        # تصمیم سریع‌تر: خود s_buy / s_sell آستانه‌ی اصلی هستند
-        buy_th = float(p.s_buy)
-        sell_th = float(p.s_sell)
+        # آستانه‌ها (با استفاده از buffer برای نرم‌تر شدن لبه‌ها، اما سریع‌تر)
+        # نکته: نام‌ها همان buy_th/sell_th باقی می‌ماند
+        buf = float(p.decision_buffer) if math.isfinite(p.decision_buffer) else 0.0
+        buy_th = float(p.s_buy) - max(buf, 0.0)
+        sell_th = float(p.s_sell) - max(buf, 0.0)
 
-        # تأیید مولتی‌تایم‌فریم
+        # تأیید مولتی‌تایم‌فریم (الان veto-style)
         mtf_ok, mtf_reasons = self._mtf_confirm_pass(dc_primary, dc_confirm)
         dc_primary.reasons.extend(mtf_reasons)
 
         primary_s = float(dc_primary.aggregate_s)
 
-        wants_long = (primary_s >= buy_th) and mtf_ok
-        wants_short = (primary_s <= -sell_th) and mtf_ok
-
         entry = float(max(dc_primary.price, 0.0)) if math.isfinite(dc_primary.price) else 0.0
         atr = float(max(dc_primary.atr, 0.0)) if math.isfinite(dc_primary.atr) else 0.0
+
+        # -------- FAST PATH: Trend + Breakout impulse --------
+        # اگر هم ترند و هم بریک‌اوت قوی باشند و ADX حداقل باشد → تصمیم سریع
+        adx_val = float(dc_primary.adx) if math.isfinite(dc_primary.adx) else 0.0
+        trend_val = float(dc_primary.trend)
+        bo_val = float(dc_primary.breakout)
+
+        impulse = (
+            abs(trend_val) >= 0.45 and
+            abs(bo_val) >= 0.35 and
+            adx_val >= float(p.min_adx_for_trend) and
+            mtf_ok
+        )
+
+        if impulse and entry > 0.0:
+            if trend_val > 0.0:
+                action = "BUY"
+                side = "LONG"
+            else:
+                action = "SELL"
+                side = "SHORT"
+
+            stop_price = self._build_stop(side, entry, atr, p.atr_stop_mult)
+            pos = Position(side=side, qty=0.0, entry_price=entry, stop_price=stop_price)
+            dc_primary.reasons.append(
+                f"FAST_DECISION: impulse trend={trend_val:.3f} breakout={bo_val:.3f} adx={adx_val:.1f}"
+            )
+            return action, pos
+
+        # -------- Normal threshold decision --------
+        wants_long = (primary_s >= buy_th) and mtf_ok
+        wants_short = (primary_s <= -sell_th) and mtf_ok
 
         stop_long = self._build_stop("LONG", entry, atr, p.atr_stop_mult)
         stop_short = self._build_stop("SHORT", entry, atr, p.atr_stop_mult)
