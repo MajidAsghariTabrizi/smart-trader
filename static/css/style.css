@@ -83,15 +83,14 @@ html {
         grid-template-columns: 1fr;
     }
 }
-
 /* ======================================================
-   Quantum Neural ORB – Hero Section (Final)
+   Quantum Neural ORB – Hero Section (Final / Polished)
    ====================================================== */
 
-/* فولد اول، بدون باکس، آزاد روی سایت */
+/* فولد اول – کاملاً آزاد، بدون حس قاب */
 .st-orb-banner {
     width: 100vw;
-    height: 100vh;
+    height: 100svh; /* mobile-safe viewport */
     margin-inline: calc(50% - 50vw);
     padding: 0;
 
@@ -100,13 +99,21 @@ html {
 
     display: grid;
     place-items: center;
+
+    /* کمک می‌کنه بک‌گراند پشت ORB نرم‌تر دیده بشه */
+    background: radial-gradient(
+        ellipse at center,
+        rgba(10,14,28,0.35) 0%,
+        rgba(6,8,20,0.75) 55%,
+        rgba(4,6,16,0.95) 100%
+    );
 }
 
-/* ORB canvas – شناور، زنده، دایره‌محور */
+/* ORB canvas – شناور، بدون باکس، کاملاً دایره‌ای */
 .st-orb-canvas {
-    width: min(720px, 90vw);
-    height: auto;
+    width: min(720px, 92vw);
     aspect-ratio: 1 / 1;
+    height: auto;
 
     position: relative;
     z-index: 1;
@@ -114,31 +121,31 @@ html {
     will-change: transform, filter;
     animation: orb-float 9s ease-in-out infinite;
 
-    /* glow تمیز (نه haze بی‌کیفیت) */
+    /* glow کنترل‌شده (نه تیز، نه haze) */
     filter:
-        drop-shadow(0 0 36px rgba(120,160,255,0.35))
-        drop-shadow(0 0 72px rgba(80,110,255,0.18));
+        drop-shadow(0 0 28px rgba(120,160,255,0.32))
+        drop-shadow(0 0 64px rgba(80,110,255,0.16));
 }
 
 /* نفس کشیدن ORB
-   بزرگ → کمی shape-less
-   کوچک → دایره کامل */
+   بزرگ → کمی محو لبه‌ها
+   کوچک → دایره شارپ */
 @keyframes orb-float {
     0% {
-        transform: scale(0.94);
+        transform: scale(0.95);
         filter: blur(0px);
     }
     45% {
-        transform: scale(1.05);
-        filter: blur(0.6px);
+        transform: scale(1.045);
+        filter: blur(0.55px);
     }
     100% {
-        transform: scale(0.94);
+        transform: scale(0.95);
         filter: blur(0px);
     }
 }
 
-/* متن روی ORB – حتماً داخل فولد */
+/* متن روی ORB – جای فعلی حفظ شده (دست نخورده) */
 .orb-overlay {
     position: absolute;
     bottom: 14%;
@@ -157,12 +164,12 @@ html {
 
     font-size: clamp(30px, 4vw, 42px);
     font-weight: 900;
-    letter-spacing: 0.2px;
+    letter-spacing: 0.25px;
 
     color: #e6faff;
     text-shadow:
-        0 0 18px rgba(0, 200, 255, 0.65),
-        0 0 36px rgba(0, 120, 255, 0.35);
+        0 0 16px rgba(0, 200, 255, 0.6),
+        0 0 32px rgba(0, 120, 255, 0.32);
 }
 
 .orb-desc {
@@ -175,7 +182,7 @@ html {
     opacity: 0.9;
 }
 
-/* Scroll hint */
+/* Scroll hint – مینیمال، محو */
 .scroll-hint {
     position: absolute;
     bottom: 18px;
@@ -190,7 +197,7 @@ html {
     letter-spacing: 0.3px;
 
     color: #cbd5f5;
-    opacity: 0.7;
+    opacity: 0.65;
 }
 
 .scroll-dot {
@@ -206,7 +213,7 @@ html {
 @keyframes scroll-dot-pulse {
     0% {
         transform: translateY(0);
-        opacity: 0.4;
+        opacity: 0.35;
     }
     50% {
         transform: translateY(6px);
@@ -214,7 +221,18 @@ html {
     }
     100% {
         transform: translateY(0);
-        opacity: 0.4;
+        opacity: 0.35;
+    }
+}
+
+/* موبایل */
+@media (max-width: 768px) {
+    .st-orb-canvas {
+        width: min(420px, 96vw);
+    }
+
+    .scroll-hint {
+        display: none;
     }
 }
 
