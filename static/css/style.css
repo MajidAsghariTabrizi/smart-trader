@@ -84,79 +84,111 @@ html {
     }
 }
 
-/* =========================================================
-   ORB SECTION (FULL WIDTH, FREEFORM)
-   ========================================================= */
+/* ======================================================
+   Quantum Neural ORB – Hero Section (Final)
+   ====================================================== */
 
+/* فولد اول، بدون باکس، آزاد روی سایت */
 .st-orb-banner {
     width: 100vw;
+    height: 100vh;
     margin-inline: calc(50% - 50vw);
-    padding-block: clamp(40px, 13vh, 80px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 28px;
-    background: var(--bg-main);
+    padding: 0;
+
     position: relative;
+    overflow: hidden;
+
+    display: grid;
+    place-items: center;
 }
 
-/* ORB canvas – بدون قاب، با fade در لبه‌ها */
+/* ORB canvas – شناور، زنده، دایره‌محور */
 .st-orb-canvas {
-    width: min(900px, 90vw);
+    width: min(720px, 90vw);
     height: auto;
     aspect-ratio: 1 / 1;
-    display: block;
 
-    /* جلوگیری از stretch */
-    object-fit: contain;
+    position: relative;
+    z-index: 1;
 
-    /* حذف blur ابری بی‌کیفیت */
+    will-change: transform, filter;
+    animation: orb-float 9s ease-in-out infinite;
+
+    /* glow تمیز (نه haze بی‌کیفیت) */
     filter:
-        drop-shadow(0 0 40px rgba(120,160,255,0.35))
-        drop-shadow(0 0 80px rgba(80,110,255,0.18));
-
-    /* Fade تمیزتر، بدون haze */
-    -webkit-mask-image: radial-gradient(circle at center,
-        rgba(0,0,0,1) 0%,
-        rgba(0,0,0,1) 70%,
-        rgba(0,0,0,0) 100%);
-    mask-image: radial-gradient(circle at center,
-        rgba(0,0,0,1) 0%,
-        rgba(0,0,0,1) 70%,
-        rgba(0,0,0,0) 100%);
+        drop-shadow(0 0 36px rgba(120,160,255,0.35))
+        drop-shadow(0 0 72px rgba(80,110,255,0.18));
 }
 
+/* نفس کشیدن ORB
+   بزرگ → کمی shape-less
+   کوچک → دایره کامل */
+@keyframes orb-float {
+    0% {
+        transform: scale(0.94);
+        filter: blur(0px);
+    }
+    45% {
+        transform: scale(1.05);
+        filter: blur(0.6px);
+    }
+    100% {
+        transform: scale(0.94);
+        filter: blur(0px);
+    }
+}
+
+/* متن روی ORB – حتماً داخل فولد */
 .orb-overlay {
+    position: absolute;
+    bottom: 14%;
+    left: 50%;
+    transform: translateX(-50%);
+
     text-align: center;
     padding-inline: 16px;
+
+    z-index: 2;
+    pointer-events: none;
 }
 
 .orb-title {
+    margin: 0 0 6px;
+
     font-size: clamp(30px, 4vw, 42px);
     font-weight: 900;
+    letter-spacing: 0.2px;
+
     color: #e6faff;
-    text-shadow: 0 0 18px rgba(0, 200, 255, 0.65);
-    margin: 0 0 6px;
+    text-shadow:
+        0 0 18px rgba(0, 200, 255, 0.65),
+        0 0 36px rgba(0, 120, 255, 0.35);
 }
 
 .orb-desc {
     margin: 0;
+
     font-size: clamp(13px, 2vw, 16px);
+    line-height: 1.6;
+
     color: #dcecff;
     opacity: 0.9;
 }
 
-/* scroll hint */
+/* Scroll hint */
 .scroll-hint {
     position: absolute;
     bottom: 18px;
     left: 50%;
     transform: translateX(-50%);
+
     display: flex;
     align-items: center;
     gap: 8px;
+
     font-size: 11px;
+    letter-spacing: 0.3px;
+
     color: #cbd5f5;
     opacity: 0.7;
 }
@@ -165,30 +197,48 @@ html {
     width: 7px;
     height: 7px;
     border-radius: 999px;
+
     background: #c4d3ff;
+
     animation: scroll-dot-pulse 1.6s infinite ease-in-out;
 }
 
 @keyframes scroll-dot-pulse {
-    0% { transform: translateY(0); opacity: 0.4; }
-    50% { transform: translateY(6px); opacity: 1; }
-    100% { transform: translateY(0); opacity: 0.4; }
+    0% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+    50% {
+        transform: translateY(6px);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
 }
 
+/* -------------------- Mobile -------------------- */
 @media (max-width: 768px) {
     .st-orb-banner {
         padding-block: 32px;
+        height: auto;
+        min-height: 100vh;
     }
 
     .st-orb-canvas {
         width: min(430px, 100vw);
-        aspect-ratio: 1 / 1;
+    }
+
+    .orb-overlay {
+        bottom: 10%;
     }
 
     .scroll-hint {
         display: none;
     }
 }
+
 
 /* =========================================================
    HERO SECTION

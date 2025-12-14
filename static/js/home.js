@@ -755,7 +755,7 @@ function rebuildOrbFromDecisions(decisions) {
 /* --------------------------- RENDER ORB ----------------------------- */
 function animateOrb(now) {
   const ctx = orbState.ctx;
-  if (!ctx) return;
+  if (!ctx || !orbState.W) return;
 
   const W = orbState.W;
   const H = orbState.H;
@@ -763,7 +763,20 @@ function animateOrb(now) {
   const CY = orbState.CY;
   const t = (now - orbState.t0) * 0.001;
 
+  const last = orbState.lastDecision;
+
+  /* ---------- SAFE PULSE (no undefined, no duplicate) ---------- */
+  const pulseRaw = Math.sin(t * 1.6);
+  const energy = Math.abs(last?.aggregate_s ?? 0);
+  const pulse = 0.018 + Math.min(0.02, energy * 0.04) * pulseRaw;
+
+  /* ---------- CLEAR FIRST ---------- */
   ctx.clearRect(0, 0, W, H);
+
+  ctx.save();
+  ctx.translate(CX, CY);
+  ctx.scale(1 + pulse, 1 - pulse * 0.6);
+  ctx.translate(-CX, -CY);
 
   /* ---------------- BACKGROUND HALO ---------------- */
   const bg = ctx.createRadialGradient(CX, CY, W * 0.1, CX, CY, W * 0.5);
@@ -775,7 +788,6 @@ function animateOrb(now) {
   ctx.fill();
 
   /* ---------------- CORE ---------------- */
-  const last = orbState.lastDecision;
   const coreColor =
     last?.decision === "BUY"
       ? "rgba(0,255,190,0.95)"
@@ -783,7 +795,8 @@ function animateOrb(now) {
       ? "rgba(255,90,120,0.95)"
       : "rgba(255,235,170,0.95)";
 
-  const coreR = W * (0.065 + Math.sin(t * 2) * 0.004);
+  const corePulse = 0.004 + energy * 0.01;
+  const coreR = W * (0.065 + Math.sin(t * 2) * corePulse);
 
   const halo = ctx.createRadialGradient(CX, CY, coreR * 0.4, CX, CY, coreR * 2.3);
   halo.addColorStop(0, "rgba(255,255,255,0.9)");
@@ -801,14 +814,13 @@ function animateOrb(now) {
 
   /* ---------------- INNER CLOUD ---------------- */
   orbState.cloud.forEach((c, i) => {
-    const rr = c.radius + Math.sin(t * c.speed + c.phase) * 3.2;
-    const ang = c.angle + Math.sin(t * 0.4 + i * 0.3) * 0.35;
+    const rr = c.radius + Math.sin(t * c.speed + c.phase) * 3;
+    const ang = c.angle + Math.sin(t * 0.4 + i) * 0.3;
 
     const x = CX + Math.cos(ang) * rr;
     const y = CY + Math.sin(ang) * rr;
 
-    const a = 0.08 + 0.06 * Math.sin(t * 1.2 + c.phase);
-
+    const a = 0.07 + 0.05 * Math.sin(t * 1.2 + c.phase);
     ctx.beginPath();
     ctx.fillStyle = `rgba(200,220,255,${a})`;
     ctx.arc(x, y, c.size, 0, Math.PI * 2);
@@ -816,66 +828,40 @@ function animateOrb(now) {
   });
 
   /* ---------------- SHOCKWAVE ---------------- */
-  const energy = Math.abs(last?.aggregate_s ?? 0);
   if (energy > 0.25) {
     const p = (t * 1.4) % 1;
     const r = W * 0.18 + p * (W * 0.33);
-    const alpha = 0.55 * (1 - p);
-
     ctx.beginPath();
-    ctx.strokeStyle = `rgba(150,210,255,${alpha})`;
-    ctx.lineWidth = 1.6;
+    ctx.strokeStyle = `rgba(150,210,255,${0.5 * (1 - p)})`;
+    ctx.lineWidth = 1.5;
     ctx.arc(CX, CY, r, 0, Math.PI * 2);
     ctx.stroke();
   }
 
-  /* ---------------- MAGNETIC FIELD LINES ---------------- */
-  ctx.strokeStyle = "rgba(80,140,255,0.18)";
-  ctx.lineWidth = 0.7;
-  const FL = 12;
-  for (let i = 0; i < FL; i++) {
-    const a = (i / FL) * Math.PI * 2 + Math.sin(t * 0.4 + i) * 0.1;
-    const bend = Math.sin(t * 0.7 + i * 1.7) * 0.4;
-
-    const x1 = CX + Math.cos(a - bend) * (W * 0.12);
-    const y1 = CY + Math.sin(a - bend) * (W * 0.12);
-
-    const x2 = CX + Math.cos(a + bend) * (W * 0.42);
-    const y2 = CY + Math.sin(a + bend) * (W * 0.42);
-
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
-  }
-
-  /* ---------------- FOG-MESH RINGS (bands) ---------------- */
-  orbState.bands.forEach((bandArr, bIdx) => {
+  /* ---------------- FOG MESH ---------------- */
+  orbState.bands.forEach((bandArr, idx) => {
     if (!bandArr.length) return;
 
     ctx.strokeStyle =
-      bIdx === 0
-        ? "rgba(190,210,255,0.40)"
-        : bIdx === 1
-        ? "rgba(150,190,255,0.32)"
-        : "rgba(110,150,255,0.25)";
+      idx === 0
+        ? "rgba(190,210,255,0.35)"
+        : idx === 1
+        ? "rgba(150,190,255,0.28)"
+        : "rgba(110,150,255,0.22)";
 
-    ctx.lineWidth = bIdx === 0 ? 1.0 : 0.8;
-    ctx.globalAlpha = 0.20; // soften the lines
-
+    ctx.lineWidth = idx === 0 ? 1 : 0.8;
     ctx.beginPath();
-    let prev = null;
 
+    let prev = null;
     bandArr.forEach((p, i) => {
       const r =
         p.baseRadius +
-        noise(p.noiseSeed + t * 0.7) * p.radiusJitter +
-        Math.sin(t * 1.1 + p.noiseSeed) * 3.5;
+        noise(p.noiseSeed + t * 0.7) * p.radiusJitter;
 
       const ang =
         p.baseAngle +
         t * p.speed +
-        p.angleDrift * Math.sin(t * 0.8 + p.noiseSeed);
+        p.angleDrift * Math.sin(t + p.noiseSeed);
 
       const x = CX + Math.cos(ang) * r;
       const y = CY + Math.sin(ang) * r;
@@ -883,24 +869,13 @@ function animateOrb(now) {
       p._x = x;
       p._y = y;
 
-      if (prev) {
-        ctx.bezierCurveTo(
-          (prev.x + x) / 2 + noise(t + i) * 15,
-          (prev.y + y) / 2 + noise(t + i * 2) * 15,
-          (prev.x + x) / 2 + noise(t + i * 3) * 22,
-          (prev.y + y) / 2 + noise(t + i * 4) * 22,
-          x,
-          y
-        );
-      } else {
-        ctx.moveTo(x, y);
-      }
+      if (!prev) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
 
       prev = { x, y };
     });
 
     ctx.stroke();
-    ctx.globalAlpha = 1;
   });
 
   /* ---------------- NODES ---------------- */
@@ -909,33 +884,25 @@ function animateOrb(now) {
     const dec = (d?.decision || "").toUpperCase();
     const intensity = Math.abs(d?.aggregate_s ?? 0.1);
 
-    let col =
+    const col =
       dec === "BUY"
-        ? `rgba(0,255,190,${0.45 + intensity * 0.7})`
+        ? `rgba(0,255,190,${0.4 + intensity})`
         : dec === "SELL"
-        ? `rgba(255,110,140,${0.45 + intensity * 0.7})`
-        : `rgba(255,230,170,${0.35 + intensity * 0.7})`;
+        ? `rgba(255,110,140,${0.4 + intensity})`
+        : `rgba(255,230,170,${0.3 + intensity})`;
 
-    const size = 2.3 + (1 - p.ageNorm) * 2.3 + intensity * 1.5;
+    const size = 2 + (1 - p.ageNorm) * 2;
 
-    /* glow */
-    const g = ctx.createRadialGradient(p._x, p._y, 0, p._x, p._y, size * 3.2);
-    g.addColorStop(0, col);
-    g.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(p._x, p._y, size * 3.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    /* node */
     ctx.beginPath();
     ctx.fillStyle = col;
     ctx.arc(p._x, p._y, size, 0, Math.PI * 2);
     ctx.fill();
   });
 
+  ctx.restore();
   requestAnimationFrame(animateOrb);
 }
+
 
 /* ---------------- REFRESH DATA ---------------- */
 async function refreshOrbData() {
