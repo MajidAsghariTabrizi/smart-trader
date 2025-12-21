@@ -204,6 +204,9 @@ ind_cache = IndicatorCache()
 last_log_fingerprint: Optional[str] = None
 last_db_fingerprint: Optional[str] = None  # برای جلوگیری از لاگ‌های تکراری در DB
 tg: Optional[TelegramClient] = None
+last_executed_candle_ts: Optional[int] = None
+from collections import deque
+signal_buffer = deque(maxlen=5)
 
 # --------------------------------------------------------
 # Telegram client
@@ -394,8 +397,8 @@ def _maybe_close_position(current_price: float):
         r_mult = ((current_price - entry) * direction) / risk_per_unit
 
         # نسبت‌های جدید
-        tp_r_level = 1.0   # حدود +1R همه پوزیشن را ببند
-        be_r_level = 0.4   # حدود +0.4R استاپ را روی BE بیاور
+        tp_r_level = 0.7   # حدود +1R همه پوزیشن را ببند
+        be_r_level = 0.35   # حدود +0.4R استاپ را روی BE بیاور
 
         # 1.a) Take-profit کامل روی 1R
         if r_mult >= tp_r_level:
@@ -467,6 +470,12 @@ def analyze_once(iteration: int):
             df["time"] = df["time"].astype(int)
 
     current_ts = int(df240["time"].iloc[-1])
+    global last_executed_candle_ts
+
+    if not cfg.STRATEGY["allow_intracandle"]:
+        if last_executed_candle_ts == current_ts:
+            return
+        last_executed_candle_ts = current_ts
 
     # Live price override
     live_ticker = wl.get_ticker(cfg.SYMBOL)
@@ -569,6 +578,13 @@ def analyze_once(iteration: int):
 
     # Decision
     action, trade = signal_engine.decide(dc240, dc60)
+    signal_buffer.append(action)
+
+    if action == "BUY" and signal_buffer.count("BUY") < 3:
+        return
+
+    if action == "SELL" and signal_buffer.count("SELL") < 3:
+        return
 
     # ---------------- DB logging (با دِدوز براساس fingerprint) ---------------- #
     try:
@@ -687,6 +703,8 @@ Reasons:
     min_trade_value = getattr(cfg, "MIN_TRADE_VALUE", 100000)
 
     if execute_now and action in ("BUY", "SELL"):
+        if action == "SELL" and not getattr(cfg, "ALLOW_SHORT", True):
+            return
         if dc240.price is None or dc240.price <= 0:
             logger.info("Skipping trade: invalid price")
             return
@@ -747,6 +765,8 @@ Reasons:
             entry_price=dc240.price,
             stop_price=float(stop_price) if stop_price else None,
             trade_id=trade_id,
+            opened_at_ts=int(time.time()),
+
         )
 
         if side == "LONG":

@@ -67,6 +67,8 @@ class Position:
     # مدیریت پوزیشن (فقط در حافظه، توی DB ذخیره نمی‌شود)
     breakeven_armed: bool = False  # آیا استاپ به BE منتقل شده؟
     tp_hit: bool = False           # اگر TP بسته شد، True
+    opened_at_ts: Optional[int] = None
+
 
 
 @dataclass
