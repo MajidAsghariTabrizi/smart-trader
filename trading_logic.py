@@ -1,5 +1,4 @@
 # trading_logic.py
-
 """
 ================================================================================
 Trading logic: decision engine, risk, and account model
@@ -9,6 +8,13 @@ Trading logic: decision engine, risk, and account model
 from dataclasses import dataclass, field
 from typing import Dict, Optional, Tuple, List
 import math
+
+
+def _clamp(x: float, lo: float, hi: float) -> float:
+    try:
+        return max(lo, min(hi, float(x)))
+    except Exception:
+        return lo
 
 
 @dataclass
@@ -23,6 +29,9 @@ class DecisionContext:
     price: float
     tf: str
     regime: str
+
+    # Volatility metadata (optional)
+    vol_ratio: Optional[float] = None  # e.g. atr/atr_ma smoothed
 
     # Optional metadata
     timestamp: Optional[str] = None  # filled by caller (now_iso)
@@ -55,6 +64,13 @@ class StrategyParams:
     decision_buffer: float
     mtf_confirm_bar: float
 
+    # Volatility / execution guards (best-practice, safe defaults)
+    min_vr_trade: float = 0.88          # below this, avoid trading (range/low-vol chop)
+    min_vr_intracandle: float = 0.95    # live-trade only if vr is expanding enough
+    vr_adapt_k: float = 0.25            # threshold adaptation slope
+    vr_adapt_clamp: float = 0.08        # max absolute threshold shift
+    impulse_only_high: bool = True      # fast-path only in HIGH regime
+
 
 @dataclass
 class Position:
@@ -68,7 +84,6 @@ class Position:
     breakeven_armed: bool = False  # آیا استاپ به BE منتقل شده؟
     tp_hit: bool = False           # اگر TP بسته شد، True
     opened_at_ts: Optional[int] = None
-
 
 
 @dataclass
@@ -115,7 +130,7 @@ class SignalEngine:
     """
 
     def __init__(self, params: StrategyParams):
-        self.params = params  # یک نام واحد برای همه‌جا
+        self.params = params
 
     def _safe_get_weight(self, name: str) -> float:
         try:
@@ -145,9 +160,8 @@ class SignalEngine:
         bo = dc.breakout_raw
 
         # 2.5) تضاد Trend vs Mean-Reversion:
-        # قبلاً FORCE HOLD بود (بد). الان فقط MeanRev رو سرکوب می‌کنیم
         conflict = False
-        mr_conf_level = 0.40  # شدت لازم برای اینکه بگیم برگشتی خیلی قویه
+        mr_conf_level = 0.40
 
         if dc.trend_raw > 0.0 and dc.meanrev_raw < -mr_conf_level:
             conflict = True
@@ -155,7 +169,6 @@ class SignalEngine:
             conflict = True
 
         if conflict:
-            # بازار ترندی معمولاً meanrev نویزی ضد ترند دارد؛ کل تصمیم را نکُش
             mr *= 0.2
             dc.reasons.append(
                 f"Trend/MeanRev conflict: trend_raw={dc.trend_raw:.3f}, "
@@ -199,10 +212,10 @@ class SignalEngine:
         dc_confirm: Optional[DecisionContext]
     ) -> Tuple[bool, List[str]]:
         """
-        New behavior (بدون تغییر نام/امضا):
-        - اگر require_mtf_agreement=False → همیشه PASS
-        - اگر True → MTF فقط نقش veto دارد (فقط وقتی شدیداً مخالف باشد رد می‌کند)
-        - نبودن confirm TF دیگر باعث رد شدن نمی‌شود
+        Veto-style MTF confirmation (best practice):
+        - require_mtf_agreement=False → PASS
+        - require_mtf_agreement=True → confirm TF only vetoes when it is *strongly opposite*
+        - missing confirm TF does NOT reject
         """
         p = self.params
         reasons: List[str] = []
@@ -212,7 +225,6 @@ class SignalEngine:
             return True, reasons
 
         primary_s = float(dc_primary.aggregate_s)
-        primary_abs = abs(primary_s)
 
         if dc_confirm is None:
             reasons.append("MTF missing → PASS (no veto)")
@@ -220,8 +232,6 @@ class SignalEngine:
 
         confirm_s = float(dc_confirm.aggregate_s)
 
-        # اگر تایم‌فریم تاییدی «واقعاً مخالف» باشد veto می‌کنیم
-        # آستانه‌ی مخالفت را از decision_buffer / mtf_confirm_bar می‌گیریم تا سخت‌کُد نشود
         veto_bar = max(float(p.decision_buffer) * 2.0, float(p.mtf_confirm_bar) * 0.35, 0.05)
 
         if primary_s > 0.0 and confirm_s < -veto_bar:
@@ -236,9 +246,7 @@ class SignalEngine:
             )
             return False, reasons
 
-        reasons.append(
-            f"MTF pass (no veto): primary={primary_s:.3f}, confirm={confirm_s:.3f}"
-        )
+        reasons.append(f"MTF pass (no veto): primary={primary_s:.3f}, confirm={confirm_s:.3f}")
         return True, reasons
 
     # ---------------- Stop Builder ---------------- #
@@ -274,23 +282,48 @@ class SignalEngine:
         action = "HOLD"
         pos: Optional[Position] = None
 
-        # آستانه‌ها (با استفاده از buffer برای نرم‌تر شدن لبه‌ها، اما سریع‌تر)
-        # نکته: نام‌ها همان buy_th/sell_th باقی می‌ماند
+        # -------- Base thresholds (with buffer) --------
         buf = float(p.decision_buffer) if math.isfinite(p.decision_buffer) else 0.0
-        buy_th = float(p.s_buy) - max(buf, 0.0)
-        sell_th = float(p.s_sell) - max(buf, 0.0)
+        base_buy_th = float(p.s_buy) - max(buf, 0.0)
+        base_sell_th = float(p.s_sell) - max(buf, 0.0)
 
-        # تأیید مولتی‌تایم‌فریم (الان veto-style)
+        # -------- Volatility-aware threshold adaptation --------
+        vr: Optional[float] = None
+        if dc_primary.vol_ratio is not None and math.isfinite(dc_primary.vol_ratio):
+            vr = float(dc_primary.vol_ratio)
+        else:
+            # fallback from regime (keeps compatibility if vol_ratio isn't provided)
+            vr = {"LOW": 0.85, "NEUTRAL": 1.0, "HIGH": 1.15}.get(dc_primary.regime or "NEUTRAL", 1.0)
+
+        vr_shift = _clamp(
+            (vr - 1.0) * float(p.vr_adapt_k),
+            -float(p.vr_adapt_clamp),
+            float(p.vr_adapt_clamp),
+        )
+
+        # High vr => easier entries (lower thresholds). Low vr => stricter.
+        buy_th = base_buy_th - vr_shift
+        sell_th = base_sell_th - vr_shift
+
+        dc_primary.reasons.append(f"VR={vr:.3f} shift={vr_shift:+.3f} buy_th={buy_th:.3f} sell_th={sell_th:.3f}")
+
+        # -------- MTF (veto-style) --------
         mtf_ok, mtf_reasons = self._mtf_confirm_pass(dc_primary, dc_confirm)
         dc_primary.reasons.extend(mtf_reasons)
 
         primary_s = float(dc_primary.aggregate_s)
 
+        # -------- Volatility trade guard (avoid low-vol chop) --------
+        low_vol_guard = (vr is not None) and math.isfinite(vr) and (vr < float(p.min_vr_trade))
+        if low_vol_guard:
+            dc_primary.reasons.append(
+                f"VOL_GUARD: vr={vr:.3f} < min_vr_trade={float(p.min_vr_trade):.3f}"
+            )
+
         entry = float(max(dc_primary.price, 0.0)) if math.isfinite(dc_primary.price) else 0.0
         atr = float(max(dc_primary.atr, 0.0)) if math.isfinite(dc_primary.atr) else 0.0
 
         # -------- FAST PATH: Trend + Breakout impulse --------
-        # اگر هم ترند و هم بریک‌اوت قوی باشند و ADX حداقل باشد → تصمیم سریع
         adx_val = float(dc_primary.adx) if math.isfinite(dc_primary.adx) else 0.0
         trend_val = float(dc_primary.trend)
         bo_val = float(dc_primary.breakout)
@@ -301,6 +334,9 @@ class SignalEngine:
             adx_val >= float(p.min_adx_for_trend) and
             mtf_ok
         )
+
+        if bool(getattr(p, "impulse_only_high", True)):
+            impulse = impulse and (dc_primary.regime == "HIGH")
 
         if impulse and entry > 0.0:
             if trend_val > 0.0:
@@ -316,6 +352,11 @@ class SignalEngine:
                 f"FAST_DECISION: impulse trend={trend_val:.3f} breakout={bo_val:.3f} adx={adx_val:.1f}"
             )
             return action, pos
+
+        # If volatility is too low and no impulse, stand down.
+        if low_vol_guard:
+            dc_primary.reasons.append("VOL_GUARD: No impulse in low vr → HOLD")
+            return "HOLD", None
 
         # -------- Normal threshold decision --------
         wants_long = (primary_s >= buy_th) and mtf_ok
@@ -334,8 +375,6 @@ class SignalEngine:
             dc_primary.reasons.append(f"Decision SELL: s={primary_s:.3f} <= {-sell_th:.3f}")
         else:
             action = "HOLD"
-            dc_primary.reasons.append(
-                f"HOLD: s={primary_s:.3f}, thresholds=({buy_th:.3f}, {-sell_th:.3f})"
-            )
+            dc_primary.reasons.append(f"HOLD: s={primary_s:.3f}, thresholds=({buy_th:.3f}, {-sell_th:.3f})")
 
         return action, pos

@@ -195,6 +195,11 @@ signal_engine = SignalEngine(
         require_mtf_agreement=cfg.STRATEGY["require_mtf_agreement"],
         decision_buffer=cfg.STRATEGY.get("decision_buffer", 0.02),
         mtf_confirm_bar=cfg.STRATEGY.get("mtf_confirm_bar", 0.30),
+        min_vr_trade=cfg.STRATEGY.get("min_vr_trade", 0.88),
+        min_vr_intracandle=cfg.STRATEGY.get("min_vr_intracandle", 0.95),
+        vr_adapt_k=cfg.STRATEGY.get("vr_adapt_k", 0.25),
+        vr_adapt_clamp=cfg.STRATEGY.get("vr_adapt_clamp", 0.08),
+        impulse_only_high=cfg.STRATEGY.get("impulse_only_high", True),
     )
 )
 
@@ -486,7 +491,7 @@ def analyze_once(iteration: int):
     except Exception:
         live_price = None
 
-    candle_is_live = True
+    candle_is_live = (live_price is not None)
     if live_price is not None:
         prev_close = df240["close"].iloc[-1]
         if abs(prev_close - live_price) > 1e-6:
@@ -536,6 +541,7 @@ def analyze_once(iteration: int):
         price=float(close240.iloc[-1]),
         tf=cfg.PRIMARY_TF,
         regime=regime,
+        vol_ratio=vr_240,
         timestamp=ts_now,
     )
     dc240.reasons.extend(regime_reasons)
@@ -572,12 +578,21 @@ def analyze_once(iteration: int):
             price=float(close60.iloc[-1]),
             tf=cfg.CONFIRM_TF,
             regime=regime,
+            vol_ratio=vr_240,
             timestamp=ts_now,
         )
         dc60 = signal_engine.gate_and_weight(dc60)
 
     # Decision
     action, trade = signal_engine.decide(dc240, dc60)
+
+    # VOL_EXPAND_GUARD (best practice):
+    # If we're trading intrabar (live price override) require volatility expansion to reduce wick/noise triggers.
+    if cfg.STRATEGY.get("allow_intracandle", True) and candle_is_live and action in ("BUY", "SELL"):
+        min_vr_live = float(cfg.STRATEGY.get("min_vr_intracandle", 0.95))
+        if (vr_240 is not None) and (vr_240 < min_vr_live) and (dc240.regime != "HIGH"):
+            dc240.reasons.append(f"VOL_EXPAND_GUARD: vr={vr_240:.3f} < {min_vr_live:.3f} (live) → HOLD")
+            action, trade = "HOLD", None
     signal_buffer.append(action)
 
     if action == "BUY" and signal_buffer.count("BUY") < 3:
@@ -653,13 +668,13 @@ adx: {format_number(dc240.adx)}  atr: {format_number(dc240.atr, nd=2)}  regime: 
 -- Post-Gate (240) --
 trend: {format_number(dc240.trend)}  momentum: {format_number(dc240.momentum)}  meanrev: {format_number(dc240.meanrev)}  breakout: {format_number(dc240.breakout)}
 Aggregate S (240): {format_number(dc240.aggregate_s)} | Thresh: BUY>={cfg.STRATEGY['s_buy']} SELL<={cfg.STRATEGY['s_sell']}
-{f"-- Post-Gate (60) --\nS(60): {format_number(dc60.aggregate_s)}  trend: {format_number(dc60.trend)}  mom: {format_number(dc60.momentum)}  mr: {format_number(dc60.meanrev)}  bo: {format_number(dc60.breakout)}" if dc60 is not None else ""}
+{(("-- Post-Gate (60) --" + chr(10) + f"S(60): {format_number(dc60.aggregate_s)}  trend: {format_number(dc60.trend)}  mom: {format_number(dc60.momentum)}  mr: {format_number(dc60.meanrev)}  bo: {format_number(dc60.breakout)}") if dc60 is not None else "")}
 Decision: {action}
 {trade_preview}
 {pos_state_text}
 
 Reasons:
-  - {"\n  - ".join(dc240.reasons)}
+  - {(chr(10) + "  - ").join(dc240.reasons)}
 ====================================
 """.rstrip()
 
@@ -691,10 +706,11 @@ Reasons:
     # 2) بعد: مدیریت TP/SL روی پوزیشن باقی‌مانده
     # 2) Entry policy / allow_intracandle
     execute_now = True
-    # allow_intracandle فقط برای HOLD
-    if not cfg.STRATEGY["allow_intracandle"] and action == "HOLD":
+    # اگر allow_intracandle خاموش باشد، فقط وقتی کندل جدید آمده ترید می‌کنیم (بالا با last_executed_candle_ts مدیریت شده).
+    # اینجا فقط برای حالت live-price override از اجرای ترید جلوگیری می‌کنیم.
+    if not cfg.STRATEGY.get("allow_intracandle", True) and candle_is_live and action in ("BUY", "SELL"):
         execute_now = False
-        dc240.reasons.append("Intracandle disabled: HOLD-only mode")
+        dc240.reasons.append("Intracandle disabled: live candle → skip trade")
 
     # Only one open position at a time (بعد از closeهای بالا)
     if account.position:

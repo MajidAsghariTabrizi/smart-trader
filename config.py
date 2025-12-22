@@ -50,6 +50,14 @@ STRATEGY = {
     "allow_intracandle": _get_bool("ALLOW_INTRACANDLE", "true"),
     "decision_buffer": float(os.getenv("DECISION_BUFFER", "0.00")),
     "mtf_confirm_bar": float(os.getenv("MTF_CONFIRM_BAR", "0.18")),
+
+    # Volatility best-practice guards
+    "min_vr_trade": float(os.getenv("MIN_VR_TRADE", "0.88")),
+    "min_vr_intracandle": float(os.getenv("MIN_VR_INTRACANDLE", "0.95")),
+    "vr_adapt_k": float(os.getenv("VR_ADAPT_K", "0.25")),
+    "vr_adapt_clamp": float(os.getenv("VR_ADAPT_CLAMP", "0.08")),
+    "impulse_only_high": _get_bool("IMPULSE_ONLY_HIGH", "true"),
+
     "atr_stop_mult": float(os.getenv("ATR_STOP_MULT", "2.0")),
     "max_risk_per_trade": float(os.getenv("RISK_PER_TRADE", "0.01")),
 }
