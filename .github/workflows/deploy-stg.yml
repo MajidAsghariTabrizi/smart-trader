@@ -2,21 +2,21 @@ name: Deploy STAGING
 
 on:
   push:
-    branches: [ "staging" ]
+    branches: ["staging"]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
+      - uses: actions/checkout@v4
+
       - name: Deploy to STAGING via SSH
-        uses: appleboy/ssh-action@v1
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SERVER_IP }}
+          host: 171.22.24.45
           username: root
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          key: ${{ secrets.SMARTTRADER_STG_SSH_KEY }}
           script: |
             cd /root/smart-trader-stg
-            git fetch origin staging
-            git reset --hard origin/staging
-            chmod +x deploy-stg.sh
             ./deploy-stg.sh
