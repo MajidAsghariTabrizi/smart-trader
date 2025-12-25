@@ -3,6 +3,8 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 import json
+import os
+
 
 db_logger = logging.getLogger(__name__)
 
@@ -10,14 +12,20 @@ db_logger = logging.getLogger(__name__)
 # مسیر دیتابیس (ثابت و مطمئن)
 # =====================================================================
 
-DB_PATH = Path("/root/smart-trader/trading_data.db")
 
+# =====================================================================
+# مسیر دیتابیس (قابل تنظیم با ENV)
+# =====================================================================
+
+_DEFAULT_DB = "/root/smart-trader/trading_data.db"  # رفتار قبلی (prod)
 
 def get_db_path() -> Path:
     """
-    مسیر قطعی دیتابیس که هم bot هم API باید ازش استفاده کنند.
+    مسیر دیتابیس که هم bot هم API باید ازش استفاده کنند.
+    - اگر SMARTTRADER_DB_PATH ست شده باشد، همان استفاده می‌شود.
+    - در غیر این صورت، مسیر پیش‌فرض (رفتار قبلی) حفظ می‌شود.
     """
-    return DB_PATH
+    return Path(os.getenv("SMARTTRADER_DB_PATH", _DEFAULT_DB))
 
 
 def get_db_connection() -> Optional[sqlite3.Connection]:
