@@ -79,7 +79,8 @@
                     <button type="submit">ثبت‌نام</button>
                 </form>
                 <div class="auth-links">
-                    <a href="/login.html">قبلاً ثبت‌نام کرده‌اید؟ وارد شوید</a>
+                    <a href="/login">قبلاً ثبت‌نام کرده‌اید؟ وارد شوید</a>
+                    <a href="/" style="display: block; margin-top: 0.5rem;">بازگشت به صفحه اصلی</a>
                 </div>
             </div>
         </div>
@@ -108,7 +109,7 @@
                     successDiv.style.display = 'block';
                     localStorage.setItem('token', data.token);
                     setTimeout(() => {
-                        window.location.href = '/app.html';
+                        window.location.href = '/app';
                     }, 1000);
                 } else {
                     errorDiv.textContent = data.detail || 'خطا در ثبت‌نام';

@@ -63,7 +63,7 @@
             <div>
                 <span id="userEmail" style="margin-left: 1rem;"></span>
                 <span id="userPlan" style="margin-left: 1rem; color: #60a5fa;"></span>
-                <a href="/" style="margin-left: 1rem; color: #94a3b8; text-decoration: none;">خروج</a>
+                <a href="/" onclick="localStorage.removeItem('token'); return true;" style="margin-left: 1rem; color: #94a3b8; text-decoration: none;">خروج</a>
             </div>
         </header>
 
@@ -99,7 +99,7 @@
     <script>
         const token = localStorage.getItem('token');
         if (!token) {
-            window.location.href = '/login.html';
+            window.location.href = '/login';
         }
 
         async function api(path) {
@@ -110,7 +110,7 @@
             });
             if (res.status === 401) {
                 localStorage.removeItem('token');
-                window.location.href = '/login.html';
+                window.location.href = '/login';
                 return null;
             }
             return res.ok ? await res.json() : null;

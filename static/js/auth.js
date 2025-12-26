@@ -36,7 +36,7 @@ async function apiWithAuth(path, options = {}) {
 
     if (res.status === 401) {
         removeAuthToken();
-        window.location.href = '/login.html';
+        window.location.href = '/login';
         return null;
     }
 

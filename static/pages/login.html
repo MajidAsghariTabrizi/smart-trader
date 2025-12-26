@@ -73,7 +73,8 @@
                     <button type="submit">ورود</button>
                 </form>
                 <div class="auth-links">
-                    <a href="/register.html">حساب کاربری ندارید؟ ثبت‌نام کنید</a>
+                    <a href="/register">حساب کاربری ندارید؟ ثبت‌نام کنید</a>
+                    <a href="/" style="display: block; margin-top: 0.5rem;">بازگشت به صفحه اصلی</a>
                 </div>
             </div>
         </div>
@@ -96,7 +97,7 @@
                 const data = await res.json();
                 if (res.ok) {
                     localStorage.setItem('token', data.token);
-                    window.location.href = '/app.html';
+                    window.location.href = '/app';
                 } else {
                     errorDiv.textContent = data.detail || 'خطا در ورود';
                     errorDiv.style.display = 'block';

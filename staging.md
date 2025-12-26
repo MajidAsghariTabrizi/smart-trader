@@ -11,6 +11,7 @@ STAGING برای توسعه‌های آینده، تغییرات اساسی و �
 - بستر اجرای فازهای SaaS
 
 ---
+nano /etc/nginx/sites-enabled/smarttrader-stg
 
 ## 2️⃣ دامنه‌ها
 | Environment | Domain |
