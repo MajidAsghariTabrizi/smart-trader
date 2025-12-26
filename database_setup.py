@@ -136,6 +136,48 @@ ACCOUNT_STATE_COLS: Dict[str, str] = {
 }
 
 # =====================================================================
+# SaaS Tables: Users, Plans, Insights
+# =====================================================================
+
+USERS_TABLE = "users"
+
+USERS_COLS: Dict[str, str] = {
+    "id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+    "email": "TEXT UNIQUE NOT NULL",
+    "password_hash": "TEXT NOT NULL",
+    "role": "TEXT NOT NULL DEFAULT 'USER'",
+    "is_active": "INTEGER NOT NULL DEFAULT 1",
+    "created_at": "TEXT NOT NULL DEFAULT (datetime('now'))",
+}
+
+USER_PLANS_TABLE = "user_plans"
+
+USER_PLANS_COLS: Dict[str, str] = {
+    "id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+    "user_id": "INTEGER NOT NULL",
+    "plan": "TEXT NOT NULL",
+    "starts_at": "TEXT NOT NULL",
+    "ends_at": "TEXT",
+    "is_active": "INTEGER NOT NULL DEFAULT 1",
+    "created_at": "TEXT NOT NULL DEFAULT (datetime('now'))",
+}
+
+INSIGHTS_POSTS_TABLE = "insights_posts"
+
+INSIGHTS_POSTS_COLS: Dict[str, str] = {
+    "id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+    "title": "TEXT NOT NULL",
+    "content": "TEXT NOT NULL",
+    "summary": "TEXT",
+    "sentiment": "TEXT",
+    "key_points": "TEXT",
+    "author_id": "INTEGER",
+    "is_published": "INTEGER NOT NULL DEFAULT 1",
+    "created_at": "TEXT NOT NULL DEFAULT (datetime('now'))",
+    "updated_at": "TEXT",
+}
+
+# =====================================================================
 # Helpers داخلی
 # =====================================================================
 
@@ -185,6 +227,16 @@ def ensure_schema() -> bool:
         # account_state
         _create_table(conn, ACCOUNT_STATE_TABLE, ACCOUNT_STATE_COLS)
         _migrate_table(conn, ACCOUNT_STATE_TABLE, ACCOUNT_STATE_COLS)
+
+        # SaaS tables
+        _create_table(conn, USERS_TABLE, USERS_COLS)
+        _migrate_table(conn, USERS_TABLE, USERS_COLS)
+
+        _create_table(conn, USER_PLANS_TABLE, USER_PLANS_COLS)
+        _migrate_table(conn, USER_PLANS_TABLE, USER_PLANS_COLS)
+
+        _create_table(conn, INSIGHTS_POSTS_TABLE, INSIGHTS_POSTS_COLS)
+        _migrate_table(conn, INSIGHTS_POSTS_TABLE, INSIGHTS_POSTS_COLS)
 
         conn.commit()
         return True

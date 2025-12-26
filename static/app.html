@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>داشبورد – SmartTrader</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .app-header {
+            padding: 1rem 2rem;
+            background: rgba(30, 41, 59, 0.8);
+            border-bottom: 1px solid rgba(100, 116, 139, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .app-container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .app-card {
+            padding: 1.5rem;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 8px;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+        }
+        .app-card h3 {
+            margin-bottom: 1rem;
+        }
+        .behavior-score {
+            font-size: 3rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        .behavior-explanation {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 6px;
+        }
+        .behavior-explanation ul {
+            list-style: none;
+            padding: 0;
+        }
+        .behavior-explanation li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(100, 116, 139, 0.2);
+        }
+    </style>
+</head>
+<body class="st-body">
+    <div class="st-page">
+        <header class="app-header">
+            <h2>داشبورد SmartTrader</h2>
+            <div>
+                <span id="userEmail" style="margin-left: 1rem;"></span>
+                <span id="userPlan" style="margin-left: 1rem; color: #60a5fa;"></span>
+                <a href="/" style="margin-left: 1rem; color: #94a3b8; text-decoration: none;">خروج</a>
+            </div>
+        </header>
+
+        <div class="app-container">
+            <h1>خوش آمدید</h1>
+            <p>این داشبورد شخصی شماست. در اینجا می‌توانید تحلیل‌های بازار، رفتار نهنگ‌ها و تصمیم‌های ربات را مشاهده کنید.</p>
+
+            <div class="app-grid">
+                <div class="app-card">
+                    <h3>وضعیت حساب</h3>
+                    <div id="userSummary">در حال بارگذاری...</div>
+                </div>
+
+                <div class="app-card">
+                    <h3>رفتار بازار (Whale Proxies)</h3>
+                    <div id="behaviorData">در حال بارگذاری...</div>
+                </div>
+
+                <div class="app-card">
+                    <h3>نظرات بازار</h3>
+                    <div id="marketOverview">در حال بارگذاری...</div>
+                </div>
+            </div>
+
+            <div class="app-card" style="margin-top: 2rem;">
+                <h3>آخرین تصمیم‌های ربات</h3>
+                <div id="recentDecisions">در حال بارگذاری...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/auth.js"></script>
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        async function api(path) {
+            const res = await fetch(path, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (res.status === 401) {
+                localStorage.removeItem('token');
+                window.location.href = '/login.html';
+                return null;
+            }
+            return res.ok ? await res.json() : null;
+        }
+
+        async function loadUserData() {
+            const me = await api('/api/auth/me');
+            if (me) {
+                document.getElementById('userEmail').textContent = me.user.email;
+                document.getElementById('userPlan').textContent = `پلن: ${me.plan}`;
+            }
+
+            const summary = await api('/api/app/me/summary');
+            if (summary) {
+                document.getElementById('userSummary').innerHTML = `
+                    <p><strong>پلن:</strong> ${summary.plan}</p>
+                    <p><strong>هشدارها:</strong> ${summary.alerts_enabled ? 'فعال' : 'غیرفعال'}</p>
+                `;
+            }
+        }
+
+        async function loadBehaviorData() {
+            const behavior = await fetch('/api/market/behavior?symbol=BTC').then(r => r.json());
+            if (behavior) {
+                const score = behavior.behavior_score || 0;
+                const color = score > 70 ? '#10b981' : score > 40 ? '#f59e0b' : '#ef4444';
+                document.getElementById('behaviorData').innerHTML = `
+                    <div class="behavior-score" style="color: ${color}">${score.toFixed(1)}</div>
+                    <div class="behavior-explanation">
+                        <ul>
+                            ${behavior.explanations.map(e => `<li>${e}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+
+        async function loadMarketOverview() {
+            const overview = await fetch('/api/market/overview?symbol=BTC').then(r => r.json());
+            if (overview) {
+                document.getElementById('marketOverview').innerHTML = `
+                    <p><strong>قیمت:</strong> ${overview.price.toLocaleString('fa-IR')}</p>
+                    <p><strong>تغییر 24h:</strong> <span style="color: ${overview.price_change_24h >= 0 ? '#10b981' : '#ef4444'}">${overview.price_change_24h.toFixed(2)}%</span></p>
+                    <p><strong>حجم 24h:</strong> ${overview.volume_24h.toLocaleString('fa-IR')}</p>
+                `;
+            }
+        }
+
+        async function loadRecentDecisions() {
+            const decisions = await fetch('/api/decisions?limit=10').then(r => r.json());
+            if (decisions && decisions.length > 0) {
+                document.getElementById('recentDecisions').innerHTML = decisions.slice().reverse().map(d => `
+                    <div style="padding: 1rem; margin: 0.5rem 0; background: rgba(15, 23, 42, 0.5); border-radius: 6px;">
+                        <strong>${d.decision || 'HOLD'}</strong> - قیمت: ${d.price?.toLocaleString('fa-IR') || '--'}
+                        <br><small>${d.timestamp ? new Date(d.timestamp).toLocaleString('fa-IR') : ''}</small>
+                    </div>
+                `).join('');
+            } else {
+                document.getElementById('recentDecisions').innerHTML = '<p>هنوز تصمیمی ثبت نشده است.</p>';
+            }
+        }
+
+        // Load all data
+        loadUserData();
+        loadBehaviorData();
+        loadMarketOverview();
+        loadRecentDecisions();
+
+        // Refresh every 30 seconds
+        setInterval(() => {
+            loadBehaviorData();
+            loadMarketOverview();
+            loadRecentDecisions();
+        }, 30000);
+    </script>
+</body>
+</html>
+

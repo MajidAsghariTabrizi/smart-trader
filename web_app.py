@@ -10,13 +10,14 @@ SmartTrader Web API + Dashboard
 """
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import sqlite3
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from database_setup import (
     get_db_path,
@@ -24,7 +25,20 @@ from database_setup import (
     TABLE_NAME,            # trading_logs
     TRADE_EVENTS_TABLE,    # trade_events
     ACCOUNT_STATE_TABLE,   # account_state
+    USERS_TABLE,
+    USER_PLANS_TABLE,
+    INSIGHTS_POSTS_TABLE,
 )
+from auth import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    get_current_user,
+    require_admin,
+)
+from plans import get_user_plan, assign_default_plan, set_user_plan
+from market_providers import get_market_data
+from behavior_engine import compute_behavior_score
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -437,3 +451,272 @@ async def api_perf_daily(
         r["day_pnl"] = r.get("pnl", 0.0)
 
     return JSONResponse(rows)
+
+# =====================================================================
+# SaaS: Auth Endpoints
+# =====================================================================
+
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+@app.post("/api/auth/register")
+async def api_auth_register(req: RegisterRequest) -> JSONResponse:
+    """Register a new user. Auto-assigns FREE plan."""
+    conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+
+    try:
+        # Check if user exists
+        existing = conn.execute(
+            f"SELECT id FROM {USERS_TABLE} WHERE email = ?",
+            (req.email,),
+        ).fetchone()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+
+        # Create user
+        password_hash = hash_password(req.password)
+        cursor = conn.execute(
+            f"INSERT INTO {USERS_TABLE} (email, password_hash, role, is_active) VALUES (?, ?, 'USER', 1)",
+            (req.email, password_hash),
+        )
+        user_id = cursor.lastrowid
+
+        # Assign FREE plan
+        assign_default_plan(user_id)
+
+        # Generate token
+        token = create_access_token({"sub": user_id})
+
+        conn.commit()
+        return JSONResponse({"user_id": user_id, "token": token, "email": req.email})
+    except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+    finally:
+        conn.close()
+
+
+@app.post("/api/auth/login")
+async def api_auth_login(req: LoginRequest) -> JSONResponse:
+    """Login and get access token."""
+    from auth import get_user_by_email, verify_password, create_access_token
+
+    user = get_user_by_email(req.email)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    if not verify_password(req.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    if not user.get("is_active", 0):
+        raise HTTPException(status_code=401, detail="User account is inactive")
+
+    token = create_access_token({"sub": user["id"]})
+    plan = get_user_plan(user["id"])
+
+    return JSONResponse({
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "email": user["email"],
+            "role": user["role"],
+        },
+        "plan": plan.get("plan", "FREE") if plan else "FREE",
+    })
+
+
+@app.get("/api/auth/me")
+async def api_auth_me(current_user: Dict[str, Any] = Depends(get_current_user)) -> JSONResponse:
+    """Get current user info and plan."""
+    plan = get_user_plan(current_user["id"])
+    return JSONResponse({
+        "user": {
+            "id": current_user["id"],
+            "email": current_user["email"],
+            "role": current_user["role"],
+        },
+        "plan": plan.get("plan", "FREE") if plan else "FREE",
+    })
+
+
+# =====================================================================
+# SaaS: Insights Endpoints (Public)
+# =====================================================================
+
+
+@app.get("/api/insights/feed")
+async def api_insights_feed(
+    limit: int = Query(20, ge=1, le=100),
+) -> JSONResponse:
+    """Get published insights feed."""
+    rows = query_db(
+        f"""
+        SELECT id, title, summary, sentiment, key_points, created_at
+        FROM {INSIGHTS_POSTS_TABLE}
+        WHERE is_published = 1
+        ORDER BY created_at DESC
+        LIMIT :limit
+        """,
+        {"limit": limit},
+    )
+    return JSONResponse(rows)
+
+
+@app.get("/api/insights/latest")
+async def api_insights_latest() -> JSONResponse:
+    """Get latest insights highlights."""
+    rows = query_db(
+        f"""
+        SELECT title, summary, sentiment, key_points, created_at
+        FROM {INSIGHTS_POSTS_TABLE}
+        WHERE is_published = 1
+        ORDER BY created_at DESC
+        LIMIT 5
+        """
+    )
+    if not rows:
+        return JSONResponse({
+            "highlights": [],
+            "sentiment": "NEUTRAL",
+            "key_points": [],
+        })
+
+    # Aggregate sentiment
+    sentiments = [r.get("sentiment", "NEUTRAL") for r in rows]
+    sentiment = "POSITIVE" if sentiments.count("POSITIVE") > sentiments.count("NEGATIVE") else "NEGATIVE" if sentiments.count("NEGATIVE") > 0 else "NEUTRAL"
+
+    # Extract key points
+    key_points = []
+    for r in rows:
+        kp = r.get("key_points")
+        if kp:
+            try:
+                import json
+                kp_list = json.loads(kp) if isinstance(kp, str) else kp
+                if isinstance(kp_list, list):
+                    key_points.extend(kp_list[:2])  # Max 2 per post
+            except Exception:
+                pass
+
+    return JSONResponse({
+        "highlights": rows[:3],
+        "sentiment": sentiment,
+        "key_points": key_points[:5],
+    })
+
+
+# =====================================================================
+# SaaS: Market Endpoints (Public)
+# =====================================================================
+
+
+@app.get("/api/market/overview")
+async def api_market_overview(
+    symbol: str = Query("BTC", description="Symbol to query"),
+) -> JSONResponse:
+    """Get normalized market overview."""
+    # Get latest candles
+    candles = get_market_data(symbol, "240", 100)
+    if not candles:
+        raise HTTPException(status_code=404, detail="Market data not available")
+
+    latest = candles[-1]
+    prices = [float(c.get("close", 0)) for c in candles if c.get("close")]
+
+    # Compute basic metrics
+    current_price = float(latest.get("close", 0))
+    price_change_24h = 0.0
+    if len(prices) >= 24:
+        price_change_24h = ((prices[-1] - prices[-24]) / prices[-24]) * 100
+
+    volume_24h = sum(float(c.get("volume", 0)) for c in candles[-24:])
+
+    return JSONResponse({
+        "symbol": symbol,
+        "price": current_price,
+        "price_change_24h": price_change_24h,
+        "volume_24h": volume_24h,
+        "high_24h": max(prices[-24:]) if len(prices) >= 24 else current_price,
+        "low_24h": min(prices[-24:]) if len(prices) >= 24 else current_price,
+        "timestamp": latest.get("time"),
+    })
+
+
+@app.get("/api/market/behavior")
+async def api_market_behavior(
+    symbol: str = Query("BTC", description="Symbol to query"),
+) -> JSONResponse:
+    """Get behavior score and explanations."""
+    # Get market data
+    candles = get_market_data(symbol, "240", 100)
+    if not candles:
+        raise HTTPException(status_code=404, detail="Market data not available")
+
+    # Extract volumes and prices
+    volumes = [float(c.get("volume", 0.0)) for c in candles]
+    prices = [float(c.get("close", 0.0)) for c in candles if c.get("close")]
+
+    # Compute behavior score
+    behavior = compute_behavior_score(symbol, candles, volumes, None)
+
+    return JSONResponse(behavior)
+
+
+# =====================================================================
+# SaaS: App Endpoints (Auth Required)
+# =====================================================================
+
+
+@app.get("/api/app/me/summary")
+async def api_app_me_summary(
+    current_user: Dict[str, Any] = Depends(get_current_user),
+) -> JSONResponse:
+    """Get user summary: plan, symbols, alert status, etc."""
+    plan = get_user_plan(current_user["id"])
+
+    # Get user's recent activity (placeholder)
+    # In future: track user's watched symbols, alerts, etc.
+
+    return JSONResponse({
+        "user_id": current_user["id"],
+        "email": current_user["email"],
+        "plan": plan.get("plan", "FREE") if plan else "FREE",
+        "plan_expires_at": plan.get("ends_at") if plan else None,
+        "symbols": ["BTC"],  # Placeholder
+        "alerts_enabled": plan.get("plan") in ("PRO", "PROFESSIONAL") if plan else False,
+    })
+
+
+# =====================================================================
+# SaaS: Admin Endpoints
+# =====================================================================
+
+
+class SetPlanRequest(BaseModel):
+    plan: str
+    duration_days: Optional[int] = None
+
+
+@app.post("/api/admin/users/{user_id}/plan")
+async def api_admin_set_plan(
+    user_id: int,
+    req: SetPlanRequest,
+    admin_user: Dict[str, Any] = Depends(require_admin),
+) -> JSONResponse:
+    """Admin endpoint to set user plan."""
+    success = set_user_plan(user_id, req.plan, req.duration_days)
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to set user plan")
+    return JSONResponse({"user_id": user_id, "plan": req.plan, "status": "updated"})

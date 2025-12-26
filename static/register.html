@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>ثبت‌نام – SmartTrader</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .auth-container {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .auth-box {
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 12px;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+        }
+        .auth-form input {
+            width: 100%;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            border-radius: 6px;
+            color: white;
+            font-size: 1rem;
+        }
+        .auth-form button {
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .auth-form button:hover {
+            background: #1d4ed8;
+        }
+        .auth-links {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .auth-links a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        .error-message {
+            color: #ef4444;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .success-message {
+            color: #10b981;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body class="st-body">
+    <div class="st-page">
+        <div class="auth-container">
+            <div class="auth-box">
+                <h2 style="text-align: center; margin-bottom: 1.5rem;">ثبت‌نام در SmartTrader</h2>
+                <form class="auth-form" id="registerForm">
+                    <input type="email" id="email" placeholder="ایمیل" required>
+                    <input type="password" id="password" placeholder="رمز عبور (حداقل ۶ کاراکتر)" required minlength="6">
+                    <div id="errorMessage" class="error-message" style="display: none;"></div>
+                    <div id="successMessage" class="success-message" style="display: none;"></div>
+                    <button type="submit">ثبت‌نام</button>
+                </form>
+                <div class="auth-links">
+                    <a href="/login.html">قبلاً ثبت‌نام کرده‌اید؟ وارد شوید</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('errorMessage');
+            const successDiv = document.getElementById('successMessage');
+
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email, password}),
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    successDiv.textContent = 'ثبت‌نام موفق! در حال انتقال...';
+                    successDiv.style.display = 'block';
+                    localStorage.setItem('token', data.token);
+                    setTimeout(() => {
+                        window.location.href = '/app.html';
+                    }, 1000);
+                } else {
+                    errorDiv.textContent = data.detail || 'خطا در ثبت‌نام';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorDiv.textContent = 'خطا در اتصال به سرور';
+                errorDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
+

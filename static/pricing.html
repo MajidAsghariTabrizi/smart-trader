@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>تعرفه‌ها – SmartTrader</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .pricing-container {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .pricing-card {
+            padding: 2rem;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 12px;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            text-align: center;
+        }
+        .pricing-card.featured {
+            border: 2px solid #2563eb;
+            background: rgba(30, 41, 59, 0.8);
+        }
+        .pricing-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .pricing-card .price {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+        .pricing-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 1.5rem 0;
+            text-align: right;
+        }
+        .pricing-card ul li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(100, 116, 139, 0.2);
+        }
+        .pricing-card .cta {
+            margin-top: 2rem;
+        }
+        .pricing-card .cta a {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="st-body">
+    <div class="st-page">
+        <div class="pricing-container">
+            <h1 style="text-align: center; margin-bottom: 1rem;">تعرفه‌های SmartTrader</h1>
+            <p style="text-align: center; color: #94a3b8; margin-bottom: 2rem;">
+                انتخاب پلن مناسب برای نیازهای معاملاتی شما
+            </p>
+
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>FREE</h3>
+                    <div class="price">رایگان</div>
+                    <ul>
+                        <li>✅ مشاهده سیگنال‌های عمومی</li>
+                        <li>✅ دسترسی به نمودار قیمت</li>
+                        <li>✅ مشاهده تصمیم‌های ربات</li>
+                        <li>❌ هشدارهای لحظه‌ای</li>
+                        <li>❌ معامله خودکار</li>
+                    </ul>
+                    <div class="cta">
+                        <a href="/register.html">شروع رایگان</a>
+                    </div>
+                </div>
+
+                <div class="pricing-card featured">
+                    <h3>PRO</h3>
+                    <div class="price">به‌زودی</div>
+                    <ul>
+                        <li>✅ تمام ویژگی‌های FREE</li>
+                        <li>✅ هشدارهای لحظه‌ای</li>
+                        <li>✅ تحلیل‌های پیشرفته</li>
+                        <li>✅ پشتیبانی اولویت‌دار</li>
+                        <li>❌ معامله خودکار</li>
+                    </ul>
+                    <div class="cta">
+                        <a href="/register.html">ثبت‌نام</a>
+                    </div>
+                </div>
+
+                <div class="pricing-card">
+                    <h3>PROFESSIONAL</h3>
+                    <div class="price">به‌زودی</div>
+                    <ul>
+                        <li>✅ تمام ویژگی‌های PRO</li>
+                        <li>✅ معامله خودکار مدیریت‌شده</li>
+                        <li>✅ دسترسی API</li>
+                        <li>✅ پشتیبانی اختصاصی</li>
+                        <li>✅ سفارشی‌سازی استراتژی</li>
+                    </ul>
+                    <div class="cta">
+                        <a href="/register.html">ثبت‌نام</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="st-footer">
+            <span>SmartTrader © 2025</span>
+            <span>Quantiviq • Algorithmic Research</span>
+        </footer>
+    </div>
+</body>
+</html>
+
