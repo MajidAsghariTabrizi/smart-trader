@@ -9,6 +9,7 @@ import os
 import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass
 
 import requests
 
@@ -263,4 +264,200 @@ def get_market_data(
 
     logger.error("All market data providers failed")
     return None
+
+
+# =====================================================================
+# Market Data Gateway (Unified with Provider Tracking)
+# =====================================================================
+
+
+@dataclass
+class MarketDataResponse:
+    """Structured response from market data gateway."""
+    data: Optional[List[Dict[str, Any]]]
+    provider: str  # "wallex" | "coingecko" | "coincap" | "none"
+    confidence: float  # 0.0-1.0 (1.0 = primary provider, lower = fallback)
+    fallback_used: bool
+    error: Optional[str] = None
+
+
+class MarketDataGateway:
+    """
+    Unified gateway for market data with explicit provider tracking and logging.
+    Used by API endpoints. Trading engine (main.py) continues using WallexClient directly.
+    """
+
+    def __init__(self, preferred_provider: Optional[str] = None):
+        """
+        Initialize gateway.
+        preferred_provider: "wallex" | "coingecko" | "coincap" | None (auto-select)
+        """
+        self.preferred_provider = preferred_provider
+        self._providers = {
+            "wallex": WallexProvider,
+            "coingecko": CoinGeckoProvider,
+            "coincap": CoinCapProvider,
+        }
+
+    def get_candles(
+        self,
+        symbol: str,
+        tf: str,
+        limit: int,
+        required_provider: Optional[str] = None,
+    ) -> MarketDataResponse:
+        """
+        Get candles with explicit provider tracking and fallback logging.
+        Returns MarketDataResponse with provider metadata.
+        """
+        provider_name = required_provider or self.preferred_provider
+
+        if provider_name:
+            # Single provider requested
+            if provider_name.lower() not in self._providers:
+                logger.error(f"Unknown provider requested: {provider_name}")
+                return MarketDataResponse(
+                    data=None,
+                    provider="none",
+                    confidence=0.0,
+                    fallback_used=False,
+                    error=f"Unknown provider: {provider_name}",
+                )
+
+            try:
+                prov = self._providers[provider_name.lower()]()
+                logger.info(f"[Gateway] Attempting {provider_name} for {symbol} {tf}")
+                candles = prov.get_candles(symbol, tf, limit)
+                if candles:
+                    logger.info(f"[Gateway] ✓ {provider_name} succeeded: {len(candles)} candles")
+                    return MarketDataResponse(
+                        data=candles,
+                        provider=provider_name.lower(),
+                        confidence=1.0,
+                        fallback_used=False,
+                    )
+                else:
+                    logger.warning(f"[Gateway] ✗ {provider_name} returned no data")
+                    return MarketDataResponse(
+                        data=None,
+                        provider=provider_name.lower(),
+                        confidence=0.0,
+                        fallback_used=False,
+                        error=f"{provider_name} returned no data",
+                    )
+            except Exception as e:
+                logger.error(f"[Gateway] ✗ {provider_name} failed: {e}")
+                return MarketDataResponse(
+                    data=None,
+                    provider=provider_name.lower(),
+                    confidence=0.0,
+                    fallback_used=False,
+                    error=str(e),
+                )
+
+        # Auto-select with fallback (wallex → coingecko → coincap)
+        providers_order = ["wallex", "coingecko", "coincap"]
+        attempted = []
+
+        for idx, prov_name in enumerate(providers_order):
+            try:
+                prov = self._providers[prov_name]()
+                logger.info(f"[Gateway] Attempting {prov_name} (attempt {idx + 1}/{len(providers_order)}) for {symbol} {tf}")
+                attempted.append(prov_name)
+
+                candles = prov.get_candles(symbol, tf, limit)
+                if candles:
+                    confidence = 1.0 - (idx * 0.2)  # Primary = 1.0, first fallback = 0.8, second = 0.6
+                    fallback_used = idx > 0
+
+                    if fallback_used:
+                        logger.warning(
+                            f"[Gateway] ✓ {prov_name} succeeded (FALLBACK, attempt {idx + 1}). "
+                            f"Previous attempts: {', '.join(attempted[:-1])}"
+                        )
+                    else:
+                        logger.info(f"[Gateway] ✓ {prov_name} succeeded (PRIMARY)")
+
+                    return MarketDataResponse(
+                        data=candles,
+                        provider=prov_name,
+                        confidence=confidence,
+                        fallback_used=fallback_used,
+                    )
+                else:
+                    logger.warning(f"[Gateway] ✗ {prov_name} returned no data, trying next...")
+
+            except Exception as e:
+                logger.warning(f"[Gateway] ✗ {prov_name} failed: {e}, trying next...")
+                continue
+
+        # All providers failed
+        logger.error(
+            f"[Gateway] ✗ ALL PROVIDERS FAILED for {symbol} {tf}. "
+            f"Attempted: {', '.join(attempted)}"
+        )
+        return MarketDataResponse(
+            data=None,
+            provider="none",
+            confidence=0.0,
+            fallback_used=True,
+            error=f"All providers failed. Attempted: {', '.join(attempted)}",
+        )
+
+    def get_ticker(
+        self,
+        symbol: str,
+        required_provider: Optional[str] = None,
+    ) -> MarketDataResponse:
+        """
+        Get ticker with explicit provider tracking.
+        Returns MarketDataResponse with ticker data in .data field.
+        """
+        provider_name = required_provider or self.preferred_provider
+
+        if provider_name:
+            if provider_name.lower() not in self._providers:
+                return MarketDataResponse(
+                    data=None,
+                    provider="none",
+                    confidence=0.0,
+                    fallback_used=False,
+                    error=f"Unknown provider: {provider_name}",
+                )
+
+            try:
+                prov = self._providers[provider_name.lower()]()
+                ticker = prov.get_ticker(symbol)
+                if ticker:
+                    return MarketDataResponse(
+                        data=[ticker],  # Wrap in list for consistency
+                        provider=provider_name.lower(),
+                        confidence=1.0,
+                        fallback_used=False,
+                    )
+            except Exception as e:
+                logger.error(f"[Gateway] Ticker fetch from {provider_name} failed: {e}")
+
+        # Fallback chain
+        for idx, prov_name in enumerate(["wallex", "coingecko", "coincap"]):
+            try:
+                prov = self._providers[prov_name]()
+                ticker = prov.get_ticker(symbol)
+                if ticker:
+                    return MarketDataResponse(
+                        data=[ticker],
+                        provider=prov_name,
+                        confidence=1.0 - (idx * 0.2),
+                        fallback_used=idx > 0,
+                    )
+            except Exception:
+                continue
+
+        return MarketDataResponse(
+            data=None,
+            provider="none",
+            confidence=0.0,
+            fallback_used=True,
+            error="All providers failed for ticker",
+        )
 

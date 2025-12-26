@@ -11,8 +11,11 @@ SmartTrader Web API + Dashboard
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import logging
 
 import sqlite3
+
+logger = logging.getLogger(__name__)
 from fastapi import FastAPI, Query, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -37,7 +40,7 @@ from auth import (
     require_admin,
 )
 from plans import get_user_plan, assign_default_plan, set_user_plan
-from market_providers import get_market_data
+from market_providers import get_market_data, MarketDataGateway
 from behavior_engine import compute_behavior_score
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -627,10 +630,18 @@ async def api_market_overview(
     symbol: str = Query("BTC", description="Symbol to query"),
 ) -> JSONResponse:
     """Get normalized market overview."""
-    # Get latest candles
-    candles = get_market_data(symbol, "240", 100)
-    if not candles:
-        raise HTTPException(status_code=404, detail="Market data not available")
+    # Get latest candles via gateway (with provider tracking)
+    gateway = MarketDataGateway()
+    response = gateway.get_candles(symbol, "240", 100)
+    
+    if not response.data:
+        logger.warning(f"Market overview failed: provider={response.provider}, error={response.error}")
+        raise HTTPException(status_code=404, detail=f"Market data not available: {response.error or 'No data'}")
+    
+    candles = response.data
+    # Log provider info for visibility
+    if response.fallback_used:
+        logger.info(f"Market overview used fallback provider: {response.provider} (confidence: {response.confidence:.2f})")
 
     latest = candles[-1]
     prices = [float(c.get("close", 0)) for c in candles if c.get("close")]
@@ -659,10 +670,18 @@ async def api_market_behavior(
     symbol: str = Query("BTC", description="Symbol to query"),
 ) -> JSONResponse:
     """Get behavior score and explanations."""
-    # Get market data
-    candles = get_market_data(symbol, "240", 100)
-    if not candles:
-        raise HTTPException(status_code=404, detail="Market data not available")
+    # Get market data via gateway (with provider tracking)
+    gateway = MarketDataGateway()
+    response = gateway.get_candles(symbol, "240", 100)
+    
+    if not response.data:
+        logger.warning(f"Market behavior failed: provider={response.provider}, error={response.error}")
+        raise HTTPException(status_code=404, detail=f"Market data not available: {response.error or 'No data'}")
+    
+    candles = response.data
+    # Log provider info for visibility
+    if response.fallback_used:
+        logger.info(f"Market behavior used fallback provider: {response.provider} (confidence: {response.confidence:.2f})")
 
     # Extract volumes and prices
     volumes = [float(c.get("volume", 0.0)) for c in candles]
