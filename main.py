@@ -30,6 +30,8 @@ import uuid
 
 import numpy as np
 import pandas as pd
+from market_providers import MarketDataGateway
+from behavior_engine import compute_behavior_score
 
 import config as cfg
 import database_setup
@@ -181,6 +183,7 @@ wl = WallexClient(
     retries=cfg.WALLEX["retries"],
     timeout=cfg.WALLEX["timeout"],
 )
+md_gateway = MarketDataGateway()
 
 signal_engine = SignalEngine(
     StrategyParams(
@@ -502,6 +505,38 @@ def analyze_once(iteration: int):
 
     # Capture latest candle for DB logging
     latest_candle_data = df240.iloc[-1].to_dict()
+    # ================= Behavior Intelligence (Option C) =================
+    behavior_score = None
+    behavior_bias = 0.0
+    behavior_details = None
+    behavior_providers = []
+
+    try:
+        md = md_gateway.get_candles(
+            symbol=cfg.SYMBOL,
+            tf=cfg.PRIMARY_TF,
+            limit=120,
+        )
+
+        if md and md.get("data"):
+            behavior = compute_behavior_score(
+                symbol=cfg.SYMBOL,
+                market_data=md["data"]
+            )
+
+            behavior_score = behavior.get("behavior_score")
+            if behavior_score is not None:
+                # normalize to [-1 .. +1]
+                behavior_bias = max(
+                    -1.0,
+                    min(1.0, (float(behavior_score) - 50.0) / 25.0)
+                )
+
+            behavior_details = behavior
+            behavior_providers = md.get("providers_used", [])
+
+    except Exception as e:
+        logger.warning(f"Behavior engine failed: {e}")
 
     # 240 TF indicators and channels
     close240 = df240["close"]
@@ -545,6 +580,14 @@ def analyze_once(iteration: int):
         timestamp=ts_now,
     )
     dc240.reasons.extend(regime_reasons)
+
+    # ✅ اول behavior رو تزریق کن
+    dc240.behavior_score = behavior_score
+    dc240.behavior_bias = behavior_bias
+    dc240.behavior_details = behavior_details
+    dc240.behavior_providers = behavior_providers
+
+    # ✅ بعد gate_and_weight
     dc240 = signal_engine.gate_and_weight(dc240)
 
     # Confirm TF
@@ -629,7 +672,15 @@ def analyze_once(iteration: int):
                     "volume": latest_candle_data.get("volume", 0.0),
                     "timestamp": dc240.timestamp or ts_now,
                 }
+
             )
+            row.update({
+                "behavior_score": dc240.behavior_score,
+                "behavior_bias": dc240.behavior_bias,
+                "behavior_json": json.dumps(dc240.behavior_details, ensure_ascii=False)
+                if dc240.behavior_details else None,
+                "behavior_providers": ",".join(dc240.behavior_providers or []),
+            })
             ok = insert_trading_log(row)
             if not ok:
                 logger.error("Failed to insert trading log row")
@@ -667,7 +718,11 @@ trend_raw: {format_number(dc240.trend_raw)}  momentum_raw: {format_number(dc240.
 adx: {format_number(dc240.adx)}  atr: {format_number(dc240.atr, nd=2)}  regime: {dc240.regime}
 -- Post-Gate (240) --
 trend: {format_number(dc240.trend)}  momentum: {format_number(dc240.momentum)}  meanrev: {format_number(dc240.meanrev)}  breakout: {format_number(dc240.breakout)}
-Aggregate S (240): {format_number(dc240.aggregate_s)} | Thresh: BUY>={cfg.STRATEGY['s_buy']} SELL<={cfg.STRATEGY['s_sell']}
+Aggregate S (240): {format_number(dc240.aggregate_s)} | Thresh: BUY>={cfg.STRATEGY['s_buy']} SELL<={cfg.STRATEGY['s_sell']}Behavior:
+  score: {dc240.behavior_score}
+  bias: {format_number(dc240.behavior_bias)}
+  providers: {", ".join(dc240.behavior_providers or [])}
+
 {(("-- Post-Gate (60) --" + chr(10) + f"S(60): {format_number(dc60.aggregate_s)}  trend: {format_number(dc60.trend)}  mom: {format_number(dc60.momentum)}  mr: {format_number(dc60.meanrev)}  bo: {format_number(dc60.breakout)}") if dc60 is not None else "")}
 Decision: {action}
 {trade_preview}

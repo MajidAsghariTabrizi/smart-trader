@@ -688,7 +688,7 @@ async def api_market_behavior(
     prices = [float(c.get("close", 0.0)) for c in candles if c.get("close")]
 
     # Compute behavior score
-    behavior = compute_behavior_score(symbol, candles, volumes, None)
+    behavior = compute_behavior_score(symbol, candles)
 
     return JSONResponse(behavior)
 

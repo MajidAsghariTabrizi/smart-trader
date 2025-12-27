@@ -48,6 +48,11 @@ class DecisionContext:
     confirm_rsi: float = 0.0
 
     reasons: List[str] = field(default_factory=list)
+    # === Behavior Intelligence (Option C) ===
+    behavior_score: Optional[float] = None        # 0..100
+    behavior_bias: float = 0.0                    # [-1 .. +1]
+    behavior_details: Optional[dict] = None
+    behavior_providers: Optional[List[str]] = None
 
 
 @dataclass
@@ -70,6 +75,8 @@ class StrategyParams:
     vr_adapt_k: float = 0.25            # threshold adaptation slope
     vr_adapt_clamp: float = 0.08        # max absolute threshold shift
     impulse_only_high: bool = True      # fast-path only in HIGH regime
+    # --- Behavior weight (Option C) ---
+    behavior_weight: float = 0.15
 
 
 @dataclass
@@ -192,16 +199,23 @@ class SignalEngine:
         dc.meanrev = float(mr)
         dc.breakout = float(bo)
 
-        # 6) Aggregate S
+        # --- Behavior bias (Option C) ---
+        behavior_bias = float(dc.behavior_bias or 0.0)
+        w_behavior = self._safe_get_weight("behavior")
+
         aggregate = (
             w_trend * dc.trend +
             w_mom * dc.momentum +
             w_mr * dc.meanrev +
-            w_bo * dc.breakout
+            w_bo * dc.breakout +
+            w_behavior * behavior_bias
         )
 
         dc.aggregate_s = float(aggregate) * float(regime_scale)
-        dc.reasons.append(f"Aggregate={dc.aggregate_s:.3f} (regime_scale={regime_scale:.2f})")
+        dc.reasons.append(
+            f"Aggregate={dc.aggregate_s:.3f} "
+            f"(regime_scale={regime_scale:.2f}, behavior_bias={behavior_bias:.3f})"
+        )
         return dc
 
     # ---------------- MTF Confirmation ---------------- #

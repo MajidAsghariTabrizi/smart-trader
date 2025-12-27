@@ -28,10 +28,11 @@ LIVE_POLL_SECONDS = int(os.getenv("LIVE_POLL_SECONDS", "12"))
 
 STRATEGY = {
     "weights": {
-        "trend": float(os.getenv("W_TREND", "0.35")),
-        "momentum": float(os.getenv("W_MOMENTUM", "0.25")),
-        "meanrev": float(os.getenv("W_MEANREV", "0.20")),
+        "trend": float(os.getenv("W_TREND", "0.30")),
+        "momentum": float(os.getenv("W_MOMENTUM", "0.20")),
+        "meanrev": float(os.getenv("W_MEANREV", "0.15")),
         "breakout": float(os.getenv("W_BREAKOUT", "0.20")),
+        "behavior": float(os.getenv("W_BEHAVIOR", "0.15")),
     },
 
     "s_buy": float(os.getenv("S_BUY", "0.18")),
