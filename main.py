@@ -19,19 +19,24 @@ Smart Trader V0.10 - Main Execution Module (Refactored, Close-Logic C)
     * Fallback stop درصدی اگر stop از استراتژی نیاید
     * بستن پوزیشن در صورت سیگنال معکوس (REVERSE_SIGNAL)
 ================================================================================
+
+NOTE (compat):
+این فایل طوری نوشته شده که با چند نسخه از market_providers سازگار باشد:
+- اگر MarketDataGateway وجود داشته باشد، از آن استفاده می‌کند.
+- اگر فقط get_market_data وجود داشته باشد، یک shim داخلی می‌سازد و همان خروجی را ارائه می‌دهد.
+این دقیقاً برای جلوگیری از شکست Deploy/HealthCheck به خاطر ImportError است.
 """
 
 import time
 import json
 import logging
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Any
 from datetime import datetime, timezone
 import uuid
+from collections import deque
 
 import numpy as np
 import pandas as pd
-from market_providers import MarketDataGateway
-from behavior_engine import compute_behavior_score
 
 import config as cfg
 import database_setup
@@ -48,16 +53,53 @@ from telegram_client import TelegramClient
 from logging_setup import setup_logging, get_child_logger
 
 # --------------------------------------------------------
+# Market Providers (compat shim)
+# --------------------------------------------------------
+# بعضی نسخه‌ها MarketDataGateway ندارند و فقط get_market_data دارند.
+# این shim باعث می‌شود main.py بدون تغییر سایر فایل‌ها اجرا شود.
+try:
+    from market_providers import MarketDataGateway  # type: ignore
+except Exception:  # pragma: no cover
+    try:
+        from market_providers import get_market_data  # type: ignore
+
+        class MarketDataGateway:  # pylint: disable=too-few-public-methods
+            """Compatibility wrapper around get_market_data()."""
+
+            def __init__(self, logger: Optional[logging.Logger] = None):
+                self._logger = logger or logging.getLogger("smart_trader.market")
+
+            def get_candles(self, symbol: str, tf: str, limit: int = 120) -> Optional[dict]:
+                try:
+                    res = get_market_data(symbol, tf, limit)
+                    if not res:
+                        return None
+                    data = res.get("data") or []
+                    provider = res.get("provider")
+                    return {"data": data, "providers_used": [provider] if provider else []}
+                except Exception as e:
+                    self._logger.warning(f"MarketDataGateway shim failed: {e}")
+                    return None
+
+    except Exception:
+        MarketDataGateway = None  # type: ignore
+
+try:
+    from behavior_engine import compute_behavior_score  # type: ignore
+except Exception:
+    compute_behavior_score = None  # type: ignore
+
+# --------------------------------------------------------
 # Logging
 # --------------------------------------------------------
 LOG_DIR_FALLBACK = getattr(cfg, "LOG_DIR", None)
 TELEGRAM_LOG_FILE = getattr(cfg, "TELEGRAM_LOG_FILE", "telegram.log")
 
 logging.basicConfig(
-    level=getattr(logging, cfg.LOG_LEVEL.upper(), logging.INFO),
+    level=getattr(logging, str(getattr(cfg, "LOG_LEVEL", "INFO")).upper(), logging.INFO),
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     handlers=[
-        logging.FileHandler(cfg.LOG_FILE, mode="a", encoding="utf-8"),
+        logging.FileHandler(getattr(cfg, "LOG_FILE", "smart_trader.log"), mode="a", encoding="utf-8"),
         logging.StreamHandler(),
     ],
 )
@@ -80,69 +122,119 @@ try:
         )
 except Exception:
     logger = logging.getLogger("smart_trader")
-    logger.setLevel(getattr(cfg, "LOG_LEVEL", "INFO"))
+    logger.setLevel(getattr(logging, str(getattr(cfg, "LOG_LEVEL", "INFO")).upper(), logging.INFO))
     telegram_logger = logging.getLogger("smart_trader.telegram")
-    telegram_logger.setLevel(getattr(cfg, "LOG_LEVEL", "INFO"))
+    telegram_logger.setLevel(getattr(logging, str(getattr(cfg, "LOG_LEVEL", "INFO")).upper(), logging.INFO))
 
 # --------------------------------------------------------
 # Helpers
 # --------------------------------------------------------
-
-
 def utc_ts_to_iso(ts: int) -> str:
     return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
-
 
 def now_iso() -> str:
     # ISO بدون microsecond و با Z – سازگار با JS و UI
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
-
 def new_trade_id() -> str:
     return uuid.uuid4().hex
-
 
 def compute_regime(trend_val: float, adx_val: float, vol_ratio: float) -> Tuple[str, list]:
     """
     Regime based on smoothed volatility ratio and trend strength.
     vol_ratio is vr = atr / atr_ma smoothed; around 1 is neutral.
     """
-    reasons = []
-    strong_trend = abs(trend_val) > 0.6 and (adx_val or 0) >= cfg.STRATEGY["min_adx_for_trend"]
+    reasons: list[str] = []
+    vr = float(vol_ratio) if vol_ratio is not None else 0.0
+    adx = float(adx_val) if adx_val is not None else 0.0
 
-    if strong_trend and vol_ratio >= 1.1:
+    strong_trend = abs(float(trend_val)) > 0.6 and adx >= cfg.STRATEGY["min_adx_for_trend"]
+
+    if strong_trend and vr >= 1.1:
         regime = "HIGH"
-        reasons.append(f"Strong trend |trend|={trend_val:.2f}, ADX={adx_val:.1f}, vr={vol_ratio:.2f}")
-    elif vol_ratio >= 0.9:
+        reasons.append(f"Strong trend |trend|={trend_val:.2f}, ADX={adx:.1f}, vr={vr:.2f}")
+    elif vr >= 0.9:
         regime = "NEUTRAL"
-        reasons.append(f"Moderate vr={vol_ratio:.2f}")
+        reasons.append(f"Moderate vr={vr:.2f}")
     else:
         regime = "LOW"
-        reasons.append(f"Low vr={vol_ratio:.2f}")
+        reasons.append(f"Low vr={vr:.2f}")
 
     return regime, reasons
 
-
 def make_fingerprint(dc_240: DecisionContext, dc_60: Optional[DecisionContext], price: float) -> str:
     parts = [
-        round(dc_240.aggregate_s, 3),
-        round(dc_240.trend, 3),
-        round(dc_240.momentum, 3),
-        round(dc_240.meanrev, 3),
-        round(dc_240.breakout, 3),
-        round(price, -4) if price else 0,
+        round(float(getattr(dc_240, "aggregate_s", 0.0)), 3),
+        round(float(getattr(dc_240, "trend", 0.0)), 3),
+        round(float(getattr(dc_240, "momentum", 0.0)), 3),
+        round(float(getattr(dc_240, "meanrev", 0.0)), 3),
+        round(float(getattr(dc_240, "breakout", 0.0)), 3),
+        round(float(price), -4) if price else 0,
     ]
     if dc_60:
-        parts.append(round(dc_60.aggregate_s, 3))
+        parts.append(round(float(getattr(dc_60, "aggregate_s", 0.0)), 3))
     return "|".join(map(str, parts))
 
-
-def format_number(x, nd: int = 3) -> str:
+def format_number(x: Any, nd: int = 3) -> str:
     try:
-        return f"{x:.{nd}f}"
+        return f"{float(x):.{nd}f}"
     except Exception:
         return str(x)
 
+# --------------------------------------------------------
+# Init
+# --------------------------------------------------------
+logger.info("Initializing database...")
+database_setup.ensure_schema()
+
+wl = WallexClient(
+    base_url=cfg.WALLEX["base_url"],
+    api_key=cfg.WALLEX["api_key"],
+    rate_limit_per_sec=cfg.WALLEX["rate_limit_per_sec"],
+    retries=cfg.WALLEX["retries"],
+    timeout=cfg.WALLEX["timeout"],
+)
+
+md_gateway = None
+if MarketDataGateway is not None:
+    try:
+        md_gateway = MarketDataGateway(logger=logger)  # type: ignore[arg-type]
+    except TypeError:
+        md_gateway = MarketDataGateway()  # type: ignore[call-arg]
+    except Exception as e:
+        logger.warning(f"MarketDataGateway init failed: {e}")
+        md_gateway = None
+
+signal_engine = SignalEngine(
+    StrategyParams(
+        weights=cfg.STRATEGY["weights"],
+        s_buy=cfg.STRATEGY["s_buy"],
+        s_sell=cfg.STRATEGY["s_sell"],
+        min_adx_for_trend=cfg.STRATEGY["min_adx_for_trend"],
+        allow_intracandle=cfg.STRATEGY["allow_intracandle"],
+        regime_scale=cfg.STRATEGY["regime_scale"],
+        max_risk_per_trade=cfg.STRATEGY["max_risk_per_trade"],
+        atr_stop_mult=cfg.STRATEGY["atr_stop_mult"],
+        require_mtf_agreement=cfg.STRATEGY["require_mtf_agreement"],
+        decision_buffer=cfg.STRATEGY.get("decision_buffer", 0.02),
+        mtf_confirm_bar=cfg.STRATEGY.get("mtf_confirm_bar", 0.30),
+        min_vr_trade=cfg.STRATEGY.get("min_vr_trade", 0.88),
+        min_vr_intracandle=cfg.STRATEGY.get("min_vr_intracandle", 0.95),
+        vr_adapt_k=cfg.STRATEGY.get("vr_adapt_k", 0.25),
+        vr_adapt_clamp=cfg.STRATEGY.get("vr_adapt_clamp", 0.08),
+        impulse_only_high=cfg.STRATEGY.get("impulse_only_high", True),
+    )
+)
+
+account = Account(equity=cfg.START_EQUITY, balance=cfg.START_EQUITY, position=None)
+ind_cache = IndicatorCache()  # kept for compatibility even if unused
+
+last_log_fingerprint: Optional[str] = None
+last_db_fingerprint: Optional[str] = None
+tg: Optional[TelegramClient] = None
+last_executed_candle_ts: Optional[int] = None
+
+signal_buffer = deque(maxlen=5)
 
 def _format_position_state(price: float) -> Optional[str]:
     """
@@ -169,58 +261,9 @@ def _format_position_state(price: float) -> Optional[str]:
         f"notional: {notional:.2f}  uPnL: {upnl:.2f}  status: {status}"
     )
 
-
-# --------------------------------------------------------
-# Init
-# --------------------------------------------------------
-logger.info("Initializing database...")
-database_setup.ensure_schema()
-
-wl = WallexClient(
-    base_url=cfg.WALLEX["base_url"],
-    api_key=cfg.WALLEX["api_key"],
-    rate_limit_per_sec=cfg.WALLEX["rate_limit_per_sec"],
-    retries=cfg.WALLEX["retries"],
-    timeout=cfg.WALLEX["timeout"],
-)
-md_gateway = MarketDataGateway()
-
-signal_engine = SignalEngine(
-    StrategyParams(
-        weights=cfg.STRATEGY["weights"],
-        s_buy=cfg.STRATEGY["s_buy"],
-        s_sell=cfg.STRATEGY["s_sell"],
-        min_adx_for_trend=cfg.STRATEGY["min_adx_for_trend"],
-        allow_intracandle=cfg.STRATEGY["allow_intracandle"],
-        regime_scale=cfg.STRATEGY["regime_scale"],
-        max_risk_per_trade=cfg.STRATEGY["max_risk_per_trade"],
-        atr_stop_mult=cfg.STRATEGY["atr_stop_mult"],
-        require_mtf_agreement=cfg.STRATEGY["require_mtf_agreement"],
-        decision_buffer=cfg.STRATEGY.get("decision_buffer", 0.02),
-        mtf_confirm_bar=cfg.STRATEGY.get("mtf_confirm_bar", 0.30),
-        min_vr_trade=cfg.STRATEGY.get("min_vr_trade", 0.88),
-        min_vr_intracandle=cfg.STRATEGY.get("min_vr_intracandle", 0.95),
-        vr_adapt_k=cfg.STRATEGY.get("vr_adapt_k", 0.25),
-        vr_adapt_clamp=cfg.STRATEGY.get("vr_adapt_clamp", 0.08),
-        impulse_only_high=cfg.STRATEGY.get("impulse_only_high", True),
-    )
-)
-
-account = Account(equity=cfg.START_EQUITY, balance=cfg.START_EQUITY, position=None)
-ind_cache = IndicatorCache()
-
-last_log_fingerprint: Optional[str] = None
-last_db_fingerprint: Optional[str] = None  # برای جلوگیری از لاگ‌های تکراری در DB
-tg: Optional[TelegramClient] = None
-last_executed_candle_ts: Optional[int] = None
-from collections import deque
-signal_buffer = deque(maxlen=5)
-
 # --------------------------------------------------------
 # Telegram client
 # --------------------------------------------------------
-
-
 def _build_tg_client() -> Optional[TelegramClient]:
     try:
         enabled = bool(cfg.TELEGRAM.get("enabled", False))
@@ -250,7 +293,6 @@ def _build_tg_client() -> Optional[TelegramClient]:
         logger.exception(f"Failed to build Telegram client: {e}")
         return None
 
-
 def _tg_ping():
     if tg:
         try:
@@ -261,15 +303,12 @@ def _tg_ping():
     else:
         logger.info("Telegram client is None; startup ping skipped.")
 
-
 tg = _build_tg_client()
 _tg_ping()
 
 # --------------------------------------------------------
 # Persistence helpers
 # --------------------------------------------------------
-
-
 def _persist_account_snapshot():
     try:
         state = {
@@ -291,7 +330,6 @@ def _persist_account_snapshot():
     except Exception as e:
         logger.exception(f"Failed to persist account state: {e}")
 
-
 def _log_trade_event(event_type: str, details: dict):
     try:
         event = {
@@ -307,7 +345,9 @@ def _log_trade_event(event_type: str, details: dict):
     except Exception as e:
         logger.exception(f"Failed to insert trade event: {e}")
 
-
+# --------------------------------------------------------
+# Close helpers
+# --------------------------------------------------------
 def _close_position(current_price: float, reason: str):
     """
     Close current position with given reason.
@@ -372,7 +412,6 @@ def _close_position(current_price: float, reason: str):
 
     _persist_account_snapshot()
 
-
 def _maybe_close_position(current_price: float):
     """
     Exit management:
@@ -406,7 +445,7 @@ def _maybe_close_position(current_price: float):
 
         # نسبت‌های جدید
         tp_r_level = 0.7   # حدود +1R همه پوزیشن را ببند
-        be_r_level = 0.35   # حدود +0.4R استاپ را روی BE بیاور
+        be_r_level = 0.35  # حدود +0.4R استاپ را روی BE بیاور
 
         # 1.a) Take-profit کامل روی 1R
         if r_mult >= tp_r_level:
@@ -426,7 +465,6 @@ def _maybe_close_position(current_price: float):
                 f"trade_id={getattr(pos, 'trade_id', None)} "
                 f"R={r_mult:.2f} (>= {be_r_level:.2f})"
             )
-            # بعد از این، استاپ جدید BE است
 
     # 2) Hard stop check (STOP_HIT) – بعد از مدیریت TP/BE
     if pos.stop_price is None:
@@ -450,10 +488,8 @@ def _maybe_close_position(current_price: float):
 # --------------------------------------------------------
 # Core loop
 # --------------------------------------------------------
-
-
 def analyze_once(iteration: int):
-    global last_log_fingerprint, last_db_fingerprint
+    global last_log_fingerprint, last_db_fingerprint, last_executed_candle_ts
 
     candles_240 = wl.get_candles(cfg.SYMBOL, cfg.PRIMARY_TF, cfg.MAX_CANDLES_PRIMARY)
     candles_60 = wl.get_candles(cfg.SYMBOL, cfg.CONFIRM_TF, cfg.MAX_CANDLES_CONFIRM)
@@ -478,7 +514,6 @@ def analyze_once(iteration: int):
             df["time"] = df["time"].astype(int)
 
     current_ts = int(df240["time"].iloc[-1])
-    global last_executed_candle_ts
 
     if not cfg.STRATEGY["allow_intracandle"]:
         if last_executed_candle_ts == current_ts:
@@ -503,40 +538,28 @@ def analyze_once(iteration: int):
             df240.at[df240.index[-1], "high"] = max(df240["high"].iloc[-1], live_price)
             df240.at[df240.index[-1], "low"] = min(df240["low"].iloc[-1], live_price)
 
-    # Capture latest candle for DB logging
     latest_candle_data = df240.iloc[-1].to_dict()
+
     # ================= Behavior Intelligence (Option C) =================
     behavior_score = None
     behavior_bias = 0.0
     behavior_details = None
     behavior_providers = []
 
-    try:
-        md = md_gateway.get_candles(
-            symbol=cfg.SYMBOL,
-            tf=cfg.PRIMARY_TF,
-            limit=120,
-        )
+    if md_gateway is not None and compute_behavior_score is not None:
+        try:
+            md = md_gateway.get_candles(symbol=cfg.SYMBOL, tf=cfg.PRIMARY_TF, limit=120)
+            if md and md.get("data"):
+                behavior = compute_behavior_score(symbol=cfg.SYMBOL, market_data=md["data"])
 
-        if md and md.get("data"):
-            behavior = compute_behavior_score(
-                symbol=cfg.SYMBOL,
-                market_data=md["data"]
-            )
+                behavior_score = behavior.get("behavior_score")
+                if behavior_score is not None:
+                    behavior_bias = max(-1.0, min(1.0, (float(behavior_score) - 50.0) / 25.0))
 
-            behavior_score = behavior.get("behavior_score")
-            if behavior_score is not None:
-                # normalize to [-1 .. +1]
-                behavior_bias = max(
-                    -1.0,
-                    min(1.0, (float(behavior_score) - 50.0) / 25.0)
-                )
-
-            behavior_details = behavior
-            behavior_providers = md.get("providers_used", [])
-
-    except Exception as e:
-        logger.warning(f"Behavior engine failed: {e}")
+                behavior_details = behavior
+                behavior_providers = md.get("providers_used", []) or []
+        except Exception as e:
+            logger.warning(f"Behavior engine failed: {e}")
 
     # 240 TF indicators and channels
     close240 = df240["close"]
@@ -557,9 +580,7 @@ def analyze_once(iteration: int):
 
     up, lo = donchian_channels(df240, 20)
     rng = float((up.iloc[-1] - lo.iloc[-1]) or 1.0)
-    breakout_240 = float(
-        np.clip((close240.iloc[-1] - (up.iloc[-1] + lo.iloc[-1]) / 2) / (rng + 1e-9), -1, 1)
-    )
+    breakout_240 = float(np.clip((close240.iloc[-1] - (up.iloc[-1] + lo.iloc[-1]) / 2) / (rng + 1e-9), -1, 1))
 
     adx_val_240 = float(adx240.iloc[-1])
     regime, regime_reasons = compute_regime(trend_240, adx_val_240, vr_240)
@@ -581,13 +602,13 @@ def analyze_once(iteration: int):
     )
     dc240.reasons.extend(regime_reasons)
 
-    # ✅ اول behavior رو تزریق کن
+    # inject behavior first
     dc240.behavior_score = behavior_score
     dc240.behavior_bias = behavior_bias
     dc240.behavior_details = behavior_details
     dc240.behavior_providers = behavior_providers
 
-    # ✅ بعد gate_and_weight
+    # then gate_and_weight
     dc240 = signal_engine.gate_and_weight(dc240)
 
     # Confirm TF
@@ -607,9 +628,7 @@ def analyze_once(iteration: int):
         meanrev_60 = float(-np.tanh(residual60.iloc[-1] / (1e-9 + residual_std60)))
         up60, lo60 = donchian_channels(df60, 20)
         rng60 = float((up60.iloc[-1] - lo60.iloc[-1]) or 1.0)
-        breakout_60 = float(
-            np.clip((close60.iloc[-1] - (up60.iloc[-1] + lo60.iloc[-1]) / 2) / (rng60 + 1e-9), -1, 1)
-        )
+        breakout_60 = float(np.clip((close60.iloc[-1] - (up60.iloc[-1] + lo60.iloc[-1]) / 2) / (rng60 + 1e-9), -1, 1))
 
         dc60 = DecisionContext(
             trend_raw=trend_60,
@@ -626,31 +645,27 @@ def analyze_once(iteration: int):
         )
         dc60 = signal_engine.gate_and_weight(dc60)
 
-    # Decision
     action, trade = signal_engine.decide(dc240, dc60)
 
-    # VOL_EXPAND_GUARD (best practice):
-    # If we're trading intrabar (live price override) require volatility expansion to reduce wick/noise triggers.
+    # VOL_EXPAND_GUARD
     if cfg.STRATEGY.get("allow_intracandle", True) and candle_is_live and action in ("BUY", "SELL"):
         min_vr_live = float(cfg.STRATEGY.get("min_vr_intracandle", 0.95))
         if (vr_240 is not None) and (vr_240 < min_vr_live) and (dc240.regime != "HIGH"):
             dc240.reasons.append(f"VOL_EXPAND_GUARD: vr={vr_240:.3f} < {min_vr_live:.3f} (live) → HOLD")
             action, trade = "HOLD", None
-    signal_buffer.append(action)
 
+    signal_buffer.append(action)
     if action == "BUY" and signal_buffer.count("BUY") < 3:
         return
-
     if action == "SELL" and signal_buffer.count("SELL") < 3:
         return
 
-    # ---------------- DB logging (با دِدوز براساس fingerprint) ---------------- #
+    # ---------------- DB logging (dedupe by fingerprint) ---------------- #
     try:
         from database_setup import dc_to_row, insert_trading_log
 
         fingerprint = make_fingerprint(dc240, dc60, dc240.price or 0)
 
-        # فقط اگر fingerprint عوض شده باشد لاگ می‌زنیم
         if fingerprint != last_db_fingerprint:
             row = dc_to_row(
                 decision=action,
@@ -672,15 +687,15 @@ def analyze_once(iteration: int):
                     "volume": latest_candle_data.get("volume", 0.0),
                     "timestamp": dc240.timestamp or ts_now,
                 }
-
             )
             row.update({
-                "behavior_score": dc240.behavior_score,
-                "behavior_bias": dc240.behavior_bias,
-                "behavior_json": json.dumps(dc240.behavior_details, ensure_ascii=False)
-                if dc240.behavior_details else None,
-                "behavior_providers": ",".join(dc240.behavior_providers or []),
+                "behavior_score": getattr(dc240, "behavior_score", None),
+                "behavior_bias": getattr(dc240, "behavior_bias", None),
+                "behavior_json": json.dumps(getattr(dc240, "behavior_details", None), ensure_ascii=False)
+                if getattr(dc240, "behavior_details", None) else None,
+                "behavior_providers": ",".join(getattr(dc240, "behavior_providers", []) or []),
             })
+
             ok = insert_trading_log(row)
             if not ok:
                 logger.error("Failed to insert trading log row")
@@ -718,10 +733,11 @@ trend_raw: {format_number(dc240.trend_raw)}  momentum_raw: {format_number(dc240.
 adx: {format_number(dc240.adx)}  atr: {format_number(dc240.atr, nd=2)}  regime: {dc240.regime}
 -- Post-Gate (240) --
 trend: {format_number(dc240.trend)}  momentum: {format_number(dc240.momentum)}  meanrev: {format_number(dc240.meanrev)}  breakout: {format_number(dc240.breakout)}
-Aggregate S (240): {format_number(dc240.aggregate_s)} | Thresh: BUY>={cfg.STRATEGY['s_buy']} SELL<={cfg.STRATEGY['s_sell']}Behavior:
-  score: {dc240.behavior_score}
-  bias: {format_number(dc240.behavior_bias)}
-  providers: {", ".join(dc240.behavior_providers or [])}
+Aggregate S (240): {format_number(dc240.aggregate_s)} | Thresh: BUY>={cfg.STRATEGY['s_buy']} SELL<={cfg.STRATEGY['s_sell']}
+Behavior:
+  score: {getattr(dc240, 'behavior_score', None)}
+  bias: {format_number(getattr(dc240, 'behavior_bias', 0.0))}
+  providers: {", ".join(getattr(dc240, 'behavior_providers', []) or [])}
 
 {(("-- Post-Gate (60) --" + chr(10) + f"S(60): {format_number(dc60.aggregate_s)}  trend: {format_number(dc60.trend)}  mom: {format_number(dc60.momentum)}  mr: {format_number(dc60.meanrev)}  bo: {format_number(dc60.breakout)}") if dc60 is not None else "")}
 Decision: {action}
@@ -743,12 +759,10 @@ Reasons:
                 telegram_logger.exception(f"SMART ANALYSIS send exception: {e}")
 
     # ---------------- Risk / Execution layer ---------------- #
-
-    # 1) اول: در صورت سیگنال معکوس، سریع ببند
-    # 1) اول TP / SL
+    # 1) TP/SL
     _maybe_close_position(dc240.price)
 
-    # 2) بعد Reverse signal
+    # 2) Reverse signal
     if account.position and action in ("BUY", "SELL"):
         desired_side = "LONG" if action == "BUY" else "SHORT"
         if account.position.side != desired_side:
@@ -758,16 +772,13 @@ Reasons:
             )
             _close_position(dc240.price, "REVERSE_SIGNAL")
 
-    # 2) بعد: مدیریت TP/SL روی پوزیشن باقی‌مانده
-    # 2) Entry policy / allow_intracandle
+    # Entry policy / allow_intracandle
     execute_now = True
-    # اگر allow_intracandle خاموش باشد، فقط وقتی کندل جدید آمده ترید می‌کنیم (بالا با last_executed_candle_ts مدیریت شده).
-    # اینجا فقط برای حالت live-price override از اجرای ترید جلوگیری می‌کنیم.
     if not cfg.STRATEGY.get("allow_intracandle", True) and candle_is_live and action in ("BUY", "SELL"):
         execute_now = False
         dc240.reasons.append("Intracandle disabled: live candle → skip trade")
 
-    # Only one open position at a time (بعد از closeهای بالا)
+    # Only one open position at a time
     if account.position:
         return
 
@@ -795,15 +806,15 @@ Reasons:
 
         side = "LONG" if action == "BUY" else "SHORT"
 
-        # Fallback stop اگر استراتژی استاپ نداد (Option C)
+        # Fallback stop
         if stop_price is None:
-            default_stop_pct = getattr(cfg, "DEFAULT_STOP_PCT", 0.01)  # 1% به طور پیش‌فرض
+            default_stop_pct = getattr(cfg, "DEFAULT_STOP_PCT", 0.01)
             if side == "LONG":
                 stop_price = dc240.price * (1.0 - default_stop_pct)
             else:
                 stop_price = dc240.price * (1.0 + default_stop_pct)
 
-        # محاسبه سایز بر اساس ریسک اگر stop داریم
+        # position sizing by risk
         if stop_price:
             qty = position_size_by_risk(
                 account.equity,
@@ -837,7 +848,6 @@ Reasons:
             stop_price=float(stop_price) if stop_price else None,
             trade_id=trade_id,
             opened_at_ts=int(time.time()),
-
         )
 
         if side == "LONG":
@@ -871,7 +881,6 @@ Reasons:
             except Exception as e:
                 logger.exception(f"Failed to send Telegram trade message: {e}")
 
-
 def main():
     logger.info("Re-checking database initialization...")
     database_setup.ensure_schema()
@@ -884,7 +893,6 @@ def main():
         except Exception as e:
             logger.exception(f"Error in main loop: {e}")
         time.sleep(cfg.LIVE_POLL_SECONDS)
-
 
 if __name__ == "__main__":
     main()
