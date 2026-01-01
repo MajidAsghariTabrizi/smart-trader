@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
-    <title>ورود – SmartTrader</title>
+    <title>Login – SmartTrader</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/static/css/style.css">
     <style>
@@ -71,16 +71,16 @@
     <div class="st-page">
         <div class="auth-container">
             <div class="auth-box">
-                <h2 style="text-align: center; margin-bottom: 1.5rem;">ورود به SmartTrader</h2>
+                <h2 style="text-align: center; margin-bottom: 1.5rem;">Login to SmartTrader</h2>
                 <form class="auth-form" id="loginForm">
-                    <input type="email" id="email" placeholder="ایمیل" required>
-                    <input type="password" id="password" placeholder="رمز عبور" required>
+                    <input type="email" id="email" placeholder="Email" required>
+                    <input type="password" id="password" placeholder="Password" required>
                     <div id="errorMessage" class="error-message" style="display: none;"></div>
-                    <button type="submit">ورود</button>
+                    <button type="submit">Login</button>
                 </form>
                 <div class="auth-links">
-                    <a href="/register">حساب کاربری ندارید؟ ثبت‌نام کنید</a>
-                    <a href="/" style="display: block; margin-top: 0.5rem;">بازگشت به صفحه اصلی</a>
+                    <a href="/register">Don't have an account? Sign up</a>
+                    <a href="/" style="display: block; margin-top: 0.5rem;">Back to Home</a>
                 </div>
             </div>
         </div>
@@ -105,15 +105,14 @@
                     localStorage.setItem('token', data.token);
                     window.location.href = '/app';
                 } else {
-                    errorDiv.textContent = data.detail || 'خطا در ورود';
+                    errorDiv.textContent = data.detail || 'Login error';
                     errorDiv.style.display = 'block';
                 }
             } catch (err) {
-                errorDiv.textContent = 'خطا در اتصال به سرور';
+                errorDiv.textContent = 'Connection error';
                 errorDiv.style.display = 'block';
             }
         });
     </script>
 </body>
 </html>
-

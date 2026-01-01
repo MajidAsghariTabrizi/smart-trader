@@ -1,48 +1,50 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
-    <title>SmartTrader – ربات معاملاتی هوشمند</title>
+    <title>SmartTrader – AI-Powered Algorithmic Trading</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body class="st-body">
     <script src="/static/js/nav.js"></script>
     <div class="st-page">
-        <section class="landing-hero" style="min-height: 90vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 4rem 2rem; position: relative;">
-            <div style="max-width: 800px; z-index: 1;">
-                <h1 style="font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2;">
+        <!-- Hero Section with Quantum Neural ORB -->
+        <section class="st-orb-banner" style="min-height: 90vh; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+            <canvas id="marketOrb" class="st-orb-canvas"></canvas>
+            <div class="orb-overlay" style="position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); text-align: center; z-index: 2;">
+                <h1 class="orb-title" style="font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
                     SmartTrader
                 </h1>
-                <p style="font-size: clamp(1.1rem, 2vw, 1.5rem); color: var(--text-muted); margin-bottom: 2.5rem; line-height: 1.6;">
-                    ربات معاملاتی هوشمند با تحلیل چندلایه بازار<br>
-                    <span style="color: var(--text-main); font-weight: 600;">Command Center برای معامله‌گران حرفه‌ای</span>
+                <p class="orb-desc" style="font-size: clamp(1.1rem, 2vw, 1.5rem); color: var(--text-muted); margin-bottom: 2.5rem; line-height: 1.6;">
+                    AI-Powered Algorithmic Trading Platform<br>
+                    <span style="color: var(--text-main); font-weight: 600;">Command Center for Professional Traders</span>
                 </p>
                 <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 2.5rem;">
-                    <a href="/register" class="st-btn st-btn-primary">شروع رایگان</a>
-                    <a href="/pricing" class="st-btn st-btn-secondary">مشاهده تعرفه‌ها</a>
+                    <a href="/register" class="st-btn st-btn-primary">Get Started Free</a>
+                    <a href="/pricing" class="st-btn st-btn-secondary">View Pricing</a>
                 </div>
-                <div class="st-scroll-hint" style="position: absolute; bottom: 2rem;"></div>
             </div>
+            <div class="st-scroll-hint" style="position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);"></div>
         </section>
 
         <section class="landing-features" style="padding: 6rem 2rem; max-width: 1200px; margin: 0 auto;">
-            <h2 style="text-align: center; margin-bottom: 3rem; font-size: 2rem; font-weight: 700;">ویژگی‌های پیشرفته</h2>
+            <h2 style="text-align: center; margin-bottom: 3rem; font-size: 2rem; font-weight: 700;">Advanced Features</h2>
             <div class="st-grid-responsive">
                 <div class="st-glass-card">
                     <div style="font-size: 2.5rem; margin-bottom: 1rem;">🧠</div>
-                    <h3 style="margin-bottom: 0.75rem; font-size: 1.25rem;">تحلیل هوشمند</h3>
-                    <p style="color: var(--text-muted); line-height: 1.6;">تحلیل چندلایه بازار با استفاده از ADX، ATR و مدل‌های پیشرفته</p>
+                    <h3 style="margin-bottom: 0.75rem; font-size: 1.25rem;">Intelligent Analysis</h3>
+                    <p style="color: var(--text-muted); line-height: 1.6;">Multi-layer market analysis using ADX, ATR, and advanced models</p>
                 </div>
                 <div class="st-glass-card">
                     <div style="font-size: 2.5rem; margin-bottom: 1rem;">⚡</div>
-                    <h3 style="margin-bottom: 0.75rem; font-size: 1.25rem;">سیگنال‌های زنده</h3>
-                    <p style="color: var(--text-muted); line-height: 1.6;">دریافت سیگنال‌های خرید و فروش در لحظه با هشدارهای لحظه‌ای</p>
+                    <h3 style="margin-bottom: 0.75rem; font-size: 1.25rem;">Live Signals</h3>
+                    <p style="color: var(--text-muted); line-height: 1.6;">Real-time buy/sell signals with instant alerts</p>
                 </div>
                 <div class="st-glass-card">
                     <div style="font-size: 2.5rem; margin-bottom: 1rem;">🛡️</div>
-                    <h3 style="margin-bottom: 0.75rem; font-size: 1.25rem;">مدیریت ریسک</h3>
-                    <p style="color: var(--text-muted); line-height: 1.6;">مدیریت خودکار ریسک و محاسبه سایز پوزیشن بر اساس ATR</p>
+                    <h3 style="margin-bottom: 0.75rem; font-size: 1.25rem;">Risk Management</h3>
+                    <p style="color: var(--text-muted); line-height: 1.6;">Automated risk management and position sizing based on ATR</p>
                 </div>
             </div>
         </section>
@@ -52,6 +54,6 @@
             <span>Quantiviq • Algorithmic Research</span>
         </footer>
     </div>
+    <script src="/static/js/orb.js"></script>
 </body>
 </html>
-

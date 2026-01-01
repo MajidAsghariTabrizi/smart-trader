@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <title>Command Center – SmartTrader</title>
@@ -22,8 +22,8 @@
                     <span id="userPlan" style="color: var(--blue); font-size: 0.9rem;"></span>
                 </div>
             </div>
-            <div style="text-align: left;">
-                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.25rem;">کاربر</div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.25rem;">User</div>
                 <div id="userEmail" style="font-weight: 600;"></div>
             </div>
         </header>
@@ -34,8 +34,8 @@
             <section class="st-row st-row-responsive">
                 <div class="st-card st-card-large">
                     <div class="st-card-header">
-                        <h2>نمودار قیمت + سیگنال‌ها</h2>
-                        <p class="st-card-caption">قیمت BTC با مارکرهای BUY / SELL</p>
+                        <h2>Price Chart + Signals</h2>
+                        <p class="st-card-caption">BTC Price with BUY / SELL Markers</p>
                     </div>
                     <div style="height: 400px; position: relative;">
                         <canvas id="priceChart"></canvas>
@@ -70,14 +70,14 @@
             <section class="st-row st-row-responsive">
                 <div class="st-card">
                     <div class="st-card-header">
-                        <h2>وضعیت حساب</h2>
+                        <h2>Account Status</h2>
                     </div>
                     <div id="userSummary" style="padding: 1rem 0;"></div>
                 </div>
 
                 <div class="st-card">
                     <div class="st-card-header">
-                        <h2>آخرین تصمیم‌های ربات</h2>
+                        <h2>Recent Bot Decisions</h2>
                         <p class="st-card-caption">Live Decision Feed</p>
                     </div>
                     <div id="recentDecisions" style="max-height: 300px; overflow-y: auto;"></div>
@@ -122,16 +122,29 @@
             return res.ok ? await res.json() : null;
         }
 
-        function formatFaDate(ts) {
+        function formatDate(ts) {
             const d = new Date(ts);
             if (isNaN(d.getTime())) return ts;
-            return d.toLocaleString('fa-IR', {
+            return d.toLocaleString('en-US', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit'
             });
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+
+        function formatNumber(value) {
+            return new Intl.NumberFormat('en-US').format(value);
         }
 
         function updateGauge(score, colorClass) {
@@ -177,7 +190,7 @@
                     labels,
                     datasets: [
                         {
-                            label: 'قیمت',
+                            label: 'Price',
                             data,
                             borderColor: '#60a5fa',
                             backgroundColor: 'rgba(96, 165, 250, 0.1)',
@@ -213,8 +226,8 @@
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
-                                title: items => formatFaDate(items[0].label),
-                                label: ctx => 'قیمت: ' + Number(ctx.parsed.y).toLocaleString('fa-IR')
+                                title: items => formatDate(items[0].label),
+                                label: ctx => 'Price: ' + formatCurrency(ctx.parsed.y)
                             }
                         }
                     },
@@ -222,7 +235,7 @@
                         x: { ticks: { display: false } },
                         y: {
                             ticks: {
-                                callback: v => Number(v).toLocaleString('fa-IR')
+                                callback: v => formatCurrency(v)
                             }
                         }
                     }
@@ -234,7 +247,7 @@
             const me = await api('/api/auth/me');
             if (me) {
                 document.getElementById('userEmail').textContent = me.user.email;
-                document.getElementById('userPlan').textContent = `پلن: ${me.plan}`;
+                document.getElementById('userPlan').textContent = `Plan: ${me.plan}`;
             }
 
             const summary = await api('/api/app/me/summary');
@@ -242,13 +255,13 @@
                 document.getElementById('userSummary').innerHTML = `
                     <div style="display: grid; gap: 1rem;">
                         <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--bg-soft); border-radius: var(--radius-sm);">
-                            <span style="color: var(--text-muted);">پلن فعلی:</span>
+                            <span style="color: var(--text-muted);">Current Plan:</span>
                             <span style="font-weight: 600;">${summary.plan}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--bg-soft); border-radius: var(--radius-sm);">
-                            <span style="color: var(--text-muted);">هشدارها:</span>
+                            <span style="color: var(--text-muted);">Alerts:</span>
                             <span class="st-status-badge ${summary.alerts_enabled ? 'st-status-badge-active' : 'st-status-badge-pending'}">
-                                ${summary.alerts_enabled ? 'فعال' : 'غیرفعال'}
+                                ${summary.alerts_enabled ? 'Active' : 'Inactive'}
                             </span>
                         </div>
                     </div>
@@ -278,18 +291,18 @@
                 document.getElementById('marketOverview').innerHTML = `
                     <div style="display: grid; gap: 0.75rem;">
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--text-muted);">قیمت فعلی:</span>
-                            <span style="font-weight: 600;">${overview.price.toLocaleString('fa-IR')}</span>
+                            <span style="color: var(--text-muted);">Current Price:</span>
+                            <span style="font-weight: 600;">${formatCurrency(overview.price)}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--text-muted);">تغییر 24h:</span>
+                            <span style="color: var(--text-muted);">24h Change:</span>
                             <span style="color: ${overview.price_change_24h >= 0 ? 'var(--green)' : 'var(--red)'}; font-weight: 600;">
                                 ${overview.price_change_24h >= 0 ? '+' : ''}${overview.price_change_24h.toFixed(2)}%
                             </span>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--text-muted);">حجم 24h:</span>
-                            <span style="font-weight: 600;">${overview.volume_24h.toLocaleString('fa-IR')}</span>
+                            <span style="color: var(--text-muted);">24h Volume:</span>
+                            <span style="font-weight: 600;">${formatNumber(overview.volume_24h)}</span>
                         </div>
                     </div>
                 `;
@@ -306,17 +319,17 @@
                         <div style="padding: 1rem; margin: 0.5rem 0; background: var(--bg-soft); border-radius: var(--radius-sm); border-left: 3px solid ${d.decision === 'BUY' ? 'var(--green)' : d.decision === 'SELL' ? 'var(--red)' : 'var(--text-muted)'};">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                                 <span class="st-status-badge ${decisionClass}">${d.decision || 'HOLD'}</span>
-                                <span style="font-size: 0.85rem; color: var(--text-muted);">${formatFaDate(d.timestamp)}</span>
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">${formatDate(d.timestamp)}</span>
                             </div>
                             <div style="font-size: 0.9rem;">
-                                <strong>قیمت:</strong> ${d.price?.toLocaleString('fa-IR') || '--'}
-                                ${d.regime ? ` • <strong>رژیم:</strong> ${d.regime}` : ''}
+                                <strong>Price:</strong> ${d.price ? formatCurrency(d.price) : '--'}
+                                ${d.regime ? ` • <strong>Regime:</strong> ${d.regime}` : ''}
                             </div>
                         </div>
                     `;
                 }).join('');
             } else {
-                document.getElementById('recentDecisions').innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 2rem;">هنوز تصمیمی ثبت نشده است.</p>';
+                document.getElementById('recentDecisions').innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 2rem;">No decisions recorded yet.</p>';
             }
         }
 
@@ -325,15 +338,15 @@
             if (perf) {
                 document.getElementById('performanceMetrics').innerHTML = `
                     <div class="st-metric">
-                        <div class="st-metric-label">کل معاملات</div>
+                        <div class="st-metric-label">Total Trades</div>
                         <div class="st-metric-value">${perf.total_trades || 0}</div>
                     </div>
                     <div class="st-metric">
-                        <div class="st-metric-label">برد</div>
+                        <div class="st-metric-label">Wins</div>
                         <div class="st-metric-value" style="color: var(--green);">${perf.wins || 0}</div>
                     </div>
                     <div class="st-metric">
-                        <div class="st-metric-label">باخت</div>
+                        <div class="st-metric-label">Losses</div>
                         <div class="st-metric-value" style="color: var(--red);">${perf.losses || 0}</div>
                     </div>
                     <div class="st-metric">
@@ -341,9 +354,9 @@
                         <div class="st-metric-value">${perf.winrate || 0}%</div>
                     </div>
                     <div class="st-metric">
-                        <div class="st-metric-label">PnL کل</div>
+                        <div class="st-metric-label">Total PnL</div>
                         <div class="st-metric-value" style="color: ${perf.total_pnl >= 0 ? 'var(--green)' : 'var(--red)'};">
-                            ${perf.total_pnl?.toLocaleString('fa-IR') || 0}
+                            ${perf.total_pnl ? formatCurrency(perf.total_pnl) : formatCurrency(0)}
                         </div>
                     </div>
                 `;

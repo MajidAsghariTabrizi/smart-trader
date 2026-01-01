@@ -237,7 +237,7 @@ async def api_decisions(
 @app.get("/api/btc_price")
 async def api_btc_price() -> JSONResponse:
     """
-    آخرین قیمت BTC/IRT از trading_logs + history کوتاه.
+    Latest BTC/USDT price from trading_logs + short history.
     برای باکس "قیمت لحظه‌ای" و اسپارکلاین در home.js.
     """
     # 60 رکورد آخر برای history
@@ -253,7 +253,7 @@ async def api_btc_price() -> JSONResponse:
 
     if not rows:
         return JSONResponse(
-            {"price": None, "price_tmn": None, "timestamp": None, "history": []}
+            {"price": None, "price_usdt": None, "timestamp": None, "history": []}
         )
 
     # نرمال‌سازی و برعکس کردن برای قدیم → جدید
@@ -266,7 +266,7 @@ async def api_btc_price() -> JSONResponse:
     return JSONResponse(
         {
             "price": last["price"],
-            "price_tmn": last["price"],  # فرض: price به تومان است
+            "price_usdt": last["price"],  # Price in USDT/USD
             "timestamp": last["timestamp"],
             "history": history,
         }

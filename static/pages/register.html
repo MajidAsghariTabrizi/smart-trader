@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
-    <title>ثبت‌نام – SmartTrader</title>
+    <title>Register – SmartTrader</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/static/css/style.css">
     <style>
@@ -76,17 +76,17 @@
     <div class="st-page">
         <div class="auth-container">
             <div class="auth-box">
-                <h2 style="text-align: center; margin-bottom: 1.5rem;">ثبت‌نام در SmartTrader</h2>
+                <h2 style="text-align: center; margin-bottom: 1.5rem;">Register for SmartTrader</h2>
                 <form class="auth-form" id="registerForm">
-                    <input type="email" id="email" placeholder="ایمیل" required>
-                    <input type="password" id="password" placeholder="رمز عبور (حداقل ۶ کاراکتر)" required minlength="6">
+                    <input type="email" id="email" placeholder="Email" required>
+                    <input type="password" id="password" placeholder="Password (min 6 characters)" required minlength="6">
                     <div id="errorMessage" class="error-message" style="display: none;"></div>
                     <div id="successMessage" class="success-message" style="display: none;"></div>
-                    <button type="submit">ثبت‌نام</button>
+                    <button type="submit">Sign Up</button>
                 </form>
                 <div class="auth-links">
-                    <a href="/login">قبلاً ثبت‌نام کرده‌اید؟ وارد شوید</a>
-                    <a href="/" style="display: block; margin-top: 0.5rem;">بازگشت به صفحه اصلی</a>
+                    <a href="/login">Already registered? Log in</a>
+                    <a href="/" style="display: block; margin-top: 0.5rem;">Back to Home</a>
                 </div>
             </div>
         </div>
@@ -111,22 +111,21 @@
 
                 const data = await res.json();
                 if (res.ok) {
-                    successDiv.textContent = 'ثبت‌نام موفق! در حال انتقال...';
+                    successDiv.textContent = 'Registration successful! Redirecting...';
                     successDiv.style.display = 'block';
                     localStorage.setItem('token', data.token);
                     setTimeout(() => {
                         window.location.href = '/app';
                     }, 1000);
                 } else {
-                    errorDiv.textContent = data.detail || 'خطا در ثبت‌نام';
+                    errorDiv.textContent = data.detail || 'Registration error';
                     errorDiv.style.display = 'block';
                 }
             } catch (err) {
-                errorDiv.textContent = 'خطا در اتصال به سرور';
+                errorDiv.textContent = 'Connection error';
                 errorDiv.style.display = 'block';
             }
         });
     </script>
 </body>
 </html>
-

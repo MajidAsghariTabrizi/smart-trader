@@ -14,17 +14,17 @@ function renderNavigation() {
                 </div>
                 <div class="st-nav-menu" id="navMenu">
                     ${isAuthenticated ? `
-                        <a href="/app" class="st-nav-link">داشبورد</a>
-                        <a href="/insights" class="st-nav-link">تحلیل‌ها</a>
-                        <a href="/pricing" class="st-nav-link">تعرفه‌ها</a>
+                        <a href="/app" class="st-nav-link">Command Center</a>
+                        <a href="/insights" class="st-nav-link">Market Intelligence</a>
+                        <a href="/pricing" class="st-nav-link">Pricing</a>
                         <span class="st-nav-divider"></span>
-                        <a href="/" class="st-nav-link" onclick="localStorage.removeItem('token'); return true;">خروج</a>
+                        <a href="/" class="st-nav-link" onclick="localStorage.removeItem('token'); return true;">Logout</a>
                     ` : `
-                        <a href="/" class="st-nav-link">صفحه اصلی</a>
-                        <a href="/pricing" class="st-nav-link">تعرفه‌ها</a>
-                        <a href="/insights" class="st-nav-link">تحلیل‌ها</a>
-                        <a href="/login" class="st-nav-link st-nav-link-primary">ورود</a>
-                        <a href="/register" class="st-nav-link st-nav-link-cta">ثبت‌نام</a>
+                        <a href="/" class="st-nav-link">Home</a>
+                        <a href="/pricing" class="st-nav-link">Pricing</a>
+                        <a href="/insights" class="st-nav-link">Insights</a>
+                        <a href="/login" class="st-nav-link st-nav-link-primary">Login</a>
+                        <a href="/register" class="st-nav-link st-nav-link-cta">Get Started</a>
                     `}
                 </div>
                 <button class="st-nav-toggle" id="navToggle" aria-label="Toggle menu">
