@@ -1,18 +1,18 @@
-name: Deploy STAGING
+name: Deploy PROD
 on:
   push:
-    branches: [staging]
+    branches: [main]
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: SSH Deploy to Staging
+      - name: SSH Deploy to Production
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 171.22.24.45
           username: root
-          key: ${{ secrets.SMARTTRADER_STG_SSH_KEY }}
+          key: ${{ secrets.SSH_KEY }}
           script: |
-            cd /root/smart-trader-stg
-            bash deploy-stg.sh
+            cd /root/smart-trader
+            bash deploy-prod.sh
