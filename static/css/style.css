@@ -19,8 +19,13 @@
 
     --radius-lg: 20px;
     --radius-md: 14px;
+    --radius-sm: 8px;
 
     --shadow: 0 22px 50px rgba(0,0,0,0.55);
+    --shadow-glow: 0 0 20px rgba(96, 165, 250, 0.3);
+
+    --glass-bg: rgba(15, 23, 42, 0.7);
+    --glass-border: rgba(148, 163, 178, 0.2);
 }
 
 /* =========================================================
@@ -696,4 +701,369 @@ html {
     flex-direction: column;
     gap: 3px;
     margin-top: 10px;
+}
+
+/* =========================================================
+   NAVIGATION BAR
+   ========================================================= */
+
+.st-nav {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--glass-border);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    padding: 0;
+}
+
+.st-nav-container {
+    max-width: 1350px;
+    margin: 0 auto;
+    padding: 0 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 64px;
+}
+
+.st-nav-brand {
+    display: flex;
+    align-items: center;
+}
+
+.st-nav-logo {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-main);
+    text-decoration: none;
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.st-nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.st-nav-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.st-nav-link:hover {
+    color: var(--text-main);
+    background: rgba(96, 165, 250, 0.1);
+}
+
+.st-nav-link-primary {
+    color: var(--blue);
+}
+
+.st-nav-link-cta {
+    background: var(--blue);
+    color: white;
+    padding: 0.5rem 1.25rem;
+}
+
+.st-nav-link-cta:hover {
+    background: #3b82f6;
+    box-shadow: var(--shadow-glow);
+    color: white;
+}
+
+.st-nav-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--glass-border);
+    margin: 0 0.5rem;
+}
+
+.st-nav-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.st-nav-toggle span {
+    width: 24px;
+    height: 2px;
+    background: var(--text-main);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .st-nav-toggle {
+        display: flex;
+    }
+    .st-nav-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg-card);
+        backdrop-filter: blur(12px);
+        flex-direction: column;
+        padding: 1rem;
+        gap: 0.5rem;
+        border-top: 1px solid var(--glass-border);
+        transform: translateY(-100%);
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
+    .st-nav-menu.st-nav-menu-open {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: all;
+    }
+    .st-nav-link {
+        width: 100%;
+        text-align: right;
+        padding: 0.75rem 1rem;
+    }
+}
+
+/* =========================================================
+   STATUS BADGES
+   ========================================================= */
+
+.st-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.st-status-badge-active {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--green);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.st-status-badge-pending {
+    background: rgba(251, 191, 36, 0.15);
+    color: var(--yellow);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.st-status-badge-pro-only {
+    background: rgba(96, 165, 250, 0.15);
+    color: var(--blue);
+    border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+.st-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.st-status-dot-active {
+    background: var(--green);
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+    animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.2); }
+}
+
+/* =========================================================
+   ACTION BUTTONS
+   ========================================================= */
+
+.st-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--glass-bg);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+}
+
+.st-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.st-btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: none;
+}
+
+.st-btn-primary:hover {
+    box-shadow: var(--shadow-glow);
+}
+
+.st-btn-secondary {
+    background: var(--glass-bg);
+    color: var(--blue);
+    border: 1px solid var(--blue);
+}
+
+.st-btn-secondary:hover {
+    background: rgba(96, 165, 250, 0.1);
+}
+
+/* =========================================================
+   GLASSMORPHISM CARDS
+   ========================================================= */
+
+.st-glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+.st-glass-card:hover {
+    border-color: rgba(96, 165, 250, 0.4);
+    box-shadow: var(--shadow-glow);
+}
+
+/* =========================================================
+   BEHAVIOR SCORE GAUGE (Semi-Circle)
+   ========================================================= */
+
+.st-gauge-container {
+    position: relative;
+    width: 200px;
+    height: 120px;
+    margin: 1rem auto;
+}
+
+.st-gauge-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.st-gauge-track {
+    fill: none;
+    stroke: rgba(148, 163, 178, 0.2);
+    stroke-width: 12;
+    stroke-linecap: round;
+}
+
+.st-gauge-fill {
+    fill: none;
+    stroke-width: 12;
+    stroke-linecap: round;
+    stroke-dasharray: 314;
+    stroke-dashoffset: 314;
+    transition: stroke-dashoffset 0.8s ease;
+}
+
+.st-gauge-fill-high {
+    stroke: var(--green);
+}
+
+.st-gauge-fill-medium {
+    stroke: var(--yellow);
+}
+
+.st-gauge-fill-low {
+    stroke: var(--red);
+}
+
+.st-gauge-value {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.st-gauge-label {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    opacity: 0.7;
+    text-align: center;
+}
+
+/* =========================================================
+   RESPONSIVE GRIDS
+   ========================================================= */
+
+.st-grid-responsive {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .st-grid-responsive {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+/* =========================================================
+   SCROLL HINT
+   ========================================================= */
+
+.st-scroll-hint {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    animation: bounce-hint 2s ease-in-out infinite;
+}
+
+.st-scroll-hint::after {
+    content: '↓';
+    font-size: 1.5rem;
+    opacity: 0.6;
+}
+
+@keyframes bounce-hint {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(10px); }
 }

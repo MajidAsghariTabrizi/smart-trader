@@ -5,78 +5,44 @@
     <title>SmartTrader – ربات معاملاتی هوشمند</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/static/css/style.css">
-    <style>
-        .landing-hero {
-            min-height: 80vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 2rem;
-        }
-        .landing-cta {
-            margin-top: 2rem;
-        }
-        .landing-cta a {
-            display: inline-block;
-            padding: 1rem 2rem;
-            margin: 0.5rem;
-            background: #2563eb;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-        }
-        .landing-features {
-            padding: 4rem 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 2rem;
-        }
-        .feature-card {
-            padding: 2rem;
-            background: rgba(30, 41, 59, 0.5);
-            border-radius: 12px;
-            border: 1px solid rgba(100, 116, 139, 0.2);
-        }
-    </style>
 </head>
 <body class="st-body">
+    <script src="/static/js/nav.js"></script>
     <div class="st-page">
-        <section class="landing-hero">
-            <div>
-                <h1 style="font-size: 3rem; margin-bottom: 1rem;">SmartTrader</h1>
-                <p style="font-size: 1.5rem; color: #94a3b8; margin-bottom: 2rem;">
-                    ربات معاملاتی هوشمند با تحلیل چندلایه بازار
+        <section class="landing-hero" style="min-height: 90vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 4rem 2rem; position: relative;">
+            <div style="max-width: 800px; z-index: 1;">
+                <h1 style="font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2;">
+                    SmartTrader
+                </h1>
+                <p style="font-size: clamp(1.1rem, 2vw, 1.5rem); color: var(--text-muted); margin-bottom: 2.5rem; line-height: 1.6;">
+                    ربات معاملاتی هوشمند با تحلیل چندلایه بازار<br>
+                    <span style="color: var(--text-main); font-weight: 600;">Command Center برای معامله‌گران حرفه‌ای</span>
                 </p>
-                <div class="landing-cta">
-                    <a href="/register">ثبت‌نام رایگان</a>
-                    <a href="/login">ورود</a>
-                    <a href="/pricing">تعرفه‌ها</a>
-                    <a href="/insights">تحلیل‌ها</a>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 2.5rem;">
+                    <a href="/register" class="st-btn st-btn-primary">شروع رایگان</a>
+                    <a href="/pricing" class="st-btn st-btn-secondary">مشاهده تعرفه‌ها</a>
                 </div>
+                <div class="st-scroll-hint" style="position: absolute; bottom: 2rem;"></div>
             </div>
         </section>
 
-        <section class="landing-features">
-            <h2 style="text-align: center; margin-bottom: 2rem;">ویژگی‌ها</h2>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <h3>تحلیل هوشمند</h3>
-                    <p>تحلیل چندلایه بازار با استفاده از ADX، ATR و مدل‌های پیشرفته</p>
+        <section class="landing-features" style="padding: 6rem 2rem; max-width: 1200px; margin: 0 auto;">
+            <h2 style="text-align: center; margin-bottom: 3rem; font-size: 2rem; font-weight: 700;">ویژگی‌های پیشرفته</h2>
+            <div class="st-grid-responsive">
+                <div class="st-glass-card">
+                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">🧠</div>
+                    <h3 style="margin-bottom: 0.75rem; font-size: 1.25rem;">تحلیل هوشمند</h3>
+                    <p style="color: var(--text-muted); line-height: 1.6;">تحلیل چندلایه بازار با استفاده از ADX، ATR و مدل‌های پیشرفته</p>
                 </div>
-                <div class="feature-card">
-                    <h3>سیگنال‌های زنده</h3>
-                    <p>دریافت سیگنال‌های خرید و فروش در لحظه</p>
+                <div class="st-glass-card">
+                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">⚡</div>
+                    <h3 style="margin-bottom: 0.75rem; font-size: 1.25rem;">سیگنال‌های زنده</h3>
+                    <p style="color: var(--text-muted); line-height: 1.6;">دریافت سیگنال‌های خرید و فروش در لحظه با هشدارهای لحظه‌ای</p>
                 </div>
-                <div class="feature-card">
-                    <h3>مدیریت ریسک</h3>
-                    <p>مدیریت خودکار ریسک و محاسبه سایز پوزیشن</p>
+                <div class="st-glass-card">
+                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">🛡️</div>
+                    <h3 style="margin-bottom: 0.75rem; font-size: 1.25rem;">مدیریت ریسک</h3>
+                    <p style="color: var(--text-muted); line-height: 1.6;">مدیریت خودکار ریسک و محاسبه سایز پوزیشن بر اساس ATR</p>
                 </div>
             </div>
         </section>

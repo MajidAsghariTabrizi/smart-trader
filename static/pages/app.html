@@ -2,97 +2,103 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>داشبورد – SmartTrader</title>
+    <title>Command Center – SmartTrader</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/static/css/style.css">
-    <style>
-        .app-header {
-            padding: 1rem 2rem;
-            background: rgba(30, 41, 59, 0.8);
-            border-bottom: 1px solid rgba(100, 116, 139, 0.3);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .app-container {
-            padding: 2rem;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        .app-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-        .app-card {
-            padding: 1.5rem;
-            background: rgba(30, 41, 59, 0.6);
-            border-radius: 8px;
-            border: 1px solid rgba(100, 116, 139, 0.3);
-        }
-        .app-card h3 {
-            margin-bottom: 1rem;
-        }
-        .behavior-score {
-            font-size: 3rem;
-            font-weight: bold;
-            text-align: center;
-            margin: 1rem 0;
-        }
-        .behavior-explanation {
-            margin-top: 1rem;
-            padding: 1rem;
-            background: rgba(15, 23, 42, 0.5);
-            border-radius: 6px;
-        }
-        .behavior-explanation ul {
-            list-style: none;
-            padding: 0;
-        }
-        .behavior-explanation li {
-            padding: 0.5rem 0;
-            border-bottom: 1px solid rgba(100, 116, 139, 0.2);
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="st-body">
+    <script src="/static/js/nav.js"></script>
     <div class="st-page">
-        <header class="app-header">
-            <h2>داشبورد SmartTrader</h2>
+        <!-- Command Center Header -->
+        <header class="st-glass-card" style="margin: 2rem 0; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
-                <span id="userEmail" style="margin-left: 1rem;"></span>
-                <span id="userPlan" style="margin-left: 1rem; color: #60a5fa;"></span>
-                <a href="/" onclick="localStorage.removeItem('token'); return true;" style="margin-left: 1rem; color: #94a3b8; text-decoration: none;">خروج</a>
+                <h1 style="margin: 0 0 0.5rem; font-size: 1.75rem; font-weight: 700;">Command Center</h1>
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <span class="st-status-badge st-status-badge-active">
+                        <span class="st-status-dot st-status-dot-active"></span>
+                        Bot Active
+                    </span>
+                    <span id="userPlan" style="color: var(--blue); font-size: 0.9rem;"></span>
+                </div>
+            </div>
+            <div style="text-align: left;">
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.25rem;">کاربر</div>
+                <div id="userEmail" style="font-weight: 600;"></div>
             </div>
         </header>
 
-        <div class="app-container">
-            <h1>خوش آمدید</h1>
-            <p>این داشبورد شخصی شماست. در اینجا می‌توانید تحلیل‌های بازار، رفتار نهنگ‌ها و تصمیم‌های ربات را مشاهده کنید.</p>
-
-            <div class="app-grid">
-                <div class="app-card">
-                    <h3>وضعیت حساب</h3>
-                    <div id="userSummary">در حال بارگذاری...</div>
+        <!-- High-Density Grid -->
+        <div class="st-main">
+            <!-- Row 1: Price Chart + Behavior Gauge -->
+            <section class="st-row st-row-responsive">
+                <div class="st-card st-card-large">
+                    <div class="st-card-header">
+                        <h2>نمودار قیمت + سیگنال‌ها</h2>
+                        <p class="st-card-caption">قیمت BTC با مارکرهای BUY / SELL</p>
+                    </div>
+                    <div style="height: 400px; position: relative;">
+                        <canvas id="priceChart"></canvas>
+                    </div>
                 </div>
 
-                <div class="app-card">
-                    <h3>رفتار بازار (Whale Proxies)</h3>
-                    <div id="behaviorData">در حال بارگذاری...</div>
+                <aside class="st-card st-side-panel">
+                    <div class="st-panel-block">
+                        <div class="st-panel-title">Behavior Score</div>
+                        <div class="st-panel-subtitle">Whale Proxies Analysis</div>
+                        <div id="behaviorGauge" style="margin: 1rem 0;">
+                            <div class="st-gauge-container">
+                                <svg class="st-gauge-svg" viewBox="0 0 200 120">
+                                    <path class="st-gauge-track" d="M 20 100 A 80 80 0 0 1 180 100" />
+                                    <path id="gaugeFill" class="st-gauge-fill" d="M 20 100 A 80 80 0 0 1 180 100" />
+                                </svg>
+                                <div id="gaugeValue" class="st-gauge-value">--</div>
+                                <div class="st-gauge-label">Score</div>
+                            </div>
+                        </div>
+                        <div id="behaviorExplanations" style="font-size: 0.75rem; opacity: 0.8; margin-top: 1rem;"></div>
+                    </div>
+
+                    <div class="st-panel-block">
+                        <div class="st-panel-title">Market Overview</div>
+                        <div id="marketOverview" style="font-size: 0.85rem; line-height: 1.8;"></div>
+                    </div>
+                </aside>
+            </section>
+
+            <!-- Row 2: Account Status + Recent Decisions -->
+            <section class="st-row st-row-responsive">
+                <div class="st-card">
+                    <div class="st-card-header">
+                        <h2>وضعیت حساب</h2>
+                    </div>
+                    <div id="userSummary" style="padding: 1rem 0;"></div>
                 </div>
 
-                <div class="app-card">
-                    <h3>نظرات بازار</h3>
-                    <div id="marketOverview">در حال بارگذاری...</div>
+                <div class="st-card">
+                    <div class="st-card-header">
+                        <h2>آخرین تصمیم‌های ربات</h2>
+                        <p class="st-card-caption">Live Decision Feed</p>
+                    </div>
+                    <div id="recentDecisions" style="max-height: 300px; overflow-y: auto;"></div>
                 </div>
-            </div>
+            </section>
 
-            <div class="app-card" style="margin-top: 2rem;">
-                <h3>آخرین تصمیم‌های ربات</h3>
-                <div id="recentDecisions">در حال بارگذاری...</div>
-            </div>
+            <!-- Row 3: Performance Metrics -->
+            <section class="st-row">
+                <div class="st-card">
+                    <div class="st-card-header">
+                        <h2>Performance Metrics</h2>
+                    </div>
+                    <div class="st-metrics-grid" id="performanceMetrics"></div>
+                </div>
+            </section>
         </div>
+
+        <footer class="st-footer">
+            <span>SmartTrader © 2025</span>
+            <span>Quantiviq • Algorithmic Research</span>
+        </footer>
     </div>
 
     <script src="/static/js/auth.js"></script>
@@ -102,11 +108,11 @@
             window.location.href = '/login';
         }
 
+        let priceChartInstance = null;
+
         async function api(path) {
             const res = await fetch(path, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.status === 401) {
                 localStorage.removeItem('token');
@@ -114,6 +120,114 @@
                 return null;
             }
             return res.ok ? await res.json() : null;
+        }
+
+        function formatFaDate(ts) {
+            const d = new Date(ts);
+            if (isNaN(d.getTime())) return ts;
+            return d.toLocaleString('fa-IR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function updateGauge(score, colorClass) {
+            const fill = document.getElementById('gaugeFill');
+            const value = document.getElementById('gaugeValue');
+            if (!fill || !value) return;
+
+            const percentage = Math.min(100, Math.max(0, score));
+            const offset = 314 * (1 - percentage / 100);
+            
+            fill.setAttribute('stroke-dashoffset', offset);
+            fill.className = `st-gauge-fill ${colorClass}`;
+            value.textContent = score.toFixed(1);
+            value.style.color = colorClass === 'st-gauge-fill-high' ? 'var(--green)' : 
+                               colorClass === 'st-gauge-fill-medium' ? 'var(--yellow)' : 'var(--red)';
+        }
+
+        function buildPriceChart(prices, decisions) {
+            const canvas = document.getElementById('priceChart');
+            if (!canvas || !prices || !prices.length) return;
+
+            const labels = prices.map(p => p.timestamp);
+            const data = prices.map(p => p.price);
+            const indexByTs = {};
+            labels.forEach((t, i) => indexByTs[t] = i);
+
+            const buyPoints = [];
+            const sellPoints = [];
+
+            decisions.forEach(d => {
+                const i = indexByTs[d.timestamp];
+                if (i == null) return;
+                const point = { x: labels[i], y: data[i] };
+                if (d.decision === 'BUY') buyPoints.push(point);
+                if (d.decision === 'SELL') sellPoints.push(point);
+            });
+
+            if (priceChartInstance) priceChartInstance.destroy();
+
+            priceChartInstance = new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'قیمت',
+                            data,
+                            borderColor: '#60a5fa',
+                            backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            type: 'scatter',
+                            label: 'BUY',
+                            data: buyPoints,
+                            pointBackgroundColor: '#22c55e',
+                            pointBorderColor: '#ffffff',
+                            pointRadius: 8,
+                            pointStyle: 'triangle'
+                        },
+                        {
+                            type: 'scatter',
+                            label: 'SELL',
+                            data: sellPoints,
+                            pointBackgroundColor: '#ef4444',
+                            pointBorderColor: '#ffffff',
+                            pointRadius: 8,
+                            pointStyle: 'triangle'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: items => formatFaDate(items[0].label),
+                                label: ctx => 'قیمت: ' + Number(ctx.parsed.y).toLocaleString('fa-IR')
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { display: false } },
+                        y: {
+                            ticks: {
+                                callback: v => Number(v).toLocaleString('fa-IR')
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         async function loadUserData() {
@@ -126,8 +240,18 @@
             const summary = await api('/api/app/me/summary');
             if (summary) {
                 document.getElementById('userSummary').innerHTML = `
-                    <p><strong>پلن:</strong> ${summary.plan}</p>
-                    <p><strong>هشدارها:</strong> ${summary.alerts_enabled ? 'فعال' : 'غیرفعال'}</p>
+                    <div style="display: grid; gap: 1rem;">
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--bg-soft); border-radius: var(--radius-sm);">
+                            <span style="color: var(--text-muted);">پلن فعلی:</span>
+                            <span style="font-weight: 600;">${summary.plan}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--bg-soft); border-radius: var(--radius-sm);">
+                            <span style="color: var(--text-muted);">هشدارها:</span>
+                            <span class="st-status-badge ${summary.alerts_enabled ? 'st-status-badge-active' : 'st-status-badge-pending'}">
+                                ${summary.alerts_enabled ? 'فعال' : 'غیرفعال'}
+                            </span>
+                        </div>
+                    </div>
                 `;
             }
         }
@@ -136,14 +260,14 @@
             const behavior = await fetch('/api/market/behavior?symbol=BTC').then(r => r.json());
             if (behavior) {
                 const score = behavior.behavior_score || 0;
-                const color = score > 70 ? '#10b981' : score > 40 ? '#f59e0b' : '#ef4444';
-                document.getElementById('behaviorData').innerHTML = `
-                    <div class="behavior-score" style="color: ${color}">${score.toFixed(1)}</div>
-                    <div class="behavior-explanation">
-                        <ul>
-                            ${behavior.explanations.map(e => `<li>${e}</li>`).join('')}
-                        </ul>
-                    </div>
+                const colorClass = score > 70 ? 'st-gauge-fill-high' : score > 40 ? 'st-gauge-fill-medium' : 'st-gauge-fill-low';
+                updateGauge(score, colorClass);
+
+                const explanations = behavior.explanations || [];
+                document.getElementById('behaviorExplanations').innerHTML = `
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        ${explanations.map(e => `<li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(148,163,178,0.1);">• ${e}</li>`).join('')}
+                    </ul>
                 `;
             }
         }
@@ -152,9 +276,22 @@
             const overview = await fetch('/api/market/overview?symbol=BTC').then(r => r.json());
             if (overview) {
                 document.getElementById('marketOverview').innerHTML = `
-                    <p><strong>قیمت:</strong> ${overview.price.toLocaleString('fa-IR')}</p>
-                    <p><strong>تغییر 24h:</strong> <span style="color: ${overview.price_change_24h >= 0 ? '#10b981' : '#ef4444'}">${overview.price_change_24h.toFixed(2)}%</span></p>
-                    <p><strong>حجم 24h:</strong> ${overview.volume_24h.toLocaleString('fa-IR')}</p>
+                    <div style="display: grid; gap: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-muted);">قیمت فعلی:</span>
+                            <span style="font-weight: 600;">${overview.price.toLocaleString('fa-IR')}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-muted);">تغییر 24h:</span>
+                            <span style="color: ${overview.price_change_24h >= 0 ? 'var(--green)' : 'var(--red)'}; font-weight: 600;">
+                                ${overview.price_change_24h >= 0 ? '+' : ''}${overview.price_change_24h.toFixed(2)}%
+                            </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-muted);">حجم 24h:</span>
+                            <span style="font-weight: 600;">${overview.volume_24h.toLocaleString('fa-IR')}</span>
+                        </div>
+                    </div>
                 `;
             }
         }
@@ -162,30 +299,83 @@
         async function loadRecentDecisions() {
             const decisions = await fetch('/api/decisions?limit=10').then(r => r.json());
             if (decisions && decisions.length > 0) {
-                document.getElementById('recentDecisions').innerHTML = decisions.slice().reverse().map(d => `
-                    <div style="padding: 1rem; margin: 0.5rem 0; background: rgba(15, 23, 42, 0.5); border-radius: 6px;">
-                        <strong>${d.decision || 'HOLD'}</strong> - قیمت: ${d.price?.toLocaleString('fa-IR') || '--'}
-                        <br><small>${d.timestamp ? new Date(d.timestamp).toLocaleString('fa-IR') : ''}</small>
-                    </div>
-                `).join('');
+                document.getElementById('recentDecisions').innerHTML = decisions.slice().reverse().map(d => {
+                    const decisionClass = d.decision === 'BUY' ? 'st-status-badge-active' : 
+                                        d.decision === 'SELL' ? 'st-status-badge-pending' : '';
+                    return `
+                        <div style="padding: 1rem; margin: 0.5rem 0; background: var(--bg-soft); border-radius: var(--radius-sm); border-left: 3px solid ${d.decision === 'BUY' ? 'var(--green)' : d.decision === 'SELL' ? 'var(--red)' : 'var(--text-muted)'};">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span class="st-status-badge ${decisionClass}">${d.decision || 'HOLD'}</span>
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">${formatFaDate(d.timestamp)}</span>
+                            </div>
+                            <div style="font-size: 0.9rem;">
+                                <strong>قیمت:</strong> ${d.price?.toLocaleString('fa-IR') || '--'}
+                                ${d.regime ? ` • <strong>رژیم:</strong> ${d.regime}` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             } else {
-                document.getElementById('recentDecisions').innerHTML = '<p>هنوز تصمیمی ثبت نشده است.</p>';
+                document.getElementById('recentDecisions').innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 2rem;">هنوز تصمیمی ثبت نشده است.</p>';
             }
         }
 
-        // Load all data
+        async function loadPerformanceMetrics() {
+            const perf = await fetch('/api/perf/summary').then(r => r.json());
+            if (perf) {
+                document.getElementById('performanceMetrics').innerHTML = `
+                    <div class="st-metric">
+                        <div class="st-metric-label">کل معاملات</div>
+                        <div class="st-metric-value">${perf.total_trades || 0}</div>
+                    </div>
+                    <div class="st-metric">
+                        <div class="st-metric-label">برد</div>
+                        <div class="st-metric-value" style="color: var(--green);">${perf.wins || 0}</div>
+                    </div>
+                    <div class="st-metric">
+                        <div class="st-metric-label">باخت</div>
+                        <div class="st-metric-value" style="color: var(--red);">${perf.losses || 0}</div>
+                    </div>
+                    <div class="st-metric">
+                        <div class="st-metric-label">Winrate</div>
+                        <div class="st-metric-value">${perf.winrate || 0}%</div>
+                    </div>
+                    <div class="st-metric">
+                        <div class="st-metric-label">PnL کل</div>
+                        <div class="st-metric-value" style="color: ${perf.total_pnl >= 0 ? 'var(--green)' : 'var(--red)'};">
+                            ${perf.total_pnl?.toLocaleString('fa-IR') || 0}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        async function loadPriceChart() {
+            const [prices, decisions] = await Promise.all([
+                fetch('/api/prices?limit=300').then(r => r.json()),
+                fetch('/api/decisions?limit=80').then(r => r.json())
+            ]);
+            if (prices && decisions) {
+                buildPriceChart(prices, decisions);
+            }
+        }
+
+        // Initial load
         loadUserData();
         loadBehaviorData();
         loadMarketOverview();
         loadRecentDecisions();
+        loadPerformanceMetrics();
+        loadPriceChart();
 
-        // Refresh every 30 seconds
+        // Auto-refresh every 30 seconds
         setInterval(() => {
             loadBehaviorData();
             loadMarketOverview();
             loadRecentDecisions();
+            loadPerformanceMetrics();
+            loadPriceChart();
         }, 30000);
     </script>
 </body>
 </html>
-
