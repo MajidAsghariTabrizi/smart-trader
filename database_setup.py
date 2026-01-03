@@ -94,6 +94,12 @@ REQUIRED_COLUMNS: Dict[str, str] = {
     "breakout_gated": "INTEGER",
 
     "fingerprint": "TEXT",
+    
+    # Behavior Intelligence (VSA, Whale Tracking)
+    "behavior_score": "REAL",
+    "behavior_bias": "REAL",
+    "behavior_json": "TEXT",
+    "behavior_providers": "TEXT",
 }
 
 # =====================================================================
