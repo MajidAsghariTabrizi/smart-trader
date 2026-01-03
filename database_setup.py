@@ -357,6 +357,7 @@ def dc_to_row(
 ) -> Dict[str, Any]:
     """
     تبدیل DecisionContext اصلی و confirm به یک dict مناسب برای insert_trading_log
+    Includes VSA fingerprint and whale bias in fingerprint, stores whale override reasons.
     """
 
     def reason_has(txt: str) -> int:
@@ -364,6 +365,48 @@ def dc_to_row(
             return 1 if any(txt in r for r in getattr(dc_primary, "reasons", []) or []) else 0
         except Exception:
             return 0
+    
+    # Extract behavior details for VSA and whale bias
+    behavior_details = getattr(dc_primary, "behavior_details", None)
+    vsa_fingerprint = None
+    whale_bias = None
+    whale_override_reasons = []
+    
+    if behavior_details and isinstance(behavior_details, dict):
+        vsa_score = behavior_details.get("vsa_absorption_score", 0.0)
+        vsa_signal = behavior_details.get("vsa_signal", "NORMAL")
+        whale_bias = behavior_details.get("whale_bias", 0.0)
+        whale_direction = behavior_details.get("whale_direction", "NEUTRAL")
+        supply_overcoming = behavior_details.get("supply_overcoming_demand", False)
+        rvol = behavior_details.get("rvol", 1.0)
+        
+        # Create VSA fingerprint component
+        vsa_fingerprint = f"VSA:{vsa_score:.1f}:{vsa_signal[:3]}:WB:{whale_bias:.2f}:RVOL:{rvol:.2f}"
+        
+        # Check if whale gating occurred (check reasons for WHALE_GATE)
+        reasons = getattr(dc_primary, "reasons", []) or []
+        for reason in reasons:
+            if "WHALE_GATE" in reason:
+                whale_override_reasons.append(reason)
+        
+        # Add whale context to reasons if supply overcoming demand
+        if supply_overcoming:
+            whale_override_reasons.append(
+                f"Whale context: supply_overcoming_demand=True, "
+                f"whale_bias={whale_bias:.3f}, whale_direction={whale_direction}"
+            )
+    
+    # Combine reasons with whale override reasons
+    all_reasons = list(getattr(dc_primary, "reasons", []) or [])
+    if whale_override_reasons:
+        all_reasons.extend(whale_override_reasons)
+    
+    # Enhance fingerprint with VSA data if available
+    enhanced_fingerprint = fingerprint
+    if vsa_fingerprint and fingerprint:
+        enhanced_fingerprint = f"{fingerprint}|{vsa_fingerprint}"
+    elif vsa_fingerprint:
+        enhanced_fingerprint = vsa_fingerprint
 
     return {
         "timestamp": getattr(dc_primary, "timestamp", None),
@@ -396,7 +439,7 @@ def dc_to_row(
 
         "decision": decision,
         "regime": getattr(dc_primary, "regime", None),
-        "reasons_json": getattr(dc_primary, "reasons", None),
+        "reasons_json": all_reasons,  # Includes whale override reasons
         "regime_reasons": regime_reasons,
 
         "stop_price": getattr(getattr(dc_primary, "planned_position", None), "stop_price", None),
@@ -409,5 +452,5 @@ def dc_to_row(
         "meanrev_gated": reason_has("Mean-reversion gated"),
         "breakout_gated": reason_has("Breakout gated"),
 
-        "fingerprint": fingerprint,
+        "fingerprint": enhanced_fingerprint,  # Includes VSA fingerprint and whale bias
     }
