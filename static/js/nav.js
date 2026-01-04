@@ -47,9 +47,48 @@ function renderNavigation() {
         const toggle = document.getElementById('navToggle');
         const menu = document.getElementById('navMenu');
         if (toggle && menu) {
-            toggle.addEventListener('click', () => {
+            toggle.addEventListener('click', (e) => {
+                e.stopPropagation();
                 menu.classList.toggle('st-nav-menu-open');
                 toggle.classList.toggle('st-nav-toggle-active');
+                // Prevent body scroll when menu is open
+                if (menu.classList.contains('st-nav-menu-open')) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = '';
+                }
+            });
+
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 767) {
+                    if (!menu.contains(e.target) && !toggle.contains(e.target)) {
+                        menu.classList.remove('st-nav-menu-open');
+                        toggle.classList.remove('st-nav-toggle-active');
+                        document.body.style.overflow = '';
+                    }
+                }
+            });
+
+            // Close menu when clicking a link
+            const navLinks = menu.querySelectorAll('.st-nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth <= 767) {
+                        menu.classList.remove('st-nav-menu-open');
+                        toggle.classList.remove('st-nav-toggle-active');
+                        document.body.style.overflow = '';
+                    }
+                });
+            });
+
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 767) {
+                    menu.classList.remove('st-nav-menu-open');
+                    toggle.classList.remove('st-nav-toggle-active');
+                    document.body.style.overflow = '';
+                }
             });
         }
     }

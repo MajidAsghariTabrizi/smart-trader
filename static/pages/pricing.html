@@ -5,128 +5,59 @@
     <title>Pricing – SmartTrader</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/static/css/style.css">
-    <style>
-        .pricing-container {
-            padding: 4rem 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .pricing-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-top: 2rem;
-        }
-        .pricing-card {
-            padding: 2rem;
-            background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--glass-border);
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-        .pricing-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow);
-            border-color: rgba(96, 165, 250, 0.4);
-        }
-        .pricing-card.featured {
-            border: 2px solid var(--blue);
-            background: var(--glass-bg);
-            box-shadow: var(--shadow-glow);
-        }
-        .pricing-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-        }
-        .pricing-card .price {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin: 1rem 0;
-        }
-        .pricing-card ul {
-            list-style: none;
-            padding: 0;
-            margin: 1.5rem 0;
-            text-align: left;
-        }
-        .pricing-card ul li {
-            padding: 0.5rem 0;
-            border-bottom: 1px solid rgba(100, 116, 139, 0.2);
-        }
-        .pricing-card .cta {
-            margin-top: 2rem;
-        }
-        .pricing-card .cta a {
-            display: inline-block;
-            padding: 0.75rem 2rem;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: var(--radius-md);
-            font-weight: bold;
-            transition: all 0.2s ease;
-        }
-        .pricing-card .cta a:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-glow);
-        }
-    </style>
 </head>
 <body class="st-body">
     <script src="/static/js/nav.js"></script>
     <div class="st-page">
-        <div class="pricing-container">
-            <h1 style="text-align: center; margin-bottom: 1rem;">SmartTrader Pricing</h1>
-            <p style="text-align: center; color: #94a3b8; margin-bottom: 2rem;">
+        <div style="padding: 4rem 2rem; max-width: 1200px; margin: 0 auto;">
+            <h1 style="text-align: center; margin-bottom: 1rem; font-size: clamp(1.75rem, 4vw, 2.5rem);">SmartTrader Pricing</h1>
+            <p class="command-subtitle" style="text-align: center; margin-bottom: 2rem;">
                 Choose the plan that fits your trading needs
             </p>
 
-            <div class="pricing-grid">
-                <div class="pricing-card">
-                    <h3>FREE</h3>
-                    <div class="price">Free</div>
-                    <ul>
-                        <li>✅ View public signals</li>
-                        <li>✅ Access price charts</li>
-                        <li>✅ View bot decisions</li>
-                        <li>❌ Real-time alerts</li>
-                        <li>❌ Automated trading</li>
+            <div class="st-pricing-grid">
+                <div class="st-pricing-card">
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">FREE</h3>
+                    <div style="font-size: 2.5rem; font-weight: bold; margin: 1rem 0; color: var(--text-main);">Free</div>
+                    <ul style="list-style: none; padding: 0; margin: 1.5rem 0; text-align: left;">
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(100, 116, 139, 0.2);">✅ View public signals</li>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(100, 116, 139, 0.2);">✅ Access price charts</li>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(100, 116, 139, 0.2);">✅ View bot decisions</li>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(100, 116, 139, 0.2);">❌ Real-time alerts</li>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(100, 116, 139, 0.2);">❌ Automated trading</li>
                     </ul>
-                    <div class="cta">
-                        <a href="/register">Get Started Free</a>
+                    <div style="margin-top: 2rem;">
+                        <a href="/register" class="st-btn st-btn-primary">Get Started Free</a>
                     </div>
                 </div>
 
-                <div class="pricing-card featured">
-                    <h3>PRO</h3>
-                    <div class="price">Coming Soon</div>
-                    <ul>
-                        <li>✅ All FREE features</li>
-                        <li>✅ Real-time alerts</li>
-                        <li>✅ Advanced analytics</li>
-                        <li>✅ Priority support</li>
-                        <li>❌ Automated trading</li>
+                <div class="st-pricing-card featured">
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">PRO</h3>
+                    <div style="font-size: 2.5rem; font-weight: bold; margin: 1rem 0; color: var(--text-main);">Coming Soon</div>
+                    <ul style="list-style: none; padding: 0; margin: 1.5rem 0; text-align: left;">
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(100, 116, 139, 0.2);">✅ All FREE features</li>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(100, 116, 139, 0.2);">✅ Real-time alerts</li>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(100, 116, 139, 0.2);">✅ Advanced analytics</li>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(100, 116, 139, 0.2);">✅ Priority support</li>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(100, 116, 139, 0.2);">❌ Automated trading</li>
                     </ul>
-                    <div class="cta">
-                        <a href="/register">Sign Up</a>
+                    <div style="margin-top: 2rem;">
+                        <a href="/register" class="st-btn st-btn-primary">Sign Up</a>
                     </div>
                 </div>
 
-                <div class="pricing-card">
-                    <h3>PROFESSIONAL</h3>
-                    <div class="price">Coming Soon</div>
-                    <ul>
-                        <li>✅ All PRO features</li>
-                        <li>✅ Managed automated trading</li>
-                        <li>✅ API access</li>
-                        <li>✅ Dedicated support</li>
-                        <li>✅ Strategy customization</li>
+                <div class="st-pricing-card">
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">PROFESSIONAL</h3>
+                    <div style="font-size: 2.5rem; font-weight: bold; margin: 1rem 0; color: var(--text-main);">Coming Soon</div>
+                    <ul style="list-style: none; padding: 0; margin: 1.5rem 0; text-align: left;">
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(100, 116, 139, 0.2);">✅ All PRO features</li>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(100, 116, 139, 0.2);">✅ Managed automated trading</li>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(100, 116, 139, 0.2);">✅ API access</li>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(100, 116, 139, 0.2);">✅ Dedicated support</li>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(100, 116, 139, 0.2);">✅ Strategy customization</li>
                     </ul>
-                    <div class="cta">
-                        <a href="/register">Sign Up</a>
+                    <div style="margin-top: 2rem;">
+                        <a href="/register" class="st-btn st-btn-primary">Sign Up</a>
                     </div>
                 </div>
             </div>
