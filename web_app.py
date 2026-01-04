@@ -89,6 +89,13 @@ async def dashboard_page() -> HTMLResponse:
     html = _read_html(BASE_DIR / "index.html")
     return HTMLResponse(html)
 
+
+@app.get("/insights", response_class=HTMLResponse)
+async def insights_page() -> HTMLResponse:
+    """Command Center dashboard (insights.html)"""
+    html = _read_html(BASE_DIR / "static" / "pages" / "insights.html")
+    return HTMLResponse(html)
+
 # ----------------------------------------------------------------------
 # Helper: DB
 # ----------------------------------------------------------------------
@@ -734,74 +741,256 @@ async def api_admin_set_plan(
 
 
 # =====================================================================
-# Intelligence: Market DNA Summary (ADX, ATR, Regime)
+# Command Center: Full Bot Brain Visualization
 # =====================================================================
 
-
-@app.get("/api/intelligence/summary")
-async def api_intelligence_summary() -> JSONResponse:
+@app.get("/api/insights/command-center")
+async def api_command_center() -> JSONResponse:
     """
-    Aggregate ADX, ATR, and Regime data from last 100 trading_logs records.
-    Returns market DNA summary for intelligence dashboard.
+    Comprehensive Command Center endpoint returning:
+    - Latest decision with VSA/whale data
+    - Dynamic weights based on current regime
+    - Market regime and regime_scale
+    - Price data with VSA markers
+    - Relative volume data
+    - Latest reasons_json for Live Logic Feed
     """
-    rows = query_db(
+    import json
+    from config import STRATEGY
+    
+    # Get latest decision with all fields
+    latest_row = query_db(
         f"""
         SELECT
-            adx,
-            atr,
-            regime,
-            aggregate_s,
-            decision,
-            timestamp
+            timestamp, price, decision, regime, aggregate_s,
+            trend, momentum, meanrev, breakout,
+            trend_raw, momentum_raw, meanrev_raw, breakout_raw,
+            adx, atr, confirm_s, confirm_adx,
+            reasons_json, behavior_json, behavior_bias, behavior_score,
+            volume, open, high, low
         FROM {TABLE_NAME}
-        WHERE adx IS NOT NULL AND atr IS NOT NULL
+        WHERE decision IS NOT NULL
         ORDER BY timestamp DESC
-        LIMIT 100
+        LIMIT 1
         """
     )
-
-    if not rows:
+    
+    if not latest_row:
         return JSONResponse({
-            "adx_avg": 0.0,
-            "adx_latest": 0.0,
-            "atr_avg": 0.0,
-            "atr_latest": 0.0,
-            "regime_distribution": {},
-            "trend_strength": 0.0,
-            "volatility_shift": 0.0,
+            "error": "No decisions found",
+            "whale_bias": 0.0,
+            "vsa_signal": "NO_DATA",
+            "supply_overcoming_demand": False,
+            "current_regime": "NEUTRAL",
+            "regime_scale": 1.0,
+            "dynamic_weights": {},
+            "latest_decision": None,
         })
-
-    # Calculate averages and latest
-    adx_values = [float(r.get("adx", 0)) for r in rows if r.get("adx")]
-    atr_values = [float(r.get("atr", 0)) for r in rows if r.get("atr")]
-
-    latest = rows[0] if rows else {}
-    adx_latest = float(latest.get("adx", 0))
-    atr_latest = float(latest.get("atr", 0))
-
-    # Regime distribution
-    regime_counts = {}
-    for r in rows:
-        regime = r.get("regime", "NEUTRAL")
-        regime_counts[regime] = regime_counts.get(regime, 0) + 1
-
-    # Volatility shift: compare latest ATR to average
-    atr_avg = sum(atr_values) / len(atr_values) if atr_values else 0.0
-    volatility_shift = ((atr_latest / atr_avg) - 1.0) * 100 if atr_avg > 0 else 0.0
-
-    # Trend strength: ADX normalized (0-100 scale, assuming max ADX ~50)
-    trend_strength = min(100.0, (adx_latest / 50.0) * 100) if adx_latest else 0.0
-
+    
+    latest = latest_row[0]
+    
+    # Parse behavior_json - try multiple sources
+    behavior_details = {}
+    whale_bias = 0.0
+    vsa_signal = "NO_DATA"
+    supply_overcoming_demand = False
+    rvol = 1.0
+    
+    # First try behavior_json column
+    behavior_json_str = latest.get("behavior_json")
+    if behavior_json_str:
+        try:
+            behavior_details = json.loads(behavior_json_str) if isinstance(behavior_json_str, str) else behavior_json_str
+            if isinstance(behavior_details, dict):
+                whale_bias = float(behavior_details.get("whale_bias", 0.0))
+                vsa_signal = behavior_details.get("vsa_signal", "NO_DATA")
+                supply_overcoming_demand = bool(behavior_details.get("supply_overcoming_demand", False))
+                rvol = float(behavior_details.get("rvol", 1.0))
+        except Exception as e:
+            logger.warning(f"Failed to parse behavior_json: {e}")
+    
+    # Fallback: try behavior_bias column directly
+    if whale_bias == 0.0 and latest.get("behavior_bias") is not None:
+        whale_bias = float(latest.get("behavior_bias", 0.0))
+    
+    # Ensure behavior_details is a dict
+    if not isinstance(behavior_details, dict):
+        behavior_details = {
+            "whale_bias": whale_bias,
+            "vsa_signal": vsa_signal,
+            "supply_overcoming_demand": supply_overcoming_demand,
+            "rvol": rvol,
+        }
+    
+    # Calculate dynamic weights based on regime (same logic as trading_logic.py)
+    regime = latest.get("regime", "NEUTRAL")
+    base_weights = STRATEGY["weights"].copy()
+    
+    # Normalize base weights
+    total = sum(base_weights.values())
+    if total > 0:
+        normalized = {k: v / total for k, v in base_weights.items()}
+    else:
+        normalized = base_weights
+    
+    # Apply regime-specific adjustments
+    if regime == "LOW":
+        normalized["meanrev"] *= 1.4
+        normalized["trend"] *= 0.7
+        normalized["breakout"] *= 0.8
+    elif regime == "HIGH":
+        normalized["breakout"] *= 1.3
+        normalized["behavior"] *= 1.2
+        normalized["meanrev"] *= 0.6
+        normalized["trend"] *= 1.1
+    
+    # Renormalize after adjustments
+    total = sum(normalized.values())
+    if total > 0:
+        normalized = {k: v / total for k, v in normalized.items()}
+    
+    # Get regime_scale
+    regime_scale = STRATEGY["regime_scale"].get(regime, 1.0)
+    
+    # Parse reasons_json
+    reasons = []
+    reasons_json_str = latest.get("reasons_json")
+    if reasons_json_str:
+        try:
+            reasons = json.loads(reasons_json_str) if isinstance(reasons_json_str, str) else reasons_json_str
+            if not isinstance(reasons, list):
+                reasons = [str(reasons)]
+        except Exception:
+            reasons = []
+    
+    # Get price history with VSA markers (last 200 candles)
+    price_history = query_db(
+        f"""
+        SELECT
+            timestamp, price, open, high, low, volume,
+            behavior_json
+        FROM {TABLE_NAME}
+        WHERE price IS NOT NULL
+        ORDER BY timestamp DESC
+        LIMIT 200
+        """
+    )
+    
+    # Process price history with VSA markers
+    candles_with_vsa = []
+    rvol_data = []
+    
+    for candle in reversed(price_history):  # Oldest to newest
+        candle_vsa = {
+            "timestamp": _normalize_ts(candle.get("timestamp")),
+            "price": float(candle.get("price", 0)),
+            "open": float(candle.get("open", 0)),
+            "high": float(candle.get("high", 0)),
+            "low": float(candle.get("low", 0)),
+            "volume": float(candle.get("volume", 0)),
+            "vsa_signal": "NORMAL",
+            "whale_footprint": None,
+        }
+        
+        # Parse behavior_json for this candle
+        candle_behavior_json = candle.get("behavior_json")
+        if candle_behavior_json:
+            try:
+                candle_behavior = json.loads(candle_behavior_json) if isinstance(candle_behavior_json, str) else candle_behavior_json
+                candle_vsa["vsa_signal"] = candle_behavior.get("vsa_signal", "NORMAL")
+                candle_whale_bias = float(candle_behavior.get("whale_bias", 0.0))
+                
+                # Mark whale footprints (Absorption or Effort vs Result)
+                if candle_vsa["vsa_signal"] == "ABSORPTION":
+                    candle_vsa["whale_footprint"] = "ABSORPTION"
+                elif candle_vsa["vsa_signal"] == "DISTRIBUTION":
+                    candle_vsa["whale_footprint"] = "DISTRIBUTION"
+                
+                # Add RVOL data
+                candle_rvol = float(candle_behavior.get("rvol", 1.0))
+                rvol_data.append({
+                    "timestamp": candle_vsa["timestamp"],
+                    "rvol": candle_rvol,
+                })
+            except Exception:
+                pass
+        
+        candles_with_vsa.append(candle_vsa)
+    
+    # Calculate average RVOL for comparison
+    avg_rvol = sum(d["rvol"] for d in rvol_data) / len(rvol_data) if rvol_data else 1.0
+    
+    # Get whale_bias history from price_history for flow chart
+    whale_bias_history = []
+    for candle in candles_with_vsa:
+        candle_behavior_json = None
+        # Find matching candle in price_history
+        for ph_candle in price_history:
+            if _normalize_ts(ph_candle.get("timestamp")) == candle["timestamp"]:
+                candle_behavior_json = ph_candle.get("behavior_json")
+                break
+        
+        if candle_behavior_json:
+            try:
+                candle_behavior = json.loads(candle_behavior_json) if isinstance(candle_behavior_json, str) else candle_behavior_json
+                candle_wb = float(candle_behavior.get("whale_bias", 0.0))
+                whale_bias_history.append({
+                    "timestamp": candle["timestamp"],
+                    "whale_bias": candle_wb,
+                })
+            except Exception:
+                pass
+    
+    # Calculate confluence_factors (raw values for radar chart)
+    confluence_factors = {
+        "trend": float(latest.get("trend_raw", latest.get("trend", 0.0))),
+        "momentum": float(latest.get("momentum_raw", latest.get("momentum", 0.0))),
+        "meanrev": float(latest.get("meanrev_raw", latest.get("meanrev", 0.0))),
+        "breakout": float(latest.get("breakout_raw", latest.get("breakout", 0.0))),
+    }
+    
+    # Calculate volatility ratio (vr) - approximate from regime or use default
+    # In a real scenario, this would come from vol_ratio in DecisionContext
+    # For now, we'll estimate based on regime
+    vr_estimate = {"LOW": 0.85, "NEUTRAL": 1.0, "HIGH": 1.15}.get(regime, 1.0)
+    min_vr_trade = STRATEGY.get("min_vr_trade", 0.88)
+    
     return JSONResponse({
-        "adx_avg": sum(adx_values) / len(adx_values) if adx_values else 0.0,
-        "adx_latest": adx_latest,
-        "atr_avg": atr_avg,
-        "atr_latest": atr_latest,
-        "regime_distribution": regime_counts,
-        "trend_strength": trend_strength,
-        "volatility_shift": volatility_shift,
-        "latest_regime": latest.get("regime", "NEUTRAL"),
-        "latest_decision": latest.get("decision", "HOLD"),
+        "latest_decision": {
+            "timestamp": _normalize_ts(latest.get("timestamp")),
+            "price": float(latest.get("price", 0)),
+            "decision": latest.get("decision", "HOLD"),
+            "regime": regime,
+            "aggregate_s": float(latest.get("aggregate_s", 0.0)),
+            "trend": float(latest.get("trend", 0.0)),
+            "momentum": float(latest.get("momentum", 0.0)),
+            "meanrev": float(latest.get("meanrev", 0.0)),
+            "breakout": float(latest.get("breakout", 0.0)),
+            "adx": float(latest.get("adx", 0.0)),
+            "atr": float(latest.get("atr", 0.0)),
+        },
+        "whale_bias": whale_bias,
+        "vsa_signal": vsa_signal,
+        "supply_overcoming_demand": supply_overcoming_demand,
+        "rvol": rvol,
+        "current_regime": regime,
+        "regime_scale": regime_scale,
+        "dynamic_weights": {
+            "trend": float(normalized.get("trend", 0.0)),
+            "momentum": float(normalized.get("momentum", 0.0)),
+            "meanrev": float(normalized.get("meanrev", 0.0)),
+            "breakout": float(normalized.get("breakout", 0.0)),
+            "behavior": float(normalized.get("behavior", 0.0)),
+        },
+        "confluence_factors": confluence_factors,
+        "volatility_ratio": vr_estimate,
+        "min_vr_trade": min_vr_trade,
+        "reasons": reasons,
+        "price_history": candles_with_vsa,
+        "rvol_history": rvol_data,
+        "whale_bias_history": whale_bias_history,
+        "avg_rvol": avg_rvol,
+        "behavior_details": behavior_details,
     })
 
 
@@ -875,3 +1064,4 @@ async def api_intelligence_summary() -> JSONResponse:
         "latest_regime": latest.get("regime", "NEUTRAL"),
         "latest_decision": latest.get("decision", "HOLD"),
     })
+
