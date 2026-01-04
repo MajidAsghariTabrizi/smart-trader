@@ -2,907 +2,365 @@
 <html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
-    <title>Command Center – SmartTrader</title>
+    <title>Market Intelligence – SmartTrader</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/static/css/style.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    <style>
-        :root {
-            --bg-primary: #0f172a;      /* slate-900 */
-            --bg-secondary: #1e293b;    /* slate-800 */
-            --bg-tertiary: #334155;     /* slate-700 */
-            --text-primary: #f1f5f9;    /* slate-100 */
-            --text-secondary: #94a3b8;  /* slate-400 */
-            --accent-blue: #3b82f6;
-            --accent-green: #10b981;
-            --accent-red: #ef4444;
-            --accent-yellow: #f59e0b;
-            --border-color: #475569;    /* slate-600 */
-        }
-        
-        body {
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-        
-        .command-center-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .regime-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.875rem;
-        }
-        
-        .regime-low { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-        .regime-neutral { background: rgba(148, 163, 178, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 178, 0.3); }
-        .regime-high { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-        
-        .supply-demand-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.875rem;
-        }
-        
-        .supply-overcoming { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-        .demand-dominant { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .balanced { background: rgba(148, 163, 178, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 178, 0.3); }
-        
-        .logic-feed-item {
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            background: var(--bg-tertiary);
-            border-left: 3px solid var(--accent-blue);
-            border-radius: 4px;
-            font-size: 0.875rem;
-            line-height: 1.6;
-        }
-        
-        .logic-feed-item.warning { border-left-color: var(--accent-yellow); }
-        .logic-feed-item.danger { border-left-color: var(--accent-red); }
-        .logic-feed-item.success { border-left-color: var(--accent-green); }
-        
-        .reasoning-timeline-item {
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            background: var(--bg-tertiary);
-            border-left: 2px solid var(--accent-blue);
-            border-radius: 4px;
-            font-size: 0.8rem;
-            line-height: 1.5;
-        }
-        
-        .reasoning-timeline-item .highlight {
-            color: var(--accent-red);
-            font-weight: 600;
-        }
-        
-        .volatility-guard-bar {
-            height: 24px;
-            background: var(--bg-tertiary);
-            border-radius: 12px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .volatility-guard-fill {
-            height: 100%;
-            border-radius: 12px;
-            transition: width 0.3s ease;
-        }
-        
-        .whale-activity-heat {
-            height: 8px;
-            border-radius: 4px;
-            background: linear-gradient(to right, 
-                #ef4444 0%, 
-                #f59e0b 25%, 
-                #eab308 50%, 
-                #84cc16 75%, 
-                #10b981 100%);
-            position: relative;
-        }
-        
-        .whale-activity-marker {
-            position: absolute;
-            top: -4px;
-            width: 16px;
-            height: 16px;
-            background: white;
-            border: 2px solid var(--accent-blue);
-            border-radius: 50%;
-            transform: translateX(-50%);
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="st-body">
     <script src="/static/js/nav.js"></script>
-    <div class="st-page" style="background: var(--bg-primary); padding: 2rem;">
-        <!-- Command Center Header -->
-        <header class="command-center-card" style="margin-bottom: 2rem;">
-            <div style="display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center;">
-                <div>
-                    <h1 style="margin: 0 0 0.5rem; font-size: 2rem; font-weight: 700; display: flex; align-items: center; gap: 0.75rem;">
-                        🧠 Command Center
-                        <span class="st-status-dot st-status-dot-active" style="margin-right: 0.5rem;"></span>
-                    </h1>
-                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Real-time Bot Brain Visualization & Decision Intelligence</p>
-                </div>
-                <div style="text-align: right;">
-                    <div id="liveStatus" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
-                        <span class="st-status-dot st-status-dot-active"></span>
-                        <span>Bot Active</span>
-                    </div>
+    <div class="st-page">
+        <!-- Intelligence Header -->
+        <header class="st-glass-card" style="margin: 2rem 0; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1 style="margin: 0 0 0.5rem; font-size: 1.75rem; font-weight: 700; display: flex; align-items: center; gap: 0.75rem;">
+                    Market Intelligence Dashboard
+                    <span class="st-status-dot st-status-dot-active" style="margin-right: 0.5rem;"></span>
+                </h1>
+                <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Real-time Market DNA Analysis</p>
+            </div>
+            <div style="text-align: right;">
+                <div id="liveStatus" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
+                    <span class="st-status-dot st-status-dot-active"></span>
+                    <span>Bot Active</span>
                 </div>
             </div>
         </header>
 
-        <!-- Main Grid: 2 Columns -->
-        <div style="display: grid; grid-template-columns: 1fr 350px; gap: 1.5rem;">
-            <!-- Left Column: Main Visualizations -->
-            <div>
-                <!-- Top Row: Whale Sentiment & Market Regime -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-                    <!-- Whale Sentiment -->
-                    <div class="command-center-card">
-                        <h2 style="margin: 0 0 1rem; font-size: 1.25rem; font-weight: 600;">Whale Sentiment & Flow</h2>
-                        <div id="whaleBiasGauge" style="min-height: 200px;"></div>
-                        <div id="whaleFlowChart" style="min-height: 150px; margin-top: 1rem;"></div>
-                        <div style="margin-top: 1rem;">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Whale Activity Level</div>
-                            <div id="whaleActivityHeat" class="whale-activity-heat"></div>
-                        </div>
-                        <div id="supplyDemandIndicator" style="margin-top: 1rem; text-align: center;"></div>
-                    </div>
+        <!-- 2-Column High-Density Layout -->
+        <div class="st-main">
+            <section class="st-row st-row-responsive">
+                <!-- LEFT SIDEBAR: Technical Pulse -->
+                <aside class="st-card st-side-panel" style="min-width: 320px;">
+                    <!-- Market Health Gauges -->
+                    <div class="st-panel-block">
+                        <div class="st-panel-title">Market Health Gauges</div>
+                        <div class="st-panel-subtitle">Real-time Technical Pulse</div>
 
-                    <!-- Market Regime Dashboard -->
-                    <div class="command-center-card">
-                        <h2 style="margin: 0 0 1rem; font-size: 1.25rem; font-weight: 600;">Market Regime</h2>
-                        <div id="regimeDashboard" style="text-align: center; padding: 1rem 0;">
-                            <div id="regimeBadge" class="regime-badge" style="font-size: 1.5rem; padding: 1rem 2rem; margin-bottom: 1rem;">--</div>
-                            <div style="color: var(--text-secondary); margin-top: 1rem;">
-                                <div style="font-size: 0.875rem; margin-bottom: 0.5rem;">Regime Scale Multiplier</div>
-                                <div id="regimeScale" style="font-size: 2rem; font-weight: 700; color: var(--accent-blue);">--</div>
+                        <!-- Behavior Score Gauge -->
+                        <div style="margin: 1.5rem 0;">
+                            <div style="text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">Behavior Score</div>
+                            <div class="st-gauge-container" id="gaugeBehavior">
+                                <svg class="st-gauge-svg" viewBox="0 0 200 120">
+                                    <path class="st-gauge-track" d="M 20 100 A 80 80 0 0 1 180 100" />
+                                    <path id="gaugeBehaviorFill" class="st-gauge-fill" d="M 20 100 A 80 80 0 0 1 180 100" />
+                                </svg>
+                                <div id="gaugeBehaviorValue" class="st-gauge-value">--</div>
+                                <div class="st-gauge-label">Whale Proxies</div>
                             </div>
                         </div>
-                        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
-                            <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.75rem;">Volatility Guard</div>
-                            <div id="volatilityGuard" class="volatility-guard-bar"></div>
-                            <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);">
-                                <span id="vrCurrent">VR: --</span>
-                                <span id="vrThreshold">Min: 0.88</span>
+
+                        <!-- Trend Strength (ADX) Gauge -->
+                        <div style="margin: 1.5rem 0;">
+                            <div style="text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">Trend Strength (ADX)</div>
+                            <div class="st-gauge-container" id="gaugeTrend">
+                                <svg class="st-gauge-svg" viewBox="0 0 200 120">
+                                    <path class="st-gauge-track" d="M 20 100 A 80 80 0 0 1 180 100" />
+                                    <path id="gaugeTrendFill" class="st-gauge-fill" d="M 20 100 A 80 80 0 0 1 180 100" />
+                                </svg>
+                                <div id="gaugeTrendValue" class="st-gauge-value">--</div>
+                                <div class="st-gauge-label">ADX</div>
+                            </div>
+                        </div>
+
+                        <!-- Volatility Shift (ATR) Gauge -->
+                        <div style="margin: 1.5rem 0;">
+                            <div style="text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">Volatility Shift</div>
+                            <div class="st-gauge-container" id="gaugeVolatility">
+                                <svg class="st-gauge-svg" viewBox="0 0 200 120">
+                                    <path class="st-gauge-track" d="M 20 100 A 80 80 0 0 1 180 100" />
+                                    <path id="gaugeVolatilityFill" class="st-gauge-fill" d="M 20 100 A 80 80 0 0 1 180 100" />
+                                </svg>
+                                <div id="gaugeVolatilityValue" class="st-gauge-value">--</div>
+                                <div class="st-gauge-label">ATR Ratio</div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Decision Logic Radar -->
-                <div class="command-center-card">
-                    <h2 style="margin: 0 0 1rem; font-size: 1.25rem; font-weight: 600;">Decision Logic Composition</h2>
-                    <p style="margin: 0 0 1.5rem; color: var(--text-secondary); font-size: 0.875rem;">How the bot is currently thinking (Dynamic Weights)</p>
-                    <div id="decisionLogicRadar" style="min-height: 400px;"></div>
-                </div>
-
-                <!-- Advanced VSA Candlestick Charting -->
-                <div class="command-center-card">
-                    <h2 style="margin: 0 0 1rem; font-size: 1.25rem; font-weight: 600;">Advanced VSA Charting</h2>
-                    <p style="margin: 0 0 1.5rem; color: var(--text-secondary); font-size: 0.875rem;">Price action with Whale Footprints (Absorption/Distribution markers)</p>
-                    <div id="vsaCandlestickChart" style="min-height: 450px;"></div>
-                    <div style="margin-top: 1rem;">
-                        <h3 style="margin: 0 0 0.75rem; font-size: 1rem; font-weight: 600;">Relative Volume (RVOL)</h3>
-                        <div id="rvolChart" style="min-height: 200px;"></div>
+                    <!-- Live Bot Decision Status -->
+                    <div class="st-panel-block">
+                        <div class="st-panel-title">Live Bot Status</div>
+                        <div id="botStatus" style="font-size: 0.85rem; line-height: 1.8;">
+                            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(148,163,178,0.1);">
+                                <span style="color: var(--text-muted);">Last Decision:</span>
+                                <span id="lastDecision" style="font-weight: 600;">--</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(148,163,178,0.1);">
+                                <span style="color: var(--text-muted);">Regime:</span>
+                                <span id="currentRegime" style="font-weight: 600;">--</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                                <span style="color: var(--text-muted);">Aggregate S:</span>
+                                <span id="aggregateS" style="font-weight: 600;">--</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Right Column: Live Reasoning Timeline -->
-            <div>
-                <div class="command-center-card" style="position: sticky; top: 2rem;">
-                    <h2 style="margin: 0 0 1rem; font-size: 1.25rem; font-weight: 600;">Live Reasoning Timeline</h2>
-                    <p style="margin: 0 0 1.5rem; color: var(--text-secondary); font-size: 0.875rem;">Real-time decision reasoning and alerts</p>
-                    <div id="reasoningTimeline" style="max-height: calc(100vh - 300px); overflow-y: auto;">
-                        <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Loading...</div>
+                    <!-- Momentum Sparkline -->
+                    <div class="st-panel-block">
+                        <div class="st-panel-title">24h Price Momentum</div>
+                        <div class="st-panel-subtitle">BTC/TMN Trend</div>
+                        <canvas id="momentumSparkline" style="width: 100%; height: 80px; margin-top: 0.5rem;"></canvas>
                     </div>
-                </div>
-            </div>
+                </aside>
+
+                <!-- RIGHT MAIN: Quantitative Reports + Insights -->
+                <main style="flex: 1;">
+                    <!-- Whale Tracker Radar -->
+                    <div class="st-card" style="margin-bottom: 1.5rem;">
+                        <div class="st-card-header">
+                            <h2>Whale Tracker Radar</h2>
+                            <p class="st-card-caption">Automated Intelligence Alerts</p>
+                        </div>
+                        <div id="whaleRadar" style="max-height: 300px; overflow-y: auto; padding: 1rem 0;">
+                            <div style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading...</div>
+                        </div>
+                    </div>
+
+                    <!-- Quantitative Reports -->
+                    <div class="st-card" style="margin-bottom: 1.5rem;">
+                        <div class="st-card-header">
+                            <h2>Quantitative Reports</h2>
+                            <p class="st-card-caption">Market DNA Analysis</p>
+                        </div>
+                        <div id="quantitativeReports" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; padding: 1rem 0;">
+                            <div style="padding: 1rem; background: var(--bg-soft); border-radius: var(--radius-sm); border-left: 3px solid var(--blue);">
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">ADX Latest</div>
+                                <div id="reportAdx" style="font-size: 1.5rem; font-weight: 700;">--</div>
+                            </div>
+                            <div style="padding: 1rem; background: var(--bg-soft); border-radius: var(--radius-sm); border-left: 3px solid var(--yellow);">
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">ATR Latest</div>
+                                <div id="reportAtr" style="font-size: 1.5rem; font-weight: 700;">--</div>
+                            </div>
+                            <div style="padding: 1rem; background: var(--bg-soft); border-radius: var(--radius-sm); border-left: 3px solid var(--green);">
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">Volatility Shift</div>
+                                <div id="reportVolShift" style="font-size: 1.5rem; font-weight: 700;">--</div>
+                            </div>
+                            <div style="padding: 1rem; background: var(--bg-soft); border-radius: var(--radius-sm); border-left: 3px solid var(--blue);">
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">Regime Distribution</div>
+                                <div id="reportRegime" style="font-size: 0.9rem; font-weight: 600;">--</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Human Insights Feed -->
+                    <div class="st-card">
+                        <div class="st-card-header">
+                            <h2>Human Insights</h2>
+                            <p class="st-card-caption">Published Analysis & News</p>
+                        </div>
+                        <div id="insightsList" style="padding: 1rem 0;">
+                            <div style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading...</div>
+                        </div>
+                    </div>
+                </main>
+            </section>
         </div>
 
-        <footer class="st-footer" style="margin-top: 3rem;">
+        <footer class="st-footer">
             <span>SmartTrader © 2025</span>
             <span>Quantiviq • Algorithmic Research</span>
         </footer>
     </div>
 
     <script>
-        let whaleBiasGaugeChart = null;
-        let whaleFlowChart = null;
-        let decisionLogicRadarChart = null;
-        let vsaCandlestickChart = null;
-        let rvolChart = null;
+        let sparklineChart = null;
 
-        async function loadCommandCenter() {
+        function updateGauge(gaugeId, fillId, valueId, score, colorClass) {
+            const fill = document.getElementById(fillId);
+            const value = document.getElementById(valueId);
+            if (!fill || !value) return;
+
+            const percentage = Math.min(100, Math.max(0, score));
+            const offset = 314 * (1 - percentage / 100);
+            
+            fill.setAttribute('stroke-dashoffset', offset);
+            fill.className = `st-gauge-fill ${colorClass}`;
+            value.textContent = score.toFixed(1);
+            
+            const color = colorClass === 'st-gauge-fill-high' ? 'var(--green)' : 
+                         colorClass === 'st-gauge-fill-medium' ? 'var(--yellow)' : 'var(--red)';
+            value.style.color = color;
+        }
+
+        function renderSparkline(history) {
+            const canvas = document.getElementById('momentumSparkline');
+            if (!canvas || !history || history.length < 2) return;
+
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            const prices = history.map(h => Number(h.price));
+            const min = Math.min(...prices);
+            const max = Math.max(...prices);
+            const range = max - min || 1;
+            const stepX = w / (prices.length - 1);
+
+            // Gradient fill
+            const gradient = ctx.createLinearGradient(0, 0, 0, h);
+            gradient.addColorStop(0, 'rgba(96, 165, 250, 0.3)');
+            gradient.addColorStop(1, 'rgba(96, 165, 250, 0)');
+
+            ctx.beginPath();
+            ctx.moveTo(0, h);
+            prices.forEach((p, i) => {
+                const x = i * stepX;
+                const y = h - ((p - min) / range) * h;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.lineTo(w, h);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Line
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#60a5fa';
+            prices.forEach((p, i) => {
+                const x = i * stepX;
+                const y = h - ((p - min) / range) * h;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+        }
+
+        async function loadBehaviorData() {
             try {
-                const response = await fetch('/api/insights/command-center');
-                const data = await response.json();
+                const behavior = await fetch('/api/market/behavior?symbol=BTC').then(r => r.json());
+                if (behavior) {
+                    const score = behavior.behavior_score || 0;
+                    const colorClass = score > 70 ? 'st-gauge-fill-high' : score > 40 ? 'st-gauge-fill-medium' : 'st-gauge-fill-low';
+                    updateGauge('gaugeBehavior', 'gaugeBehaviorFill', 'gaugeBehaviorValue', score, colorClass);
 
-                if (data.error) {
-                    console.error('Command center error:', data.error);
+                    // Whale Radar
+                    const explanations = behavior.explanations || [];
+                    const radarEl = document.getElementById('whaleRadar');
+                    if (radarEl) {
+                        if (explanations.length === 0) {
+                            radarEl.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No alerts at this time.</div>';
+                        } else {
+                            radarEl.innerHTML = explanations.map((e, i) => {
+                                const isPositive = e.toLowerCase().includes('increase') || e.toLowerCase().includes('high');
+                                const borderColor = isPositive ? 'var(--green)' : 'var(--blue)';
+                                return `
+                                    <div style="padding: 1rem; margin: 0.5rem 0; background: var(--bg-soft); border-radius: var(--radius-sm); border-left: 3px solid ${borderColor}; display: flex; align-items: start; gap: 0.75rem;">
+                                        <span style="color: ${borderColor}; font-size: 1.2rem;">⚡</span>
+                                        <div style="flex: 1; font-size: 0.9rem; line-height: 1.6;">${e}</div>
+                                    </div>
+                                `;
+                            }).join('');
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Behavior data error:', err);
+            }
+        }
+
+        async function loadIntelligenceSummary() {
+            try {
+                const summary = await fetch('/api/intelligence/summary').then(r => r.json());
+                if (summary) {
+                    // Trend Strength (ADX) Gauge
+                    const trendStrength = summary.trend_strength || 0;
+                    const trendColorClass = trendStrength > 70 ? 'st-gauge-fill-high' : trendStrength > 40 ? 'st-gauge-fill-medium' : 'st-gauge-fill-low';
+                    updateGauge('gaugeTrend', 'gaugeTrendFill', 'gaugeTrendValue', trendStrength, trendColorClass);
+
+                    // Volatility Shift Gauge (normalize to 0-100)
+                    const volShift = Math.min(100, Math.max(0, 50 + (summary.volatility_shift || 0)));
+                    const volColorClass = volShift > 60 ? 'st-gauge-fill-high' : volShift > 40 ? 'st-gauge-fill-medium' : 'st-gauge-fill-low';
+                    updateGauge('gaugeVolatility', 'gaugeVolatilityFill', 'gaugeVolatilityValue', volShift, volColorClass);
+
+                    // Quantitative Reports
+                    document.getElementById('reportAdx').textContent = summary.adx_latest?.toFixed(1) || '--';
+                    document.getElementById('reportAtr').textContent = summary.atr_latest?.toFixed(2) || '--';
+                    document.getElementById('reportVolShift').textContent = 
+                        (summary.volatility_shift >= 0 ? '+' : '') + summary.volatility_shift?.toFixed(1) + '%' || '--';
+                    
+                    const regimeDist = summary.regime_distribution || {};
+                    const regimeText = Object.entries(regimeDist).map(([k, v]) => `${k}: ${v}`).join(' | ') || '--';
+                    document.getElementById('reportRegime').textContent = regimeText;
+
+                    // Bot Status
+                    document.getElementById('lastDecision').textContent = summary.latest_decision || '--';
+                    document.getElementById('currentRegime').textContent = summary.latest_regime || '--';
+                }
+            } catch (err) {
+                console.error('Intelligence summary error:', err);
+            }
+        }
+
+        async function loadLatestDecision() {
+            try {
+                const decisions = await fetch('/api/decisions?limit=1').then(r => r.json());
+                if (decisions && decisions.length > 0) {
+                    const last = decisions[0];
+                    document.getElementById('lastDecision').textContent = last.decision || '--';
+                    document.getElementById('currentRegime').textContent = last.regime || '--';
+                    document.getElementById('aggregateS').textContent = last.aggregate_s?.toFixed(3) || '--';
+                }
+            } catch (err) {
+                console.error('Latest decision error:', err);
+            }
+        }
+
+        async function loadMomentumSparkline() {
+            try {
+                const btc = await fetch('/api/btc_price').then(r => r.json());
+                if (btc && Array.isArray(btc.history)) {
+                    renderSparkline(btc.history);
+                }
+            } catch (err) {
+                console.error('Sparkline error:', err);
+            }
+        }
+
+        async function loadInsights() {
+            const container = document.getElementById('insightsList');
+            try {
+                const res = await fetch('/api/insights/feed?limit=10');
+                const insights = await res.json();
+
+                if (!insights || insights.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No insights published yet.</div>';
                     return;
                 }
 
-                // Update Whale Sentiment
-                updateWhaleSentiment(data.whale_bias || 0.0, data.vsa_signal || "NO_DATA", data.whale_bias_history || []);
-                
-                // Update Supply vs Demand Indicator
-                updateSupplyDemandIndicator(data.supply_overcoming_demand || false, data.vsa_signal || "NO_DATA");
-                
-                // Update Market Regime Dashboard
-                updateRegimeDashboard(data.current_regime || "NEUTRAL", data.regime_scale || 1.0);
-                
-                // Update Volatility Guard
-                updateVolatilityGuard(data.volatility_ratio || 1.0, data.min_vr_trade || 0.88);
-                
-                // Update Decision Logic Radar
-                updateDecisionLogicRadar(data.confluence_factors || {}, data.dynamic_weights || {});
-                
-                // Update VSA Candlestick Charting
-                updateVSACandlestickChart(data.price_history || [], data.rvol_history || [], data.avg_rvol || 1.0);
-                
-                // Update Live Reasoning Timeline
-                updateReasoningTimeline(data.reasons || [], data.latest_decision || {}, data.whale_bias || 0.0, data.supply_overcoming_demand || false);
-                
+                container.innerHTML = insights.map(insight => `
+                    <div class="st-glass-card" style="margin: 1rem 0; padding: 1.5rem;">
+                        <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">${insight.title || 'No Title'}</h3>
+                        <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; display: flex; gap: 1rem;">
+                            ${insight.created_at ? `<span>${new Date(insight.created_at).toLocaleDateString('en-US')}</span>` : ''}
+                            ${insight.sentiment ? `<span class="st-status-badge ${insight.sentiment === 'POSITIVE' ? 'st-status-badge-active' : insight.sentiment === 'NEGATIVE' ? 'st-status-badge-pending' : ''}">${insight.sentiment}</span>` : ''}
+                        </div>
+                        <p style="color: var(--text-muted); line-height: 1.6;">${insight.summary || 'Summary not available'}</p>
+                    </div>
+                `).join('');
             } catch (err) {
-                console.error('Command center load error:', err);
+                container.innerHTML = '<div style="text-align: center; color: var(--red); padding: 2rem;">Error loading insights</div>';
             }
-        }
-
-        function updateWhaleSentiment(whaleBias, vsaSignal, whaleBiasHistory) {
-            // Gauge Chart
-            const gaugeValue = ((whaleBias + 1.0) / 2.0) * 100;
-            
-            const gaugeOptions = {
-                series: [gaugeValue],
-                chart: {
-                    type: 'radialBar',
-                    height: 200,
-                },
-                plotOptions: {
-                    radialBar: {
-                        startAngle: -90,
-                        endAngle: 90,
-                        track: {
-                            background: '#334155',
-                            strokeWidth: '97%',
-                            margin: 5,
-                        },
-                        dataLabels: {
-                            name: {
-                                show: true,
-                                fontSize: '14px',
-                                fontWeight: 600,
-                                color: '#94a3b8',
-                                offsetY: -10,
-                            },
-                            value: {
-                                show: true,
-                                fontSize: '24px',
-                                fontWeight: 700,
-                                color: whaleBias > 0 ? '#10b981' : whaleBias < 0 ? '#ef4444' : '#94a3b8',
-                                offsetY: 12,
-                                formatter: function(val) {
-                                    return whaleBias.toFixed(3);
-                                }
-                            }
-                        }
-                    }
-                },
-                fill: {
-                    type: 'gradient',
-                    gradient: {
-                        shade: 'dark',
-                        type: 'horizontal',
-                        shadeIntensity: 0.5,
-                        gradientToColors: whaleBias > 0 ? ['#10b981'] : ['#ef4444'],
-                        inverseColors: true,
-                        opacityFrom: 1,
-                        opacityTo: 1,
-                        stops: [0, 100]
-                    }
-                },
-                labels: ['Whale Bias'],
-                colors: whaleBias > 0 ? ['#10b981'] : whaleBias < 0 ? ['#ef4444'] : ['#94a3b8'],
-            };
-
-            if (whaleBiasGaugeChart) {
-                whaleBiasGaugeChart.updateOptions(gaugeOptions);
-            } else {
-                whaleBiasGaugeChart = new ApexCharts(document.querySelector("#whaleBiasGauge"), gaugeOptions);
-                whaleBiasGaugeChart.render();
-            }
-
-            // Flow Chart (Area Chart)
-            if (whaleBiasHistory && whaleBiasHistory.length > 0) {
-                const flowData = whaleBiasHistory.map(h => ({
-                    x: new Date(h.timestamp).getTime(),
-                    y: h.whale_bias
-                }));
-
-                const flowOptions = {
-                    series: [{
-                        name: 'Whale Bias Flow',
-                        data: flowData,
-                    }],
-                    chart: {
-                        type: 'area',
-                        height: 150,
-                        toolbar: { show: false },
-                    },
-                    stroke: {
-                        width: 2,
-                        curve: 'smooth',
-                    },
-                    fill: {
-                        type: 'gradient',
-                        gradient: {
-                            shade: 'dark',
-                            type: 'vertical',
-                            shadeIntensity: 0.5,
-                            gradientToColors: ['#3b82f6'],
-                            inverseColors: false,
-                            opacityFrom: 0.4,
-                            opacityTo: 0.1,
-                        }
-                    },
-                    xaxis: {
-                        type: 'datetime',
-                        labels: {
-                            style: {
-                                colors: '#94a3b8',
-                                fontSize: '10px',
-                            }
-                        }
-                    },
-                    yaxis: {
-                        min: -1,
-                        max: 1,
-                        labels: {
-                            style: {
-                                colors: '#94a3b8',
-                                fontSize: '10px',
-                            }
-                        }
-                    },
-                    colors: ['#3b82f6'],
-                    tooltip: {
-                        y: {
-                            formatter: function(val) {
-                                return val.toFixed(3);
-                            }
-                        }
-                    },
-                };
-
-                if (whaleFlowChart) {
-                    whaleFlowChart.updateOptions(flowOptions);
-                    whaleFlowChart.updateSeries([{
-                        name: 'Whale Bias Flow',
-                        data: flowData,
-                    }]);
-                } else {
-                    whaleFlowChart = new ApexCharts(document.querySelector("#whaleFlowChart"), flowOptions);
-                    whaleFlowChart.render();
-                }
-            }
-
-            // Whale Activity Heat Gradient
-            const activityLevel = ((whaleBias + 1.0) / 2.0) * 100; // 0-100%
-            const heatEl = document.getElementById('whaleActivityHeat');
-            if (heatEl) {
-                heatEl.innerHTML = `<div class="whale-activity-marker" style="left: ${activityLevel}%;"></div>`;
-            }
-        }
-
-        function updateSupplyDemandIndicator(supplyOvercoming, vsaSignal) {
-            const indicatorEl = document.getElementById('supplyDemandIndicator');
-            if (!indicatorEl) return;
-
-            let status, text, className;
-            if (supplyOvercoming) {
-                status = '⚠️';
-                text = 'Supply Overcoming Demand';
-                className = 'supply-overcoming';
-            } else if (vsaSignal === 'ABSORPTION') {
-                status = '✅';
-                text = 'Demand Dominant';
-                className = 'demand-dominant';
-            } else {
-                status = '⚖️';
-                text = 'Balanced';
-                className = 'balanced';
-            }
-
-            indicatorEl.innerHTML = `
-                <div class="supply-demand-indicator ${className}">
-                    <span>${status}</span>
-                    <span>${text}</span>
-                    <span style="font-size: 0.75rem; opacity: 0.8;">(${vsaSignal})</span>
-                </div>
-            `;
-        }
-
-        function updateRegimeDashboard(regime, regimeScale) {
-            const badgeEl = document.getElementById('regimeBadge');
-            const scaleEl = document.getElementById('regimeScale');
-            
-            if (badgeEl) {
-                badgeEl.textContent = regime;
-                badgeEl.className = `regime-badge regime-${regime.toLowerCase()}`;
-            }
-            
-            if (scaleEl) {
-                scaleEl.textContent = `×${regimeScale.toFixed(2)}`;
-            }
-        }
-
-        function updateVolatilityGuard(vr, minVr) {
-            const guardEl = document.getElementById('volatilityGuard');
-            const vrCurrentEl = document.getElementById('vrCurrent');
-            const vrThresholdEl = document.getElementById('vrThreshold');
-            
-            if (guardEl) {
-                const percentage = Math.min(100, (vr / minVr) * 100);
-                const color = vr >= minVr ? '#10b981' : '#ef4444';
-                
-                guardEl.innerHTML = `
-                    <div class="volatility-guard-fill" style="width: ${percentage}%; background: ${color};"></div>
-                `;
-            }
-            
-            if (vrCurrentEl) {
-                vrCurrentEl.textContent = `VR: ${vr.toFixed(2)}`;
-                vrCurrentEl.style.color = vr >= minVr ? '#10b981' : '#ef4444';
-            }
-            
-            if (vrThresholdEl) {
-                vrThresholdEl.textContent = `Min: ${minVr.toFixed(2)}`;
-            }
-        }
-
-        function updateDecisionLogicRadar(confluenceFactors, dynamicWeights) {
-            const categories = ['Trend', 'Momentum', 'MeanRev', 'Breakout'];
-            const values = [
-                Math.abs(confluenceFactors.trend || 0) * 100,
-                Math.abs(confluenceFactors.momentum || 0) * 100,
-                Math.abs(confluenceFactors.meanrev || 0) * 100,
-                Math.abs(confluenceFactors.breakout || 0) * 100,
-            ];
-
-            const options = {
-                series: [{
-                    name: 'Signal Strength',
-                    data: values,
-                }],
-                chart: {
-                    type: 'radar',
-                    height: 400,
-                    toolbar: { show: false },
-                },
-                xaxis: {
-                    categories: categories,
-                },
-                yaxis: {
-                    max: 100,
-                    min: 0,
-                },
-                fill: {
-                    opacity: 0.3,
-                    colors: ['#3b82f6'],
-                },
-                stroke: {
-                    colors: ['#3b82f6'],
-                    width: 2,
-                },
-                markers: {
-                    size: 4,
-                    colors: ['#3b82f6'],
-                },
-                plotOptions: {
-                    radar: {
-                        polygons: {
-                            strokeColors: '#475569',
-                            fill: {
-                                colors: ['#1e293b', '#334155']
-                            }
-                        }
-                    }
-                },
-                tooltip: {
-                    y: {
-                        formatter: function(val) {
-                            return val.toFixed(1) + '%';
-                        }
-                    }
-                },
-            };
-
-            if (decisionLogicRadarChart) {
-                decisionLogicRadarChart.updateOptions(options);
-            } else {
-                decisionLogicRadarChart = new ApexCharts(document.querySelector("#decisionLogicRadar"), options);
-                decisionLogicRadarChart.render();
-            }
-        }
-
-        function updateVSACandlestickChart(priceHistory, rvolHistory, avgRvol) {
-            if (!priceHistory || priceHistory.length === 0) return;
-
-            // Prepare price line data
-            const priceData = priceHistory.map(c => ({
-                x: new Date(c.timestamp).getTime(),
-                y: c.price
-            }));
-
-            // Prepare volume data with color coding and highlight high RVOL
-            const volumeData = priceHistory.map((c, idx) => {
-                const isUp = c.price >= (c.open || c.price);
-                const rvol = rvolHistory[idx]?.rvol || 1.0;
-                const fillColor = rvol > 2.0 ? '#f59e0b' : (isUp ? '#10b981' : '#ef4444');
-                return {
-                    x: new Date(c.timestamp).getTime(),
-                    y: c.volume || 0,
-                    fillColor: fillColor,
-                };
-            });
-
-            // Find VSA annotations (Absorption/Distribution)
-            const annotations = {
-                points: []
-            };
-
-            priceHistory.forEach((candle) => {
-                const timestamp = new Date(candle.timestamp).getTime();
-                if (candle.vsa_signal === 'ABSORPTION') {
-                    annotations.points.push({
-                        x: timestamp,
-                        y: candle.high || candle.price,
-                        marker: {
-                            size: 12,
-                            fillColor: '#10b981',
-                            strokeColor: '#ffffff',
-                            strokeWidth: 2,
-                            shape: 'circle',
-                        },
-                        label: {
-                            text: '🐋',
-                            style: {
-                                color: '#10b981',
-                                fontSize: '16px',
-                            },
-                            offsetY: -20,
-                        }
-                    });
-                } else if (candle.vsa_signal === 'DISTRIBUTION') {
-                    annotations.points.push({
-                        x: timestamp,
-                        y: candle.high || candle.price,
-                        marker: {
-                            size: 12,
-                            fillColor: '#ef4444',
-                            strokeColor: '#ffffff',
-                            strokeWidth: 2,
-                            shape: 'circle',
-                        },
-                        label: {
-                            text: '⚡',
-                            style: {
-                                color: '#ef4444',
-                                fontSize: '16px',
-                            },
-                            offsetY: -20,
-                        }
-                    });
-                }
-            });
-
-            const options = {
-                series: [{
-                    name: 'Price',
-                    type: 'line',
-                    data: priceData,
-                }, {
-                    name: 'Volume',
-                    type: 'column',
-                    data: volumeData,
-                }],
-                chart: {
-                    type: 'line',
-                    height: 450,
-                    toolbar: { show: true },
-                    zoom: { enabled: true },
-                },
-                stroke: {
-                    width: 2,
-                    curve: 'smooth',
-                    colors: ['#3b82f6'],
-                },
-                fill: {
-                    type: 'gradient',
-                    gradient: {
-                        shade: 'dark',
-                        type: 'vertical',
-                        shadeIntensity: 0.5,
-                        gradientToColors: ['#3b82f6'],
-                        inverseColors: false,
-                        opacityFrom: 0.3,
-                        opacityTo: 0.1,
-                    }
-                },
-                plotOptions: {
-                    bar: {
-                        columnWidth: '60%',
-                        colors: {
-                            ranges: volumeData.map(d => ({
-                                from: d.x,
-                                to: d.x,
-                                color: d.fillColor
-                            }))
-                        }
-                    }
-                },
-                annotations: annotations,
-                xaxis: {
-                    type: 'datetime',
-                    labels: {
-                        style: {
-                            colors: '#94a3b8',
-                        }
-                    }
-                },
-                yaxis: [{
-                    title: {
-                        text: 'Price',
-                        style: {
-                            color: '#94a3b8',
-                        }
-                    },
-                    labels: {
-                        style: {
-                            colors: '#94a3b8',
-                        },
-                        formatter: function(val) {
-                            return val.toLocaleString();
-                        }
-                    }
-                }, {
-                    opposite: true,
-                    title: {
-                        text: 'Volume',
-                        style: {
-                            color: '#94a3b8',
-                        }
-                    },
-                    labels: {
-                        style: {
-                            colors: '#94a3b8',
-                        }
-                    }
-                }],
-                tooltip: {
-                    shared: true,
-                    intersect: false,
-                },
-                colors: ['#3b82f6', '#10b981'],
-                legend: {
-                    show: true,
-                    position: 'top',
-                    labels: {
-                        colors: '#94a3b8',
-                    }
-                },
-            };
-
-            if (vsaCandlestickChart) {
-                vsaCandlestickChart.updateOptions(options);
-                vsaCandlestickChart.updateSeries([{
-                    name: 'Price',
-                    type: 'line',
-                    data: priceData,
-                }, {
-                    name: 'Volume',
-                    type: 'column',
-                    data: volumeData,
-                }]);
-            } else {
-                vsaCandlestickChart = new ApexCharts(document.querySelector("#vsaCandlestickChart"), options);
-                vsaCandlestickChart.render();
-            }
-
-            // Update RVOL Chart
-            if (rvolHistory && rvolHistory.length > 0) {
-                const rvolData = rvolHistory.map(r => ({
-                    x: new Date(r.timestamp).getTime(),
-                    y: r.rvol
-                }));
-                const avgRvolData = rvolHistory.map(r => ({
-                    x: new Date(r.timestamp).getTime(),
-                    y: avgRvol
-                }));
-
-                const rvolOptions = {
-                    series: [{
-                        name: 'RVOL',
-                        data: rvolData,
-                    }, {
-                        name: 'Avg RVOL',
-                        data: avgRvolData,
-                        type: 'line',
-                    }],
-                    chart: {
-                        type: 'bar',
-                        height: 200,
-                        toolbar: { show: false },
-                    },
-                    plotOptions: {
-                        bar: {
-                            colors: {
-                                ranges: [{
-                                    from: 0,
-                                    to: 2,
-                                    color: '#3b82f6'
-                                }, {
-                                    from: 2,
-                                    to: 100,
-                                    color: '#f59e0b'
-                                }]
-                            }
-                        }
-                    },
-                    stroke: {
-                        width: 2,
-                        curve: 'smooth',
-                    },
-                    fill: {
-                        type: 'gradient',
-                        gradient: {
-                            shade: 'dark',
-                            type: 'vertical',
-                            shadeIntensity: 0.5,
-                            gradientToColors: ['#3b82f6'],
-                            inverseColors: false,
-                            opacityFrom: 0.3,
-                            opacityTo: 0.1,
-                        }
-                    },
-                    xaxis: {
-                        type: 'datetime',
-                        labels: {
-                            style: {
-                                colors: '#94a3b8',
-                            }
-                        }
-                    },
-                    yaxis: {
-                        labels: {
-                            style: {
-                                colors: '#94a3b8',
-                            },
-                        }
-                    },
-                    colors: ['#3b82f6', '#94a3b8'],
-                    legend: {
-                        show: true,
-                        position: 'top',
-                        labels: {
-                            colors: '#94a3b8',
-                        }
-                    },
-                    tooltip: {
-                        shared: true,
-                        intersect: false,
-                    },
-                };
-
-                if (rvolChart) {
-                    rvolChart.updateOptions(rvolOptions);
-                    rvolChart.updateSeries([{
-                        name: 'RVOL',
-                        data: rvolData,
-                    }, {
-                        name: 'Avg RVOL',
-                        data: avgRvolData,
-                        type: 'line',
-                    }]);
-                } else {
-                    rvolChart = new ApexCharts(document.querySelector("#rvolChart"), rvolOptions);
-                    rvolChart.render();
-                }
-            }
-        }
-
-        function updateReasoningTimeline(reasons, latestDecision, whaleBias, supplyOvercoming) {
-            const timelineEl = document.getElementById('reasoningTimeline');
-            if (!timelineEl) return;
-
-            if (!reasons || reasons.length === 0) {
-                timelineEl.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">No reasoning data available.</div>';
-                return;
-            }
-
-            let html = '';
-            
-            // Add decision summary
-            if (latestDecision.decision) {
-                const decisionClass = latestDecision.decision === 'BUY' ? 'success' : 
-                                     latestDecision.decision === 'SELL' ? 'danger' : 'warning';
-                html += `
-                    <div class="reasoning-timeline-item ${decisionClass}">
-                        <strong>Decision: ${latestDecision.decision}</strong><br>
-                        Aggregate S: ${(latestDecision.aggregate_s || 0).toFixed(3)} | 
-                        Price: ${(latestDecision.price || 0).toLocaleString()}
-                    </div>
-                `;
-            }
-
-            // Add reasons with highlighting
-            reasons.forEach((reason) => {
-                let itemClass = '';
-                let highlightedReason = reason;
-                
-                // Highlight key terms
-                const highlightTerms = ['WHALE_GATE', 'VOL_GUARD', 'conflict', 'supply overcoming', 'HOLD', 'gated'];
-                highlightTerms.forEach(term => {
-                    const regex = new RegExp(`(${term})`, 'gi');
-                    highlightedReason = highlightedReason.replace(regex, '<span class="highlight">$1</span>');
-                });
-                
-                if (reason.includes('WHALE_GATE') || reason.includes('supply overcoming')) {
-                    itemClass = 'danger';
-                } else if (reason.includes('BUY') || reason.includes('SELL')) {
-                    itemClass = 'success';
-                } else if (reason.includes('HOLD') || reason.includes('gated') || reason.includes('VOL_GUARD')) {
-                    itemClass = 'warning';
-                }
-
-                html += `
-                    <div class="reasoning-timeline-item ${itemClass}">
-                        ${highlightedReason}
-                    </div>
-                `;
-            });
-
-            // Add whale gate explanation if applicable
-            if (supplyOvercoming && latestDecision.decision === 'HOLD') {
-                html += `
-                    <div class="reasoning-timeline-item danger">
-                        <strong>🐋 Whale Gate Activated:</strong><br>
-                        Despite bullish trend signals, VSA analysis indicates supply overcoming demand 
-                        (whale_bias: ${whaleBias.toFixed(3)}). Trade held to avoid bull trap.
-                    </div>
-                `;
-            }
-
-            timelineEl.innerHTML = html;
         }
 
         // Initial load
-        loadCommandCenter();
+        loadBehaviorData();
+        loadIntelligenceSummary();
+        loadLatestDecision();
+        loadMomentumSparkline();
+        loadInsights();
 
-        // Auto-refresh every 15 seconds
-        setInterval(loadCommandCenter, 15000);
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            loadBehaviorData();
+            loadIntelligenceSummary();
+            loadLatestDecision();
+            loadMomentumSparkline();
+        }, 30000);
     </script>
 </body>
 </html>

@@ -173,17 +173,6 @@ def make_fingerprint(dc_240: DecisionContext, dc_60: Optional[DecisionContext], 
     ]
     if dc_60:
         parts.append(round(float(getattr(dc_60, "aggregate_s", 0.0)), 3))
-    
-    # Add VSA fingerprint and whale bias
-    behavior_details = getattr(dc_240, "behavior_details", None)
-    if behavior_details and isinstance(behavior_details, dict):
-        vsa_score = behavior_details.get("vsa_absorption_score", 0.0)
-        vsa_signal = behavior_details.get("vsa_signal", "NORMAL")
-        whale_bias = behavior_details.get("whale_bias", 0.0)
-        parts.append(round(float(vsa_score), 1))
-        parts.append(str(vsa_signal)[:3])  # First 3 chars: ABS, DIS, NOR, etc.
-        parts.append(round(float(whale_bias), 2))
-    
     return "|".join(map(str, parts))
 
 def format_number(x: Any, nd: int = 3) -> str:
