@@ -789,23 +789,38 @@ async def api_command_center() -> JSONResponse:
     
     latest = latest_row[0]
     
-    # Parse behavior_json
+    # Parse behavior_json - try multiple sources
     behavior_details = {}
     whale_bias = 0.0
     vsa_signal = "NO_DATA"
     supply_overcoming_demand = False
     rvol = 1.0
     
+    # First try behavior_json column
     behavior_json_str = latest.get("behavior_json")
     if behavior_json_str:
         try:
             behavior_details = json.loads(behavior_json_str) if isinstance(behavior_json_str, str) else behavior_json_str
-            whale_bias = float(behavior_details.get("whale_bias", 0.0))
-            vsa_signal = behavior_details.get("vsa_signal", "NO_DATA")
-            supply_overcoming_demand = bool(behavior_details.get("supply_overcoming_demand", False))
-            rvol = float(behavior_details.get("rvol", 1.0))
+            if isinstance(behavior_details, dict):
+                whale_bias = float(behavior_details.get("whale_bias", 0.0))
+                vsa_signal = behavior_details.get("vsa_signal", "NO_DATA")
+                supply_overcoming_demand = bool(behavior_details.get("supply_overcoming_demand", False))
+                rvol = float(behavior_details.get("rvol", 1.0))
         except Exception as e:
             logger.warning(f"Failed to parse behavior_json: {e}")
+    
+    # Fallback: try behavior_bias column directly
+    if whale_bias == 0.0 and latest.get("behavior_bias") is not None:
+        whale_bias = float(latest.get("behavior_bias", 0.0))
+    
+    # Ensure behavior_details is a dict
+    if not isinstance(behavior_details, dict):
+        behavior_details = {
+            "whale_bias": whale_bias,
+            "vsa_signal": vsa_signal,
+            "supply_overcoming_demand": supply_overcoming_demand,
+            "rvol": rvol,
+        }
     
     # Calculate dynamic weights based on regime (same logic as trading_logic.py)
     regime = latest.get("regime", "NEUTRAL")
@@ -905,6 +920,41 @@ async def api_command_center() -> JSONResponse:
     # Calculate average RVOL for comparison
     avg_rvol = sum(d["rvol"] for d in rvol_data) / len(rvol_data) if rvol_data else 1.0
     
+    # Get whale_bias history from price_history for flow chart
+    whale_bias_history = []
+    for candle in candles_with_vsa:
+        candle_behavior_json = None
+        # Find matching candle in price_history
+        for ph_candle in price_history:
+            if _normalize_ts(ph_candle.get("timestamp")) == candle["timestamp"]:
+                candle_behavior_json = ph_candle.get("behavior_json")
+                break
+        
+        if candle_behavior_json:
+            try:
+                candle_behavior = json.loads(candle_behavior_json) if isinstance(candle_behavior_json, str) else candle_behavior_json
+                candle_wb = float(candle_behavior.get("whale_bias", 0.0))
+                whale_bias_history.append({
+                    "timestamp": candle["timestamp"],
+                    "whale_bias": candle_wb,
+                })
+            except Exception:
+                pass
+    
+    # Calculate confluence_factors (raw values for radar chart)
+    confluence_factors = {
+        "trend": float(latest.get("trend_raw", latest.get("trend", 0.0))),
+        "momentum": float(latest.get("momentum_raw", latest.get("momentum", 0.0))),
+        "meanrev": float(latest.get("meanrev_raw", latest.get("meanrev", 0.0))),
+        "breakout": float(latest.get("breakout_raw", latest.get("breakout", 0.0))),
+    }
+    
+    # Calculate volatility ratio (vr) - approximate from regime or use default
+    # In a real scenario, this would come from vol_ratio in DecisionContext
+    # For now, we'll estimate based on regime
+    vr_estimate = {"LOW": 0.85, "NEUTRAL": 1.0, "HIGH": 1.15}.get(regime, 1.0)
+    min_vr_trade = STRATEGY.get("min_vr_trade", 0.88)
+    
     return JSONResponse({
         "latest_decision": {
             "timestamp": _normalize_ts(latest.get("timestamp")),
@@ -932,9 +982,13 @@ async def api_command_center() -> JSONResponse:
             "breakout": float(normalized.get("breakout", 0.0)),
             "behavior": float(normalized.get("behavior", 0.0)),
         },
+        "confluence_factors": confluence_factors,
+        "volatility_ratio": vr_estimate,
+        "min_vr_trade": min_vr_trade,
         "reasons": reasons,
         "price_history": candles_with_vsa,
         "rvol_history": rvol_data,
+        "whale_bias_history": whale_bias_history,
         "avg_rvol": avg_rvol,
         "behavior_details": behavior_details,
     })
